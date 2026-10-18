@@ -15,10 +15,24 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
   ストレージ権付きプラン以外での検索結果の保存・キャッシュ・データベース化を認めていません。
   そのため検索結果は実行中のメモリ上で集計に使うだけで、`logs/`・`data/seen.json`・`data/search-index.json`・Actionsログには出しません。
   X投稿もX側のデータを保存・再公開しません（X APIやページ本文の取得もしていません）。
-- 公式フィードは初期段階では次の6件に絞っています（`config/sources.yml`）。
+- 公式フィードは次の7件です（`config/sources.yml`）。
   OpenAI News / Google DeepMind News / GitHub Changelog（AI関連の記事のみ）/ Claude Code Releases /
-  OpenAI Codex Releases（プレリリース除外）/ MCP Specification Releases。
-  Anthropicのニュースには公式RSSが無いため、Claude Code の GitHub Releases を使っています。
+  OpenAI Codex Releases（プレリリース除外）/ MCP Specification Releases / Anthropic SDK Releases。
+  Anthropicのニュースには公式RSSが無いため、Claude Code と公式SDK（Claude API の変更）の GitHub Releases を使っています。
+- **記事の選定**（v0.1.3）: 基準は「読むと AI・AIコーディングツールについて新しい技術的知見が得られるか」です。
+  - 幅広い記事を配信するニュース（OpenAI・DeepMind）は、タイトル・説明文に `selection.rules` で点数を付け、
+    新モデル・提供開始・API・料金変更・技術的な検証などを採用し、導入事例・政策・教育などは原則として採用しません
+    （減点の規則があっても、技術的な信号が十分あれば採用されます）。1回の収集で1フィードから最大5件で、
+    上限を超えた記事は記録せず、次回の収集で（公開から7日以内なら）改めて評価します。
+  - リリース（Claude Code・Codex・MCP・SDK）は、リリースノートの項目を「新機能・変更・破壊的変更・修正・雑務」に機械的に分類し、
+    修正・雑務だけのリリースを除外します。判定できないリリースは見落とさないよう採用します。
+    同じ収集で採用したリリースは1件にまとめ、項目数（`Notes`）、公式リリースノートから機械的に選んだ最大3項目
+    （`Highlight`。破壊的変更 > 新機能 > 変更の順、原文のまま・バージョン付き）、各リリースへのリンク（`Release`）を添えます。
+    要約や翻訳は作らず、項目を判定できない場合は抜粋しません。
+  - 不採用の記事は理由とともに `data/seen.json` に記録し（`excluded`）、次回以降に復活させません。
+    選定ルールを変えた後は、手動実行の `reconsider_excluded`（`--reconsider-excluded`）で、
+    フィードに残っている（7日以内の）不採用記事を現在の設定で再評価できます。
+    Actionsログに記事ごとの点数・判定・理由と、理由別の件数（`rejected by selection`）が出ます。
 - Jev・Gemini は v0.1.0 では呼び出しません（ワークフローにもキーを渡していません）。
 
 ## セットアップ
@@ -33,6 +47,7 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 - **自動実行**: 毎日 JST 6:41 頃（`.github/workflows/collect.yml`。news-watch の 7:17 と時刻をずらしています）。
   変更があったときだけ `logs/`・`data/` をcommitします。
 - **手動実行**: Actions → `Collect AI news` → Run workflow。`skip_brave` を選ぶと公式フィードだけを取得します。
+  `reconsider_excluded` を選ぶと、不採用として記録済みの記事を現在の選定ルールで再評価します。
 - **ローカル実行**（任意）: `pip install -r requirements.txt` のあと `python scripts/collect.py [--skip-brave]`
   （Brave検索をする場合は環境変数 `BRAVE_API_KEY`）。検索インデックスは `python scripts/search_index.py` で再生成します。
 - **テスト**（APIキー不要・通信なし。Node.js があればブラウザ側の検索関数も確認）: `python -m unittest discover -s tests`
@@ -59,8 +74,11 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 コードを変えずに次を調整できます。
 
 - `categories`: カテゴリ（ログの見出し・表示順）と、フィード記事の分類に使うキーワード。`classify_order` で優先順位を指定。
-- `feeds`: 公式フィード（上限10件）。`category`（既定の分類）、`classify`、`require_keywords`（いずれかの語を含む記事だけを収集）、
-  `title_prefix`、`exclude_title_patterns`（正規表現）。`max_age_days` より古い記事は収集しません。
+- `feeds`: 公式フィード（上限10件）。`category`（既定の分類）、`classify`、`select`（`all` / `score` / `release_notes`）、
+  `require_keywords`（いずれかの語を含む記事だけを収集）、`title_prefix`、`exclude_title_patterns`（正規表現）。
+  `max_age_days` より古い記事は収集しません。
+- `selection`: 記事の点数付け（`min_score`・`max_new_per_feed`・`rules`）。規則は `label`・`weight`・`in`
+  （`title` / `summary` / `any` / `categories`）・`terms` / `patterns` で書きます。
 - `brave.queries`: 検索語（`id`・`kind: x|web`・`category`・`q`・`search_lang`・`country`・`freshness`）。
   `kind: x` には `site:x.com` を含めます。
 - `quality`: 品質集計に使う語（根拠を示す語・誇張表現）。
@@ -84,8 +102,9 @@ Actionsログの `Brave ...` 行と `data/brave-usage.json` に、検索語ご�
 
 ## 出力
 
-- `logs/YYYY/YYYY-MM.md`: 日付 → カテゴリ → 記事（`URL`・`Source`・`Feed`・`Published`・`Retrieved`）。
-- `data/seen.json`: 収集済みURL（重複排除）。`data/months.json`: 月の一覧。
+- `logs/YYYY/YYYY-MM.md`: 日付 → カテゴリ → 記事（`URL`・`Source`・`Feed`・`Notes`・`Highlight`・`Release`（リリースのみ）・`Published`・`Retrieved`）。
+- `data/seen.json`: 収集済みURL（重複排除）。不採用の記事は `excluded`（理由）、1件にまとめたリリースは `grouped_into` を持ちます。
+  `data/months.json`: 月の一覧。
 - `data/search-index.json`: 横断検索用インデックス（`logs/` の派生データ）。
 - `data/brave-usage.json`: Brave APIの利用件数と品質集計（直近90日）。
 

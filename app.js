@@ -69,6 +69,25 @@ function renderCard(item, withCategory) {
     });
     card.appendChild(meta);
   }
+  if (item.notes) card.appendChild(el("p", "notes", `リリースノートの項目数: ${item.notes}`)); // 機械的な集計
+  // 主な変更: 公式リリースノートの記載を原文のまま（機械的に選択）。各リリースのリリースノートへのリンクも出す。
+  const highlights = Array.isArray(item.highlights) ? item.highlights : [];
+  if (highlights.length) {
+    card.appendChild(el("p", "notes", "主な変更（公式リリースノートから機械的に抜粋）"));
+    const list = el("ul", "highlights");
+    for (const h of highlights) list.appendChild(el("li", "", h));
+    card.appendChild(list);
+  }
+  const releases = (Array.isArray(item.releases) ? item.releases : [])
+    .map((r) => ({ label: r.label, url: safeUrl(r.url) })).filter((r) => r.url);
+  if (releases.length) {
+    const links = el("p", "notes releases", "リリースノート: ");
+    releases.forEach((r, i) => {
+      if (i) links.appendChild(document.createTextNode(" ・ "));
+      links.appendChild(externalLink(r.label, r.url));
+    });
+    card.appendChild(links);
+  }
 
   // リンクと補助情報はカード下部にまとめ、行内のカードで位置を揃える。
   const bottom = el("div", "card-bottom");

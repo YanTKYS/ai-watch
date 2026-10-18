@@ -16,6 +16,29 @@
       <pubDate>Fri, 16 Oct 2026 17:00:00 GMT</pubDate>
     </item>
     <item>
+      <title><![CDATA[How Example Corp scales support with ChatGPT]]></title>
+      <description><![CDATA[Example Corp uses ChatGPT Enterprise across its support team.]]></description>
+      <link>https://openai.com/index/fixture-example-corp/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-example-corp/</guid>
+      <category><![CDATA[Customer Story]]></category>
+      <pubDate>Fri, 16 Oct 2026 18:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Fixture: Example law firm speeds up contract review]]></title>
+      <description><![CDATA[Built with the OpenAI API and GPT-5, the firm reviews agreements faster.]]></description>
+      <link>https://openai.com/index/fixture-law-firm/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-law-firm/</guid>
+      <pubDate>Fri, 16 Oct 2026 19:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Fixture: Example research update]]></title>
+      <description><![CDATA[We describe the architecture and report benchmark results for an example reasoning system.]]></description>
+      <link>https://openai.com/index/fixture-research-update/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-research-update/</guid>
+      <category><![CDATA[Research]]></category>
+      <pubDate>Thu, 15 Oct 2026 17:00:00 GMT</pubDate>
+    </item>
+    <item>
       <title><![CDATA[Fixture: An old research post]]></title>
       <link>https://openai.com/index/fixture-old/</link>
       <guid isPermaLink="false">https://openai.com/index/fixture-old/</guid>
