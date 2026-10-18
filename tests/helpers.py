@@ -26,8 +26,14 @@ def block_network():
 
 
 class FakeResponse:
-    def __init__(self, body):
+    def __init__(self, body, headers=None, url="", status=200):
         self._body = body if isinstance(body, bytes) else json.dumps(body).encode("utf-8")
+        self.headers = headers or {}
+        self.status = status
+        self._url = url
+
+    def geturl(self):
+        return self._url
 
     def read(self, n=-1):
         return self._body if n is None or n < 0 else self._body[:n]
@@ -122,7 +128,7 @@ class Base(unittest.TestCase):
         self.logs = self.dir / "logs"
         self.months = self.dir / "data" / "months.json"
         self.usage = self.dir / "data" / "brave-usage.json"
-        self.feeds = {}  # url -> bytes | Exception
+        self.feeds = {}  # url -> bytes | (bytes, headers) | Exception
         self.brave = {}  # 検索語(q) -> payload | Exception
         self.calls = []
 
@@ -137,7 +143,9 @@ class Base(unittest.TestCase):
             value = self.feeds.get(url, rss())
         if isinstance(value, Exception):
             raise value
-        return FakeResponse(value)
+        if isinstance(value, tuple):
+            return FakeResponse(value[0], headers=value[1], url=url)
+        return FakeResponse(value, url=url)
 
     def run_collect(self, today="2026-10-18", env=None, skip_brave=False):
         env = {"BRAVE_API_KEY": SECRET} if env is None else env

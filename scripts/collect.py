@@ -214,12 +214,17 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[li
     new_items: dict[str, Item] = {}
     for feed in config.feeds:
         stats.feed_requests += 1
+        info, body = feeds.FetchInfo(), b""
         try:
-            entries = feeds.parse_feed(feeds.fetch(feed.url))
-        except Exception as e:  # 1件の失敗で全体を止めない。本文は出力しない。
+            body = feeds.fetch(feed.url, info)
+            entries = feeds.parse_feed(body)
+        except Exception as e:  # 1件の失敗で全体を止めない。本文全体は出力せず、切り分け用の診断情報だけを出す。
             stats.failed_feeds.append(feed.name)
             print(f"::warning::feed failed: feed='{feed.name}' error={feeds.describe_error(e)}")
+            print(f"  diagnostics: {feeds.diagnose(info, body, e)}")
             continue
+        print(f"feed ok: feed='{feed.name}' status={info.status} content_type={json.dumps(info.content_type)} "
+              f"bytes={info.size} entries={len(entries)}")
         stats.entries += len(entries)
         selected = feeds.select_entries(feed, entries, today, config.max_age_days)
         stats.skipped_old_or_excluded += len(entries) - len(selected)

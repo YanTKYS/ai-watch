@@ -299,6 +299,78 @@ class ShippedFeedFormats(Base):
             self.assertNotIn(absent, text)  # 古い記事・AI以外の記事・プレリリース・本文は保存しない
 
 
+class FeedDiagnostics(ShippedFeedFormats):
+    """取得・解析に失敗したフィードの診断情報（v0.1.1）。他のフィードには影響しない。"""
+
+    DEEPMIND = "https://deepmind.google/blog/rss.xml"
+
+    def run_with_deepmind(self, value):
+        fixtures = ROOT / "tests" / "fixtures"
+        self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
+        self.feeds[self.DEEPMIND] = value
+        code, out, err = self.run_collect(skip_brave=True)
+        self.assertEqual(code, 0, err)
+        self.assertIn("failed feeds: 1 (Google DeepMind News)", out)  # 他の5フィードは成功
+        self.assertEqual(out.count("feed ok: "), 5)
+        self.assertIn("Claude Code v9.9.2", self.log_text())
+        diag = [line for line in out.splitlines() if line.startswith("  diagnostics: ")]
+        self.assertEqual(len(diag), 1)
+        for line in out.splitlines():  # 外部由来の文字列でActionsのワークフローコマンドを発生させない
+            self.assertFalse(line.startswith("::") and not line.startswith(("::warning::feed failed", "::warning::BRAVE")), line)
+        return out, diag[0]
+
+    def test_html_response_reports_status_type_and_position(self):
+        # DOCTYPE付きのHTMLは安全対策で先に拒否される（ValueError）。ParseError になるのは DOCTYPE なしのHTMLなど
+        html = (b'<html lang="en">\n<head><meta charset="utf-8"><title>Blog</title></head>\n'
+                b"<body>" + b"x" * 5000 + b"SECRET-FAR-FROM-ERROR</body></html>")
+        out, diag = self.run_with_deepmind((html, {"Content-Type": "text/html; charset=utf-8"}))
+        self.assertIn("error=ParseError", out)
+        self.assertIn('status=200 content_type="text/html; charset=utf-8"', diag)
+        self.assertIn(f"bytes={len(html)}", diag)
+        self.assertIn('final_url="https://deepmind.google/blog/rss.xml"', diag)
+        self.assertIn('start=html first_element="html"', diag)
+        self.assertRegex(diag, r'parse_error="mismatched tag: line 2, column \d+"')
+        self.assertNotIn("SECRET-FAR-FROM-ERROR", out)  # 本文全体は出さない
+        context = diag.split("context=", 1)[1]
+        self.assertLessEqual(len(context), 2 * 30 + 2 + 20)
+
+    def test_doctype_html_is_still_rejected_before_parsing(self):
+        out, diag = self.run_with_deepmind(b"<!DOCTYPE html><html><body>x</body></html>")
+        self.assertIn("error=ValueError", out)
+        self.assertIn('start=html', diag)
+        self.assertIn('message="DOCTYPE is not allowed"', diag)
+
+    def test_xml_variants_are_distinguishable(self):
+        cases = [
+            (b"\n\n  <?xml version=\"1.0\"?><rss><channel></channel></rss>", "start=xml-declaration", "leading_whitespace=4"),
+            (b'<?xml version="1.0"?><rss><channel><item><title>A&nbsp;B</title></item></channel></rss>',
+             "undefined entity", 'first_element="rss"'),
+            (b"\x1f\x8b\x08\x00binary", "start=gzip", "bom=no"),
+            (b"", "start=empty", "bytes=0"),
+        ]
+        for body, *needles in cases:
+            with self.subTest(body=body[:20]):
+                self.setUp()
+                _, diag = self.run_with_deepmind((body, {"Content-Type": "application/rss+xml"}))
+                for needle in needles:
+                    self.assertIn(needle, diag)
+
+    def test_injection_in_context_is_escaped(self):
+        body = b'<?xml version="1.0"?><rss>\n::error::injected <bad & </rss>'
+        _, diag = self.run_with_deepmind(body)
+        self.assertIn("::error::injected", diag)  # 行頭ではないのでコマンドとして解釈されない
+        self.assertNotIn("\n", diag)
+
+    def test_http_error_reports_status_and_type(self):
+        import email.message
+        headers = email.message.Message()
+        headers["Content-Type"] = "text/html"
+        err = urllib.error.HTTPError(self.DEEPMIND, 403, "Forbidden", headers, None)
+        out, diag = self.run_with_deepmind(err)
+        self.assertIn("error=HTTP 403", out)
+        self.assertIn('status=403 content_type="text/html"', diag)
+
+
 class RepoLayout(unittest.TestCase):
     def workflow(self, name):
         return yaml.safe_load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
@@ -327,6 +399,15 @@ class RepoLayout(unittest.TestCase):
             wf = yaml.safe_load(p.read_text(encoding="utf-8"))
             self.assertNotIn("pull_request_target", wf.get(True, wf.get("on")), p.name)
         self.assertNotIn("secrets.", (ROOT / ".github" / "workflows" / "test.yml").read_text(encoding="utf-8"))
+
+    def test_actions_use_node24_versions(self):
+        # Node.js 20 で動く旧版（checkout@v4・setup-python@v5・setup-node@v4）を使わない。v7 はいずれも node24
+        expected = {"actions/checkout": "v7", "actions/setup-python": "v7", "actions/setup-node": "v7"}
+        for name in ("collect.yml", "test.yml"):
+            for step in self.workflow(name)["jobs"][next(iter(self.workflow(name)["jobs"]))]["steps"]:
+                if "uses" in step:
+                    action, _, version = step["uses"].partition("@")
+                    self.assertEqual(version, expected[action], (name, step["uses"]))
 
     def test_no_weekly_monthly_or_external_ai_calls(self):
         names = {p.name for p in (ROOT / "scripts").glob("*.py")}
