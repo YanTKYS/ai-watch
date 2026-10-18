@@ -34,7 +34,7 @@ feeds:
     url: https://openai.com/news/rss.xml
     category: models
   - name: Google DeepMind News
-    url: https://deepmind.google/blog/feed
+    url: https://deepmind.google/blog/rss.xml
     category: models
   - name: GitHub Changelog
     url: https://github.blog/changelog/feed/

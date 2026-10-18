@@ -36,6 +36,8 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 - **ローカル実行**（任意）: `pip install -r requirements.txt` のあと `python scripts/collect.py [--skip-brave]`
   （Brave検索をする場合は環境変数 `BRAVE_API_KEY`）。検索インデックスは `python scripts/search_index.py` で再生成します。
 - **テスト**（APIキー不要・通信なし。Node.js があればブラウザ側の検索関数も確認）: `python -m unittest discover -s tests`
+  公式フィードの解析は、実際の配信形式（RSS 2.0・WordPress・GitHub Releases の Atom）を模した合成データ `tests/fixtures/` で確認しています。
+  実サイトから取得できるかは、GitHub Actions での実行ログ（`failed feeds`）で確認してください。
 
 ## API利用量の制御（Brave Search API）
 

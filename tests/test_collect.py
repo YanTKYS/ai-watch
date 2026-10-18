@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from helpers import ROOT, SECRET, Base, atom, block_network, collect, rss  # noqa: E402
 
 import feeds  # noqa: E402
+import search_index  # noqa: E402
 from common import normalize_url  # noqa: E402
 
 import yaml  # noqa: E402
@@ -241,6 +242,61 @@ class CollectFeeds(Base):
     def test_no_secret_in_outputs(self):
         code, out, err = self.run_collect()
         self.assertNotIn(SECRET, out + err + self.all_written_text())
+
+
+class ShippedFeedFormats(Base):
+    """出荷時の設定（6フィード）を、実際の配信形式を模した合成データ（tests/fixtures）で通しで確認する。
+
+    実サイトへの通信は行わない。実際のフィードの取得可否は、GitHub Actions での実行で確認する。
+    """
+
+    FIXTURES = {
+        "https://openai.com/news/rss.xml": "openai_news.xml",
+        "https://deepmind.google/blog/rss.xml": "deepmind_blog.xml",
+        "https://github.blog/changelog/feed/": "github_changelog.xml",
+        "https://github.com/anthropics/claude-code/releases.atom": "claude_code_releases.atom",
+        "https://github.com/openai/codex/releases.atom": "codex_releases.atom",
+        "https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom": "mcp_spec_releases.atom",
+    }
+
+    config_text = (ROOT / "config" / "sources.yml").read_text(encoding="utf-8")
+
+    def test_shipped_feeds_parse_and_classify(self):
+        fixtures = ROOT / "tests" / "fixtures"
+        self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
+        code, out, err = self.run_collect(skip_brave=True)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sorted(self.feed_calls()), sorted(self.FIXTURES))  # 設定のURLどおりに1回ずつ取得
+        self.assertIn("failed feeds: 0", out)
+        days = {}
+        for a in search_index.parse_log(self.log_text()):
+            days.setdefault(a["category"], []).append((a["feed"], a["title"], a["url"], a["published"]))
+        self.assertEqual(days, {
+            "AIモデル": [
+                ("OpenAI News", "Fixture: Introducing an example GPT model", "https://openai.com/index/fixture-gpt-model", "2026-10-18"),
+                ("Google DeepMind News", "Fixture: Gemini example model card update",
+                 "https://deepmind.google/discover/blog/fixture-gemini-update", "2026-10-15"),
+                ("Google DeepMind News", "Fixture: A science collaboration",  # キーワードなし→既定カテゴリ
+                 "https://deepmind.google/discover/blog/fixture-science", "2026-10-14"),
+            ],
+            "AIコーディング": [
+                ("GitHub Changelog", "Fixture: Copilot coding agent supports example setting",
+                 "https://github.blog/changelog/2026-10-17-fixture-copilot-agent", "2026-10-18"),
+                ("Claude Code Releases", "Claude Code v9.9.2", "https://github.com/anthropics/claude-code/releases/tag/v9.9.2", "2026-10-18"),
+                ("Claude Code Releases", "Claude Code v9.9.1", "https://github.com/anthropics/claude-code/releases/tag/v9.9.1", "2026-10-16"),
+                ("OpenAI Codex Releases", "Codex 9.8.0", "https://github.com/openai/codex/releases/tag/rust-v9.8.0", "2026-10-17"),
+            ],
+            "MCP・連携技術": [
+                ("MCP Specification Releases", "MCP 2026-10-15",
+                 "https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-10-15", "2026-10-15"),
+            ],
+            "API・料金・制限": [
+                ("OpenAI News", "Fixture: API pricing update for example models", "https://openai.com/index/fixture-api-pricing", "2026-10-17"),
+            ],
+        })
+        text = self.log_text()
+        for absent in ("old research", "Dependabot", "REST API", "alpha", "rc.1", "Synthetic"):
+            self.assertNotIn(absent, text)  # 古い記事・AI以外の記事・プレリリース・本文は保存しない
 
 
 class RepoLayout(unittest.TestCase):

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- テスト用の合成データ。OpenAI News（RSS 2.0）の構造を模したもので、記事内容は架空。 -->
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title><![CDATA[OpenAI News]]></title>
+    <description><![CDATA[The OpenAI blog]]></description>
+    <link>https://openai.com/news</link>
+    <atom:link href="https://openai.com/news/rss.xml" rel="self" type="application/rss+xml"/>
+    <language>en-US</language>
+    <item>
+      <title><![CDATA[Fixture: API pricing update for example models]]></title>
+      <description><![CDATA[<p>Synthetic description.</p>]]></description>
+      <link>https://openai.com/index/fixture-api-pricing/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-api-pricing/</guid>
+      <category><![CDATA[Product]]></category>
+      <pubDate>Fri, 16 Oct 2026 17:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Fixture: An old research post]]></title>
+      <link>https://openai.com/index/fixture-old/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-old/</guid>
+      <pubDate>Mon, 14 Sep 2026 17:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title><![CDATA[Fixture: Introducing an example GPT model]]></title>
+      <description><![CDATA[Synthetic description.]]></description>
+      <link>https://openai.com/index/fixture-gpt-model/</link>
+      <guid isPermaLink="false">https://openai.com/index/fixture-gpt-model/</guid>
+      <category><![CDATA[Release]]></category>
+      <pubDate>Sat, 17 Oct 2026 16:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

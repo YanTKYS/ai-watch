@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- テスト用の合成データ。GitHub Releases（releases.atom）の構造を模したもので、リリース内容は架空。 -->
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/openai/codex/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/openai/codex/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/openai/codex/releases.atom"/>
+  <title>Release notes from codex</title>
+  <updated>2026-10-17T21:00:00Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/rust-v9.9.0-alpha.3</id>
+    <updated>2026-10-17T21:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/openai/codex/releases/tag/rust-v9.9.0-alpha.3"/>
+    <title>9.9.0-alpha.3</title>
+    <content type="html">&lt;h2&gt;Synthetic notes&lt;/h2&gt;</content>
+    <author>
+      <name>fixture-bot</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/rust-v9.8.0</id>
+    <updated>2026-10-16T21:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/openai/codex/releases/tag/rust-v9.8.0"/>
+    <title>9.8.0</title>
+    <content type="html">&lt;h2&gt;Synthetic notes&lt;/h2&gt;</content>
+    <author>
+      <name>fixture-bot</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/rust-v9.8.0-rc.1</id>
+    <updated>2026-10-15T21:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/openai/codex/releases/tag/rust-v9.8.0-rc.1"/>
+    <title>9.8.0-rc.1</title>
+    <content type="html">&lt;h2&gt;Synthetic notes&lt;/h2&gt;</content>
+    <author>
+      <name>fixture-bot</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1?s=60&amp;v=4"/>
+  </entry>
+</feed>

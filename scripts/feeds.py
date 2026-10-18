@@ -19,7 +19,7 @@ from common import JST, USER_AGENT, ConfigError, clean_text, compile_terms, norm
 MAX_FEEDS = 10  # 情報源を無理に増やさないための上限
 MAX_ITEMS_PER_FEED = 30  # 1フィードから採用する記事数の上限（新しい順）
 TIMEOUT_SEC = 20
-MAX_RESPONSE_BYTES = 3_000_000
+MAX_RESPONSE_BYTES = 10_000_000  # OpenAI News は全記事（1,000件超）を1つのフィードで配信する
 DEFAULT_MAX_AGE_DAYS = 7
 
 ATOM = "{http://www.w3.org/2005/Atom}"

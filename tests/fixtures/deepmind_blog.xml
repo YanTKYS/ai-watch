@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- テスト用の合成データ。Google DeepMind News（RSS 2.0）の構造を模したもので、記事内容は架空。 -->
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">
+  <channel>
+    <title>Google DeepMind News</title>
+    <link>https://deepmind.google/</link>
+    <description>Google DeepMind News</description>
+    <atom:link href="https://example.com/rss.xml" rel="self"/>
+    <lastBuildDate>Sat, 17 Oct 2026 10:00:00 +0000</lastBuildDate>
+    <item>
+      <title>Fixture: Gemini example model card update</title>
+      <link>https://deepmind.google/discover/blog/fixture-gemini-update/</link>
+      <description>Synthetic description.</description>
+      <guid isPermaLink="false">fixture-gemini-update</guid>
+      <pubDate>Thu, 15 Oct 2026 14:00:00 +0000</pubDate>
+      <media:content url="https://example.com/image.png" medium="image"/>
+    </item>
+    <item>
+      <title>Fixture: A science collaboration</title>
+      <link>https://deepmind.google/discover/blog/fixture-science/</link>
+      <guid isPermaLink="false">fixture-science</guid>
+      <pubDate>Wed, 14 Oct 2026 14:00:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>
