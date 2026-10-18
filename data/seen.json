@@ -1,1 +1,62 @@
-{}
+{
+  "https://github.blog/changelog/2026-10-15-agentic-autofix-for-code-scanning-alerts-general-availability": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.blog/changelog/2026-10-15-ai-scan-for-pull-requests-generally-available": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.blog/changelog/2026-10-15-upcoming-deprecation-of-selected-github-copilot-models-in-mid-november": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.300": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.301": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.302": {
+    "first_seen": "2026-10-18"
+  },
+  "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/amp-beyond-coding": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/benefit-street-partners": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/block-ai-powered-security": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/higgsfield-longer-videos-voice": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/introducing-the-rosalind-academic-plan": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/itau-generative-ai": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/sentinelone": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/stack-overflow-chatgpt-plugin": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/sullivan-cromwell": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/teaching-students-to-think-and-learn-through-questions": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/the-eus-next-chapter-in-ai-is-agentic": {
+    "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/third-moment-research": {
+    "first_seen": "2026-10-18"
+  }
+}
