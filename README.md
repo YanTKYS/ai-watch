@@ -41,6 +41,8 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
   `feed ok: ... status=200 content_type=... entries=N` が出ます。失敗したフィードは `feed failed` の次の行の
   `diagnostics:` に、HTTPステータス・Content-Type・先頭の形式（`start=xml-declaration` / `html` など）・
   XMLの解析失敗位置と前後30文字が出ます（本文全体は出しません）。Brave枠を使わずに確認する場合は `skip_brave` で手動実行します。
+  `Content-Encoding: gzip` のフィード（Google DeepMind News など）は展開してから解析します
+  （受信データ10MB・展開後30MBまで。`bytes` は受信時、`decoded_bytes` は展開後のサイズ）。
 
 ## API利用量の制御（Brave Search API）
 
