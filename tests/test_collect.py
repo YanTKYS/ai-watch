@@ -246,12 +246,13 @@ class CollectFeeds(Base):
         self.assertNotIn(SECRET, out + err + self.all_written_text())
 
 
-class ShippedFeedFormats(Base):
-    """出荷時の設定（6フィード）を、実際の配信形式を模した合成データ（tests/fixtures）で通しで確認する。
+class ShippedFeedsBase(Base):
+    """出荷時の設定（6フィード）と、実際の配信形式を模した合成データ（tests/fixtures）を使うテストの共通部分。
 
     実サイトへの通信は行わない。実際のフィードの取得可否は、GitHub Actions での実行で確認する。
     """
 
+    DEEPMIND = "https://deepmind.google/blog/rss.xml"
     FIXTURES = {
         "https://openai.com/news/rss.xml": "openai_news.xml",
         "https://deepmind.google/blog/rss.xml": "deepmind_blog.xml",
@@ -263,6 +264,24 @@ class ShippedFeedFormats(Base):
 
     config_text = (ROOT / "config" / "sources.yml").read_text(encoding="utf-8")
 
+    def run_with_deepmind(self, value):
+        """DeepMind だけ value を返し、他の5フィードは合成データを返す。DeepMind だけが失敗することを確認する。"""
+        fixtures = ROOT / "tests" / "fixtures"
+        self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
+        self.feeds[self.DEEPMIND] = value
+        code, out, err = self.run_collect(skip_brave=True)
+        self.assertEqual(code, 0, err)
+        self.assertIn("failed feeds: 1 (Google DeepMind News)", out)  # 他の5フィードは成功
+        self.assertEqual(out.count("feed ok: "), 5)
+        self.assertIn("Claude Code v9.9.2", self.log_text())
+        diag = [line for line in out.splitlines() if line.startswith("  diagnostics: ")]
+        self.assertEqual(len(diag), 1)
+        for line in out.splitlines():  # 外部由来の文字列でActionsのワークフローコマンドを発生させない
+            self.assertFalse(line.startswith("::") and not line.startswith(("::warning::feed failed", "::warning::BRAVE")), line)
+        return out, diag[0]
+
+
+class ShippedFeedFormats(ShippedFeedsBase):
     def test_shipped_feeds_parse_and_classify(self):
         fixtures = ROOT / "tests" / "fixtures"
         self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
@@ -301,25 +320,8 @@ class ShippedFeedFormats(Base):
             self.assertNotIn(absent, text)  # 古い記事・AI以外の記事・プレリリース・本文は保存しない
 
 
-class FeedDiagnostics(ShippedFeedFormats):
+class FeedDiagnostics(ShippedFeedsBase):
     """取得・解析に失敗したフィードの診断情報（v0.1.1）。他のフィードには影響しない。"""
-
-    DEEPMIND = "https://deepmind.google/blog/rss.xml"
-
-    def run_with_deepmind(self, value):
-        fixtures = ROOT / "tests" / "fixtures"
-        self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
-        self.feeds[self.DEEPMIND] = value
-        code, out, err = self.run_collect(skip_brave=True)
-        self.assertEqual(code, 0, err)
-        self.assertIn("failed feeds: 1 (Google DeepMind News)", out)  # 他の5フィードは成功
-        self.assertEqual(out.count("feed ok: "), 5)
-        self.assertIn("Claude Code v9.9.2", self.log_text())
-        diag = [line for line in out.splitlines() if line.startswith("  diagnostics: ")]
-        self.assertEqual(len(diag), 1)
-        for line in out.splitlines():  # 外部由来の文字列でActionsのワークフローコマンドを発生させない
-            self.assertFalse(line.startswith("::") and not line.startswith(("::warning::feed failed", "::warning::BRAVE")), line)
-        return out, diag[0]
 
     def test_html_response_reports_status_type_and_position(self):
         # DOCTYPE付きのHTMLは安全対策で先に拒否される（ValueError）。ParseError になるのは DOCTYPE なしのHTMLなど
@@ -373,7 +375,7 @@ class FeedDiagnostics(ShippedFeedFormats):
         self.assertIn('status=403 content_type="text/html"', diag)
 
 
-class GzipFeeds(FeedDiagnostics):
+class GzipFeeds(ShippedFeedsBase):
     """Content-Encoding: gzip のフィード（v0.1.2。Google DeepMind News が gzip で配信していた）。"""
 
     GZIP = {"Content-Type": "application/xml", "Content-Encoding": "gzip"}
