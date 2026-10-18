@@ -12,6 +12,10 @@ on:
         description: "Brave検索を行わない（公式フィードのみ取得。APIを消費しない）"
         type: boolean
         default: false
+      reconsider_excluded:
+        description: "選定ルールの変更後に、不採用として記録済みの記事（フィードに残る7日以内のもの）を再評価する"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -41,7 +45,8 @@ jobs:
         env:
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
           SKIP_BRAVE: ${{ inputs.skip_brave && '--skip-brave' || '' }}
-        run: python scripts/collect.py $SKIP_BRAVE
+          RECONSIDER: ${{ inputs.reconsider_excluded && '--reconsider-excluded' || '' }}
+        run: python scripts/collect.py $SKIP_BRAVE $RECONSIDER
 
       # Pagesの横断検索用インデックス（logs/ からの派生データ）。外部APIは使わない。
       # 失敗しても日刊ログのcommitは続ける（インデックスは次回の実行で再生成される）。

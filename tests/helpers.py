@@ -149,13 +149,13 @@ class Base(unittest.TestCase):
             return FakeResponse(value[0], headers=value[1], url=url)
         return FakeResponse(value, url=url)
 
-    def run_collect(self, today="2026-10-18", env=None, skip_brave=False):
+    def run_collect(self, today="2026-10-18", env=None, skip_brave=False, reconsider_excluded=False):
         env = {"BRAVE_API_KEY": SECRET} if env is None else env
         out, err = io.StringIO(), io.StringIO()
         with mock.patch("urllib.request.urlopen", side_effect=self.responder), \
                 redirect_stdout(out), redirect_stderr(err):
             code = collect.run(self.config, self.seen, self.logs, self.months, self.usage, today, env,
-                               skip_brave=skip_brave, sleep=lambda s: None)
+                               skip_brave=skip_brave, reconsider_excluded=reconsider_excluded, sleep=lambda s: None)
         return code, out.getvalue(), err.getvalue()
 
     def brave_calls(self):

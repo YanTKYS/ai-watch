@@ -30,6 +30,7 @@ from common import JST, ConfigError, compile_terms, domain_of, matches_any
 
 ROOT = Path(__file__).resolve().parent.parent
 SAME_TITLE_WINDOW_DAYS = 7
+RETRY_REASONS = {"over_limit"}  # seen.json に記録せず、次回の収集で再評価する不採用理由（件数の上限だけが理由のもの）
 
 
 @dataclass
@@ -59,7 +60,9 @@ class Item:
     category: str  # カテゴリ名（ログの見出し）
     feed: str
     published: str
-    notes: str = ""  # リリースの項目数（機械的な集計）。リリースノートの文章は保存しない
+    notes: str = ""  # リリースの項目数（機械的な集計）
+    highlights: list[str] = field(default_factory=list)  # 公式リリースノートから機械的に選んだ項目（原文のまま）
+    releases: list[tuple[str, str]] = field(default_factory=list)  # まとめたリリースの (バージョン, URL)。新しい順
     grouped_urls: list[str] = field(default_factory=list)  # 1件にまとめた他のリリースのURL（seen.json に記録）
 
 
@@ -147,6 +150,8 @@ def render_entry(item: Item, today: str) -> list[str]:
         f"- Source: {domain_of(item.url)}",
         f"- Feed: {item.feed}",
         *([f"- Notes: {item.notes}"] if item.notes else []),
+        *(f"- Highlight: {h}" for h in item.highlights),
+        *(f"- Release: {version} {url}" for version, url in item.releases),
         f"- Published: {item.published}",
         f"- Retrieved: {today}",
     ]
@@ -258,7 +263,7 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
     adopted.sort(key=lambda x: (x[0], x[1].published), reverse=True)
     if feed.select != "release_notes":  # リリースは下で1件にまとめるため上限の対象外
         for points, e, detail in adopted[sel.max_new_per_feed:]:
-            reject(e, "over_limit", detail)  # 1回の収集で1フィードから採用する件数の上限
+            reject(e, "over_limit", detail)  # 1回の収集の上限。seen.json に記録せず、次回また評価する
         adopted = adopted[:sel.max_new_per_feed]
     for _, e, detail in adopted:
         print(f"  + adopted {detail}: {e.title}")
@@ -281,12 +286,20 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
         item.notes = selection.format_counts(totals)
         if unknown:
             item.notes += f"（{unknown} リリースは項目を判定できず）"
+    item.highlights = selection.pick_highlights([(e.title, e.content) for e in releases])
+    if len(releases) > 1:  # まとめた各リリースのリリースノートにもアクセスできるようにする
+        item.releases = [(e.title, e.url) for e in releases]
     item.grouped_urls = [e.url for e in releases[1:]]
     return [item], rejected
 
 
-def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[list[Item], dict[str, str], Stats]:
-    """戻り値は (採用した記事, 不採用URL -> 理由, 統計)。不採用URLは seen.json に記録して復活させない。"""
+def collect_feeds(config: Config, seen: dict[str, dict], today: str,
+                  reconsider_excluded: bool = False) -> tuple[list[Item], dict[str, str], Stats]:
+    """戻り値は (採用した記事, 不採用URL -> 理由, 統計)。不採用URLは seen.json に記録して復活させない。
+
+    reconsider_excluded: 選定ルールを変えたときに、seen.json で不採用（excluded）の記事を、
+    フィードにまだ載っている（max_age_days 以内の）ものに限って現在の設定で再評価する。
+    """
     stats = Stats(feeds=len(config.feeds))
     new_items: dict[str, Item] = {}
     rejected: dict[str, str] = {}
@@ -313,7 +326,10 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[li
             if feed.require_terms and not matches_any(e.title, feed.require_terms):
                 stats.skipped_unmatched += 1  # 生成AIと関係の薄い記事（GitHub Changelog など）
                 continue
-            if e.url in seen or e.url in new_items or e.url in rejected:
+            known = seen.get(e.url)
+            if reconsider_excluded and known is not None and "excluded" in known:
+                known = None
+            if known is not None or e.url in new_items or e.url in rejected:
                 stats.duplicate_items += 1
                 continue
             candidates.append(e)
@@ -392,6 +408,7 @@ def run(
     today: str | None = None,
     env: dict | None = None,
     skip_brave: bool = False,
+    reconsider_excluded: bool = False,
     sleep=time.sleep,
 ) -> int:
     env = os.environ if env is None else env
@@ -404,7 +421,7 @@ def run(
         return 2
 
     # 1. 公式フィード（保存する）
-    items, rejected, stats = collect_feeds(config, seen, today)
+    items, rejected, stats = collect_feeds(config, seen, today, reconsider_excluded)
     stats.same_title = count_same_titles(items, logs_dir, today)
     if items:
         write_log(logs_dir, today, items)  # ログ→seenの順（途中失敗時に記事を取りこぼさない）
@@ -414,7 +431,9 @@ def run(
             for url in item.grouped_urls:
                 seen[url] = {"first_seen": today, "grouped_into": item.url}
         for url, reason in rejected.items():  # 不採用の記事も記録し、次回以降に復活させない
-            seen[url] = {"first_seen": today, "excluded": reason}
+            if reason not in RETRY_REASONS:
+                first = seen.get(url, {}).get("first_seen", today)  # 再評価で再び不採用になった場合は初出日を保つ
+                seen[url] = {"first_seen": first, "excluded": reason}
         save_json(seen_path, seen)
     update_months(months_path, logs_dir)
     print_stats(stats)
@@ -450,8 +469,10 @@ def run(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ai-watch 日刊収集")
     parser.add_argument("--skip-brave", action="store_true", help="Brave検索を行わない（公式フィードのみ）")
+    parser.add_argument("--reconsider-excluded", action="store_true",
+                        help="不採用として記録済みの記事のうち、フィードにまだ載っているものを現在の設定で再評価する")
     args = parser.parse_args(argv)
-    return run(skip_brave=args.skip_brave)
+    return run(skip_brave=args.skip_brave, reconsider_excluded=args.reconsider_excluded)
 
 
 if __name__ == "__main__":

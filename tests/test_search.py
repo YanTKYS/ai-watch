@@ -218,6 +218,30 @@ class ClientSearch(unittest.TestCase):
             ["https://d.example.com/4", "", ""],
         ])
 
+    def test_release_fields_and_search_by_highlight(self):
+        log = ("## 2026-10-18\n\n### AIコーディング\n\n#### Claude Code v2.1.302（v2.1.301 以降の 2 リリース）\n\n"
+               "- URL: https://github.com/a/v2.1.302\n- Feed: Claude Code Releases\n- Notes: 新機能 2 / 修正 3\n"
+               "- Highlight: 新機能（v2.1.302）: Added CLAUDE_CODE_AUTO_MODE_MODEL\n"
+               "- Highlight: 新機能（v2.1.301）: Added the % motion to vim mode\n"
+               "- Release: v2.1.302 https://github.com/a/v2.1.302\n- Release: v2.1.301 https://github.com/a/v2.1.301\n"
+               "- Release: broken\n- Published: 2026-10-17\n- Retrieved: 2026-10-18\n")
+        days = self.node("console.log(JSON.stringify(p.parseLog(process.argv[1])));", log)
+        item = days[0]["categories"][0]["items"][0]
+        self.assertEqual(item["highlights"], ["新機能（v2.1.302）: Added CLAUDE_CODE_AUTO_MODE_MODEL",
+                                              "新機能（v2.1.301）: Added the % motion to vim mode"])
+        self.assertEqual(item["releases"], [{"label": "v2.1.302", "url": "https://github.com/a/v2.1.302"},
+                                            {"label": "v2.1.301", "url": "https://github.com/a/v2.1.301"}])
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "2026" / "2026-10.md"
+            path.parent.mkdir()
+            path.write_text("# 2026年10月\n\n" + log, encoding="utf-8")
+            index = search_index.build_index(Path(d))
+        self.assertEqual(index[0]["highlights"], item["highlights"])  # 抜粋も検索対象
+        got = self.node("const e = p.buildSearchEntries(JSON.parse(process.argv[1]));"
+                        "console.log(JSON.stringify(['vim motion', 'AUTO_MODE', 'vim 料金'].map(q => p.searchArticles(e, q).length)));",
+                        json.dumps(index, ensure_ascii=False))
+        self.assertEqual(got, [1, 1, 0])
+
     def test_parse_log_matches_collect_output(self):
         text = (ROOT / "samples" / "logs" / "2026" / "2026-10.md").read_text(encoding="utf-8")
         days = self.node("console.log(JSON.stringify(p.parseLog(process.argv[1])));", text)
@@ -228,8 +252,8 @@ class ClientSearch(unittest.TestCase):
         self.assertEqual(days[0]["date"], "2026-10-01")
         self.assertEqual(self.node("console.log(JSON.stringify([p.parseLog(''), p.parseLog('### x\\n#### t\\n- URL: u')]));"),
                          [[], [{"date": "", "categories": [{"name": "x", "items": [
-                             {"title": "t", "url": "u", "source": "", "feed": "", "notes": "", "published": "",
-                              "retrieved": ""}]}]}]])
+                             {"title": "t", "url": "u", "source": "", "feed": "", "notes": "", "highlights": [],
+                              "releases": [], "published": "", "retrieved": ""}]}]}]])
 
 
 if __name__ == "__main__":

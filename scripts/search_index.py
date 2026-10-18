@@ -53,8 +53,11 @@ def parse_log(text: str) -> list[dict]:
         url = safe_url(cur["url"])
         retrieved = cur["retrieved"] if _DATE_RE.match(cur["retrieved"]) else day
         if url and cur["title"] and _DATE_RE.match(retrieved):
-            articles.append({"title": cur["title"], "url": url, "source": cur["source"], "feed": cur["feed"],
-                             "published": cur["published"], "retrieved": retrieved, "category": category})
+            article = {"title": cur["title"], "url": url, "source": cur["source"], "feed": cur["feed"],
+                       "published": cur["published"], "retrieved": retrieved, "category": category}
+            if cur["highlights"]:  # リリースの抜粋（公式リリースノートの記載）も検索対象にする
+                article["highlights"] = cur["highlights"]
+            articles.append(article)
 
     for raw in text.split("\n"):
         line = raw.strip()
@@ -62,7 +65,8 @@ def parse_log(text: str) -> list[dict]:
             continue
         if line.startswith("#### "):
             flush()
-            cur = {"title": line[5:].strip(), "url": "", "source": "", "feed": "", "published": "", "retrieved": ""}
+            cur = {"title": line[5:].strip(), "url": "", "source": "", "feed": "", "published": "", "retrieved": "",
+                   "highlights": []}
         elif line.startswith("#"):
             flush()
             cur = None
@@ -75,6 +79,8 @@ def parse_log(text: str) -> list[dict]:
             key = m.group(1).lower() if m else None
             if key in ("url", "source", "feed", "published", "retrieved"):
                 cur[key] = m.group(2).strip()
+            elif key == "highlight":
+                cur["highlights"].append(m.group(2).strip())
     flush()
     return articles
 

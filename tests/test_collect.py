@@ -326,7 +326,13 @@ class ShippedFeedFormats(ShippedFeedsBase):
         self.assertIn("#### Claude Code v9.9.2\n\n- URL: https://github.com/anthropics/claude-code/releases/tag/v9.9.2\n"
                       "- Source: github.com\n- Feed: Claude Code Releases\n"
                       "- Notes: 新機能 1 / 変更・改善 1 / 破壊的変更・廃止 0 / 修正 2\n", text)
-        self.assertIn("- Notes: 新機能 1 / 変更・改善 0 / 破壊的変更・廃止 0 / 修正 1\n", text)  # Codex（見出しで分類）
+        self.assertIn("- Notes: 新機能 1 / 変更・改善 1 / 破壊的変更・廃止 0 / 修正 2\n"
+                      "- Highlight: 新機能（v9.9.2）: Added an example setting\n"  # 公式の記載のまま（推測で書き換えない）
+                      "- Highlight: 変更・改善（v9.9.2）: Improved example startup time\n- Published:", text)
+        self.assertIn("- Notes: 新機能 1 / 変更・改善 0 / 破壊的変更・廃止 0 / 修正 1\n"
+                      "- Highlight: 新機能（9.8.0）: Example feature (#1)\n", text)  # Codex（見出しで分類）
+        self.assertIn("- Highlight: 新機能（v9.2.0）: api: add an example parameter\n", text)  # Anthropic SDK
+        self.assertNotIn("- Release:", text)  # 1リリースだけのときは URL がそのリリース
         self.assertNotIn("Notes", text.split("#### MCP 2026-10-15", 1)[1].split("####", 1)[0])  # 判定できない場合は付けない
         # 不採用の理由はActionsログと seen.json に残る
         seen = json.loads(self.seen.read_text(encoding="utf-8"))
@@ -553,11 +559,11 @@ class Selection(ShippedFeedsBase):
         self.assertEqual(v(c("<p>See the changelog.</p><ul><li>Fixed A</li></ul>")), "unknown")
         self.assertEqual(v(c(claude)), "notable")
 
-    def run_feeds(self, mapping, today="2026-10-18"):
+    def run_feeds(self, mapping, today="2026-10-18", reconsider_excluded=False):
         fixtures = ROOT / "tests" / "fixtures"
         self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
         self.feeds.update(mapping)
-        return self.run_collect(today=today, skip_brave=True)
+        return self.run_collect(today=today, skip_brave=True, reconsider_excluded=reconsider_excluded)
 
     def test_multiple_notable_releases_become_one_entry(self):
         body = atom(*[(f"v9.9.{i}", f"https://github.com/anthropics/claude-code/releases/tag/v9.9.{i}",
@@ -569,7 +575,14 @@ class Selection(ShippedFeedsBase):
         self.assertEqual(text.count("#### Claude Code"), 1)
         self.assertIn("#### Claude Code v9.9.5（v9.9.3 以降の 3 リリース）\n\n"
                       "- URL: https://github.com/anthropics/claude-code/releases/tag/v9.9.5", text)
-        self.assertIn("- Notes: 新機能 3 / 変更・改善 0 / 破壊的変更・廃止 0 / 修正 3\n", text)
+        self.assertIn("- Notes: 新機能 3 / 変更・改善 0 / 破壊的変更・廃止 0 / 修正 3\n"
+                      "- Highlight: 新機能（v9.9.5）: Added A\n"
+                      "- Highlight: 新機能（v9.9.4）: Added A\n"
+                      "- Highlight: 新機能（v9.9.3）: Added A\n"
+                      "- Release: v9.9.5 https://github.com/anthropics/claude-code/releases/tag/v9.9.5\n"
+                      "- Release: v9.9.4 https://github.com/anthropics/claude-code/releases/tag/v9.9.4\n"
+                      "- Release: v9.9.3 https://github.com/anthropics/claude-code/releases/tag/v9.9.3\n", text)
+        self.assertNotIn("Fixed B", text)  # 修正は抜粋しない
         seen = json.loads(self.seen.read_text(encoding="utf-8"))
         for i in (4, 3):  # まとめたリリースも記録し、次回以降に個別に出さない
             self.assertEqual(seen[f"https://github.com/anthropics/claude-code/releases/tag/v9.9.{i}"],
@@ -587,7 +600,51 @@ class Selection(ShippedFeedsBase):
         self.assertTrue(all(f"Introducing GPT-9.{i}" in text for i in range(4)))  # 点数の高い順に残る
         self.assertIn("over_limit=3", out)
         seen = json.loads(self.seen.read_text(encoding="utf-8"))
-        self.assertEqual(sum(v.get("excluded") == "over_limit" for v in seen.values()), 3)
+        self.assertFalse(any(f"https://openai.com/index/many-{i}" in seen and "excluded" in seen[f"https://openai.com/index/many-{i}"]
+                             for i in range(8)))  # 上限超過だけでは除外として記録しない
+        # 翌日も同じ記事がフィードに残っていれば再評価され、上限の範囲で採用される
+        code, out, _ = self.run_feeds({"https://openai.com/news/rss.xml": body}, today="2026-10-19")
+        self.assertIn("new items: 3", out)
+        self.assertEqual(sum(f"https://openai.com/index/many-{i}\n" in self.log_text() for i in range(8)), 8)
+
+    def test_highlights_are_official_lines_in_priority_order(self):
+        pick = selection.pick_highlights
+        notes = ("<ul><li>[VSCode] Added a panel option</li><li>Fixed a crash</li><li>Improved startup</li>"
+                 "<li>Added a new command</li><li>Added a second command</li><li>Removed the --old flag</li></ul>")
+        self.assertEqual(pick([("v2.0.0", notes)]), [
+            "破壊的変更・廃止（v2.0.0）: Removed the --old flag",  # 破壊的変更 > 新機能 > 変更・改善
+            "新機能（v2.0.0）: Added a new command",  # 特定環境向け（[VSCode] など）は後回し
+            "新機能（v2.0.0）: Added a second command",
+        ])
+        self.assertEqual(pick([("v1", "<ul><li>Fixed A</li></ul>")]), [])  # 修正だけなら抜粋しない
+        self.assertEqual(pick([("v1", "<p>See the changelog.</p>")]), [])  # 判定できない場合は推測しない
+        long = pick([("v1", "<ul><li>Added " + "very long text " * 30 + "</li></ul>")])[0]
+        self.assertTrue(long.endswith("…"))  # 長い項目は末尾だけ省略する（書き換えない）
+        self.assertLessEqual(len(long.split(": ", 1)[1]), selection.MAX_HIGHLIGHT_CHARS)
+
+    def test_reconsider_excluded_after_rule_change(self):
+        story = rss(("Example Corp speeds up its support desk", "https://openai.com/index/support",
+                     "Sat, 17 Oct 2026 01:00:00 GMT"))
+        mapping = {"https://openai.com/news/rss.xml": story}
+        self.run_feeds(mapping)
+        url = "https://openai.com/index/support"
+        self.assertEqual(json.loads(self.seen.read_text(encoding="utf-8"))[url],
+                         {"first_seen": "2026-10-18", "excluded": "low_score"})
+        # 選定ルールを調整（support desk を加点）しても、通常の収集では再評価しない
+        self.config.write_text(self.config_text.replace(
+            "    - label: launch\n", "    - label: support\n      weight: 2\n      terms: [support desk]\n    - label: launch\n"),
+            encoding="utf-8")
+        code, out, _ = self.run_feeds(mapping, today="2026-10-19")
+        self.assertIn("new items: 0", out)
+        # --reconsider-excluded では、フィードに残っている不採用記事を現在の設定で再評価する
+        code, out, err = self.run_feeds(mapping, today="2026-10-20", reconsider_excluded=True)
+        self.assertEqual(code, 0, err)
+        self.assertIn("new items: 1", out)
+        self.assertIn("Example Corp speeds up its support desk", self.log_text())
+        self.assertEqual(json.loads(self.seen.read_text(encoding="utf-8"))[url], {"first_seen": "2026-10-20"})
+        # 再評価でも採用・まとめ済みの記事は対象外（重複として扱う）
+        code, out, _ = self.run_feeds(mapping, today="2026-10-21", reconsider_excluded=True)
+        self.assertIn("new items: 0", out)
 
     def test_day_with_no_adopted_articles(self):
         empty = rss()
@@ -638,7 +695,8 @@ class RepoLayout(unittest.TestCase):
         steps = wf["jobs"]["collect"]["steps"]
         with_env = [s for s in steps if "env" in s]
         self.assertEqual([s["name"] for s in with_env], ["Collect"])  # Secretは収集ステップだけに渡す
-        self.assertEqual(set(with_env[0]["env"]), {"BRAVE_API_KEY", "SKIP_BRAVE"})
+        self.assertEqual(set(with_env[0]["env"]), {"BRAVE_API_KEY", "SKIP_BRAVE", "RECONSIDER"})
+        self.assertIn("reconsider_excluded", triggers["workflow_dispatch"]["inputs"])
         text = (ROOT / ".github" / "workflows" / "collect.yml").read_text(encoding="utf-8")
         self.assertNotIn("JEV_API_KEY", text)  # v0.1.0 では Jev・Gemini を使わない
         self.assertNotIn("GEMINI_API_KEY", text)

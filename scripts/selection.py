@@ -6,14 +6,16 @@
   導入事例・政策・教育などの信号を合算して判断する。
 - リリース系（select: release_notes）: リリースノートの各項目を「新機能・変更・破壊的変更・修正・雑務」に分類し、
   修正・雑務だけのリリースを除外する。判定できないリリースは見落とさないよう採用する。
-  1回の収集で採用した同じフィードのリリースは1件にまとめ、項目数（機械的な集計）だけを添える。
-  リリースノートの文章そのものは保存しない（推測による要約も作らない）。
+  1回の収集で採用した同じフィードのリリースは1件にまとめ、項目数（機械的な集計）と、
+  公式リリースノートの記載から機械的に選んだ数項目（原文のまま・バージョン付き）、各リリースへのリンクを添える。
+  推測による要約は作らない。項目を判定できない場合は抜粋せず、リンクだけを残す。
 - 不採用の記事は理由とともに seen.json に記録し、次回以降の収集で復活させない（collect.py）。
 """
 from __future__ import annotations
 
 import html
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 
 from common import ConfigError, compile_terms, matches_any
@@ -147,8 +149,9 @@ def classify_item(line: str, section: str | None) -> str:
     return section or "other"
 
 
-def release_counts(content: str) -> dict[str, int]:
-    counts = dict.fromkeys(KINDS, 0)
+def classified_items(content: str) -> list[tuple[str, str]]:
+    """リリースノートの各項目を (種類, 1行のテキスト) にする（記載順）。"""
+    items = []
     section: str | None = None
     for heading, line in note_lines(content):
         if heading:
@@ -156,8 +159,46 @@ def release_counts(content: str) -> dict[str, int]:
             continue
         if len(line) < 4 or line.lower().startswith(("full changelog", "what's changed", "new contributors")):
             continue
-        counts[classify_item(line, section)] += 1
+        items.append((classify_item(line, section), line))
+    return items
+
+
+def release_counts(content: str) -> dict[str, int]:
+    counts = dict.fromkeys(KINDS, 0)
+    for kind, _ in classified_items(content):
+        counts[kind] += 1
     return counts
+
+
+HIGHLIGHT_KINDS = ("breaking", "feature", "change")  # 抜粋する種類と優先順（修正・雑務は抜粋しない）
+MAX_HIGHLIGHTS = 3
+MAX_HIGHLIGHT_CHARS = 200
+_SCOPED = re.compile(r"^(?:\[[^\]]{1,40}\]|[A-Za-z][\w .-]{0,30}:)\s")  # "[VSCode] ..." "Windows: ..." など特定環境向け
+
+
+def pick_highlights(releases: list[tuple[str, str]], limit: int = MAX_HIGHLIGHTS) -> list[str]:
+    """リリースノートから重要度の高い項目を機械的に選ぶ。releases は新しい順の (バージョン, リリースノート)。
+
+    優先順: 破壊的変更・廃止 > 新機能 > 変更・改善。同じ種類では、特定環境向け（[VSCode] など）でない項目を優先し、
+    複数リリースのときは各リリースの記載順の先頭から順に（新しいリリースから）選ぶ。
+    文章は公式の記載のまま（長い場合のみ末尾を省略）で、推測で書き換えない。
+    """
+    candidates = []
+    for r, (version, content) in enumerate(releases):
+        seen_in_release = Counter()
+        for kind, line in classified_items(content):
+            if kind not in HIGHLIGHT_KINDS:
+                continue
+            scoped = bool(_SCOPED.match(line))
+            key = (HIGHLIGHT_KINDS.index(kind), scoped, seen_in_release[(kind, scoped)], r)
+            seen_in_release[(kind, scoped)] += 1
+            candidates.append((key, kind, version, line))
+    out = []
+    for _, kind, version, line in sorted(candidates)[:limit]:
+        if len(line) > MAX_HIGHLIGHT_CHARS:
+            line = line[:MAX_HIGHLIGHT_CHARS - 1].rsplit(" ", 1)[0] + "…"
+        out.append(f"{KIND_LABELS[kind]}（{version}）: {line}")
+    return out
 
 
 def release_verdict(counts: dict[str, int]) -> str:

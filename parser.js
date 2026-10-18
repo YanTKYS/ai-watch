@@ -1,8 +1,9 @@
 "use strict";
 // logs/YYYY/YYYY-MM.md のMarkdownを、表示用のデータ構造へ変換する（DOM操作なし。news-watch から流用）。
 //
-// 戻り値: [{ date, categories: [{ name, items: [{ title, url, source, feed, notes,
-//           published, retrieved }] }] }]   ※ファイル中の出現順（notes はまとめたリリースの項目数）
+// 戻り値: [{ date, categories: [{ name, items: [{ title, url, source, feed, notes, highlights: [文字列],
+//           releases: [{ label, url }], published, retrieved }] }] }]   ※ファイル中の出現順
+// notes・highlights・releases はリリース（公式リリースノートの項目数・抜粋・各リリースへのリンク）のみ。
 // 見出し階層: "## 日付" > "### カテゴリ" > "#### 記事タイトル"。
 // 項目の欠落や未知の行があっても例外にせず、可能な範囲で読み取る。
 
@@ -40,7 +41,10 @@ function parseLog(markdown) {
 
     if (line.startsWith("#### ")) {
       ensureCategory();
-      item = { title: line.slice(5).trim(), url: "", source: "", feed: "", notes: "", published: "", retrieved: "" };
+      item = {
+        title: line.slice(5).trim(), url: "", source: "", feed: "", notes: "", highlights: [], releases: [],
+        published: "", retrieved: "",
+      };
       category.items.push(item);
     } else if (line.startsWith("### ")) {
       ensureCategory();
@@ -54,8 +58,15 @@ function parseLog(markdown) {
       item = null;
     } else if (item) {
       const m = FIELD_RE.exec(line);
-      const key = m && FIELD_KEYS[m[1].toLowerCase()];
-      if (key) item[key] = m[2].trim();
+      const name = m && m[1].toLowerCase();
+      if (name === "highlight") {
+        item.highlights.push(m[2].trim());
+      } else if (name === "release") {
+        const r = /^(.*\S)\s+(\S+)$/.exec(m[2].trim()); // "v1.2.3 https://..."
+        if (r) item.releases.push({ label: r[1], url: r[2] });
+      } else if (FIELD_KEYS[name]) {
+        item[FIELD_KEYS[name]] = m[2].trim();
+      }
     }
   }
 
@@ -112,9 +123,10 @@ function buildSearchEntries(data) {
     const item = {
       title: textOf(a.title), url, source: textOf(a.source), feed: textOf(a.feed), published: textOf(a.published),
       retrieved: textOf(a.retrieved), category: textOf(a.category),
+      highlights: Array.isArray(a.highlights) ? a.highlights.filter((h) => typeof h === "string") : [],
     };
-    // 検索対象: タイトル・カテゴリ・情報源・配信元。改行で区切り、項目をまたいで一致しないようにする。
-    item.haystack = normalizeText([item.title, item.category, item.source, item.feed].join("\n"));
+    // 検索対象: タイトル・カテゴリ・情報源・配信元・リリースの抜粋。改行で区切り、項目をまたいで一致しないようにする。
+    item.haystack = normalizeText([item.title, item.category, item.source, item.feed, ...item.highlights].join("\n"));
     entries.push(item);
   }
   // 安定ソートのため、同じ取得日はインデックスの順（ログの出現順）を保つ
