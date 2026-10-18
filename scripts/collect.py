@@ -217,6 +217,7 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[li
         info, body = feeds.FetchInfo(), b""
         try:
             body = feeds.fetch(feed.url, info)
+            body = feeds.decode_body(body, info)  # 展開に失敗した場合、診断には受信データの先頭形式を出す
             entries = feeds.parse_feed(body)
         except Exception as e:  # 1件の失敗で全体を止めない。本文全体は出力せず、切り分け用の診断情報だけを出す。
             stats.failed_feeds.append(feed.name)
@@ -224,7 +225,8 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[li
             print(f"  diagnostics: {feeds.diagnose(info, body, e)}")
             continue
         print(f"feed ok: feed='{feed.name}' status={info.status} content_type={json.dumps(info.content_type)} "
-              f"bytes={info.size} entries={len(entries)}")
+              f"content_encoding={json.dumps(info.content_encoding)} bytes={info.size} "
+              f"decoded_bytes={info.decoded_size} entries={len(entries)}")
         stats.entries += len(entries)
         selected = feeds.select_entries(feed, entries, today, config.max_age_days)
         stats.skipped_old_or_excluded += len(entries) - len(selected)

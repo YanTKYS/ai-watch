@@ -3,6 +3,8 @@
 - 1フィードにつきHTTPリクエストは1回（リトライ・ページングなし）。失敗したフィードは飛ばして続行する。
 - 使うのはタイトル・URL・公開日だけ（本文・要約は保存しない）。
 - DOCTYPE・ENTITY を含むXMLは解析しない（外部実体・実体展開の対策）。
+- Content-Encoding: gzip のレスポンスは、標準ライブラリ（zlib）で展開してから解析する。
+  圧縮データ・展開後データのそれぞれにサイズ上限を設ける。
 - 取得・解析に失敗したときは、原因を切り分けるための診断情報（HTTPステータス・Content-Type・
   先頭の形式・XMLの解析失敗位置と前後数十文字）だけをActionsログに出す（本文全体は出さない）。
 """
@@ -14,6 +16,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+import zlib
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
@@ -23,7 +26,8 @@ from common import JST, USER_AGENT, ConfigError, clean_text, compile_terms, norm
 MAX_FEEDS = 10  # 情報源を無理に増やさないための上限
 MAX_ITEMS_PER_FEED = 30  # 1フィードから採用する記事数の上限（新しい順）
 TIMEOUT_SEC = 20
-MAX_RESPONSE_BYTES = 10_000_000  # OpenAI News は全記事（1,000件超）を1つのフィードで配信する
+MAX_RESPONSE_BYTES = 10_000_000  # 受信データ（圧縮時は圧縮データ）の上限。OpenAI News は全記事（1,000件超）を1つで配信する
+MAX_DECODED_BYTES = 30_000_000  # gzip 展開後の上限（展開爆弾の対策）
 DEFAULT_MAX_AGE_DAYS = 7
 
 ATOM = "{http://www.w3.org/2005/Atom}"
@@ -49,7 +53,8 @@ class FetchInfo:
     content_type: str = ""
     content_encoding: str = ""
     final_url: str = ""
-    size: int = 0
+    size: int = 0  # 受信したバイト数（圧縮時は圧縮データ）
+    decoded_size: int | None = None  # 展開後のバイト数（展開に成功した場合のみ）
 
 
 @dataclass
@@ -130,6 +135,34 @@ def fetch(url: str, info: FetchInfo | None = None) -> bytes:
     return body
 
 
+def decode_body(body: bytes, info: FetchInfo) -> bytes:
+    """Content-Encoding に従って本文を展開する。gzip（x-gzip）以外の圧縮形式は失敗扱いにする。
+
+    展開後が MAX_DECODED_BYTES を超える・gzip が壊れている・途中で切れている場合は例外。
+    """
+    encodings = [e.strip().lower() for e in info.content_encoding.split(",") if e.strip()]
+    encodings = [e for e in encodings if e != "identity"]
+    if not encodings:
+        info.decoded_size = len(body)
+        return body
+    if encodings not in (["gzip"], ["x-gzip"]):
+        raise ValueError(f"unsupported content encoding: {info.content_encoding}")
+    out = bytearray()
+    data = body
+    while True:  # 複数メンバーの gzip にも対応する
+        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+        out += d.decompress(data, MAX_DECODED_BYTES - len(out) + 1)  # 上限+1バイトまでしか展開しない
+        if len(out) > MAX_DECODED_BYTES:
+            raise ValueError("decompressed response too large")
+        if not d.eof:
+            raise ValueError("truncated gzip data")
+        data = d.unused_data
+        if not data:
+            break
+    info.decoded_size = len(out)
+    return bytes(out)
+
+
 def parse_date(value: str | None) -> str | None:
     """RFC 822（RSS）・ISO 8601（Atom・dc:date）の日時を日本時間の YYYY-MM-DD にする。解釈できなければ None。"""
     if not value or not value.strip():
@@ -207,6 +240,8 @@ def display_title(feed: Feed, title: str) -> str:
 def describe_error(e: Exception) -> str:
     if isinstance(e, urllib.error.HTTPError):
         return f"HTTP {e.code}"
+    if isinstance(e, zlib.error):  # クラス名が "error" だけで分かりにくいため
+        return "zlib.error"
     return type(e).__name__
 
 
@@ -259,6 +294,7 @@ def diagnose(info: FetchInfo, body: bytes, e: Exception) -> str:
         f"content_type={json.dumps(info.content_type)}",
         f"content_encoding={json.dumps(info.content_encoding)}",
         f"bytes={info.size}",
+        f"decoded_bytes={info.decoded_size if info.decoded_size is not None else '-'}",
         f"final_url={json.dumps(info.final_url)}",
         f"start={kind}",
         f"first_element={json.dumps(element)}",

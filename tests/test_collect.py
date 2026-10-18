@@ -1,11 +1,13 @@
+import gzip
 import json
 import sys
 import unittest
 import urllib.error
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from helpers import ROOT, SECRET, Base, atom, block_network, collect, rss  # noqa: E402
+from helpers import ROOT, SECRET, Base, FakeResponse, atom, block_network, collect, rss  # noqa: E402
 
 import feeds  # noqa: E402
 import search_index  # noqa: E402
@@ -369,6 +371,92 @@ class FeedDiagnostics(ShippedFeedFormats):
         out, diag = self.run_with_deepmind(err)
         self.assertIn("error=HTTP 403", out)
         self.assertIn('status=403 content_type="text/html"', diag)
+
+
+class GzipFeeds(FeedDiagnostics):
+    """Content-Encoding: gzip のフィード（v0.1.2。Google DeepMind News が gzip で配信していた）。"""
+
+    GZIP = {"Content-Type": "application/xml", "Content-Encoding": "gzip"}
+
+    def deepmind_xml(self):
+        return (ROOT / "tests" / "fixtures" / "deepmind_blog.xml").read_bytes()
+
+    def test_gzip_rss_is_decoded_and_saved(self):
+        fixtures = ROOT / "tests" / "fixtures"
+        self.feeds = {url: (fixtures / name).read_bytes() for url, name in self.FIXTURES.items()}
+        compressed = gzip.compress(self.deepmind_xml())
+        self.feeds[self.DEEPMIND] = (compressed, self.GZIP)
+        code, out, err = self.run_collect(skip_brave=True)
+        self.assertEqual(code, 0, err)
+        self.assertIn("failed feeds: 0", out)
+        self.assertEqual(out.count("feed ok: "), 6)
+        self.assertIn(f"feed ok: feed='Google DeepMind News' status=200 content_type=\"application/xml\" "
+                      f"content_encoding=\"gzip\" bytes={len(compressed)} decoded_bytes={len(self.deepmind_xml())} "
+                      f"entries=2", out)
+        self.assertIn("content_encoding=\"\" bytes=", out)  # 非圧縮のフィードは従来どおり
+        text = self.log_text()
+        self.assertIn("Fixture: Gemini example model card update", text)
+        self.assertIn("- Feed: Google DeepMind News", text)
+
+    def test_decode_body_variants(self):
+        xml = self.deepmind_xml()
+        cases = [("", xml), ("identity", xml), ("gzip", gzip.compress(xml)), ("x-gzip", gzip.compress(xml)),
+                 ("GZIP", gzip.compress(xml)), ("gzip", gzip.compress(xml[:100]) + gzip.compress(xml[100:]))]  # 複数メンバー
+        for encoding, body in cases:
+            with self.subTest(encoding=encoding):
+                info = feeds.FetchInfo(content_encoding=encoding)
+                self.assertEqual(feeds.decode_body(body, info), xml)
+                self.assertEqual(info.decoded_size, len(xml))
+
+    def test_corrupt_gzip_fails_only_that_feed(self):
+        compressed = gzip.compress(self.deepmind_xml())
+        for name, body, errors in [
+                ("corrupt", compressed[:10] + b"\x00" * 20 + compressed[30:], ("error=zlib.error", "while decompressing data", "start=gzip")),
+                ("truncated", compressed[:-20], ("error=ValueError", 'message="truncated gzip data"', "start=gzip")),
+                ("not gzip", self.deepmind_xml(), ("error=zlib.error", "incorrect header check", "start=xml-declaration"))]:
+            with self.subTest(name=name):
+                self.setUp()
+                out, diag = self.run_with_deepmind((body, self.GZIP))  # 他の5フィードは成功
+                self.assertIn('content_encoding="gzip"', diag)
+                self.assertIn("decoded_bytes=-", diag)
+                for needle in errors:
+                    self.assertIn(needle, out + diag)
+
+    def test_decoded_size_limit(self):
+        bomb = gzip.compress(b"<rss>" + b" " * 2_000_000 + b"</rss>")  # 圧縮後は数KB
+        self.assertLess(len(bomb), 10_000)
+        with mock.patch.object(feeds, "MAX_DECODED_BYTES", 1_000_000):
+            out, diag = self.run_with_deepmind((bomb, self.GZIP))
+        self.assertIn("error=ValueError", out)
+        self.assertIn('message="decompressed response too large"', diag)
+        with mock.patch.object(feeds, "MAX_DECODED_BYTES", len(self.deepmind_xml())):  # ちょうど上限は許可
+            info = feeds.FetchInfo(content_encoding="gzip")
+            self.assertEqual(feeds.decode_body(gzip.compress(self.deepmind_xml()), info), self.deepmind_xml())
+
+    def test_compressed_size_limit(self):
+        # 受信データ（圧縮データ）の上限は展開前に判定する（他のフィードに影響させないよう fetch 単体で確認）
+        compressed = gzip.compress(self.deepmind_xml())
+        response = FakeResponse(compressed, headers=self.GZIP, url=self.DEEPMIND)
+        for limit, ok in ((len(compressed), True), (len(compressed) - 1, False)):
+            info = feeds.FetchInfo()
+            with self.subTest(limit=limit), mock.patch.object(feeds, "MAX_RESPONSE_BYTES", limit), \
+                    mock.patch("urllib.request.urlopen", return_value=response):
+                if ok:
+                    self.assertEqual(feeds.fetch(self.DEEPMIND, info), compressed)
+                else:
+                    with self.assertRaisesRegex(ValueError, "response too large"):
+                        feeds.fetch(self.DEEPMIND, info)
+                self.assertEqual((info.content_encoding, info.size), ("gzip", len(compressed)))
+
+    def test_doctype_is_rejected_after_decoding(self):
+        body = gzip.compress(b'<?xml version="1.0"?><!DOCTYPE r [<!ENTITY a "x">]><rss><channel></channel></rss>')
+        out, diag = self.run_with_deepmind((body, self.GZIP))
+        self.assertIn('message="DOCTYPE is not allowed"', diag)
+        self.assertIn("start=xml-declaration", diag)  # 展開後の本文で診断する
+
+    def test_unsupported_encoding_fails(self):
+        out, diag = self.run_with_deepmind((b"\x8b\x00compressed", {"Content-Encoding": "br"}))
+        self.assertIn('message="unsupported content encoding: br"', diag)
 
 
 class RepoLayout(unittest.TestCase):
