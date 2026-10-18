@@ -1,0 +1,107 @@
+# ai-watch の収集設定。コードを変更せずに、カテゴリ・公式フィード・Brave検索語を調整できます。
+
+# カテゴリ（日刊ログの見出し）。並び順はログ・画面での表示順です。
+# keywords はフィード記事のタイトルの分類に使います（英字は単語単位・大文字小文字を区別しない、日本語は部分一致）。
+categories:
+  - id: models
+    name: AIモデル
+    keywords: [GPT, ChatGPT, Claude, Opus, Sonnet, Haiku, Gemini, Gemma, DeepSeek, Qwen, Llama, Mistral, model, models, モデル]
+  - id: coding
+    name: AIコーディング
+    keywords: [Claude Code, Codex, Cursor, Copilot, coding, code review, IDE, VS Code, JetBrains, CLI, コーディング]
+  - id: agents
+    name: AIエージェント
+    keywords: [agent, agents, agentic, Operator, computer use, sandbox, エージェント]
+  - id: mcp
+    name: MCP・連携技術
+    keywords: [MCP, Model Context Protocol, SDK, connector, connectors, plugin, plugins, tool use, function calling]
+  - id: api
+    name: API・料金・制限
+    keywords: [API, pricing, price, rate limit, rate limits, quota, deprecation, deprecated, billing, 料金, 利用枠, レート制限]
+
+# 複数カテゴリに該当するときに優先する順（具体的なものを先に）。省略時は categories の順。
+classify_order: [api, mcp, coding, agents, models]
+
+# 公式の情報源（RSS 2.0 / Atom）。1フィードにつき1回だけ取得します（リトライなし）。上限10件。
+# 保存するのはタイトル・URL・公開日・配信元名だけです（本文・要約は保存しません）。
+#   category:        どのカテゴリのキーワードにも該当しない場合の分類（必須）
+#   classify:        false にするとキーワード分類をせず、常に category に入れる（既定 true）
+#   require_keywords: タイトルがこのいずれかの語を含む記事だけを収集する（生成AI以外の記事も多いフィード向け）
+#   title_prefix:    タイトルに付ける接頭辞（GitHub Releases の "v1.2.3" などを読みやすくする）
+#   exclude_title_patterns: タイトルがこの正規表現に一致する記事を収集しない（プレリリース除外など）
+feeds:
+  - name: OpenAI News
+    url: https://openai.com/news/rss.xml
+    category: models
+  - name: Google DeepMind News
+    url: https://deepmind.google/blog/rss.xml
+    category: models
+  - name: GitHub Changelog
+    url: https://github.blog/changelog/feed/
+    category: coding
+    require_keywords: [Copilot, AI, model, models, MCP, agent, agents, agentic, Codex, Claude, Gemini, GPT, LLM]
+  - name: Claude Code Releases
+    url: https://github.com/anthropics/claude-code/releases.atom
+    category: coding
+    classify: false
+    title_prefix: Claude Code
+  - name: OpenAI Codex Releases
+    url: https://github.com/openai/codex/releases.atom
+    category: coding
+    classify: false
+    title_prefix: Codex
+    exclude_title_patterns: ['(?i)[-.](alpha|beta|rc)\b']
+  - name: MCP Specification Releases
+    url: https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom
+    category: mcp
+    classify: false
+    title_prefix: MCP
+
+# 公開日がこの日数より古い記事は収集しない（初回実行で過去記事を大量に取り込まないため）。
+max_age_days: 7
+
+# Brave Search API。検索結果は利用規約上保存できないため、ログ・seen.json・検索インデックスには書かず、
+# 取得品質の集計（件数のみ）を data/brave-usage.json と Actionsログに残します。
+#   daily_limit: 1日（日本時間）のリクエスト上限。4 を超える値は設定できません。
+#   1日1回だけ実行し、同じ日に再実行（手動実行を含む）してもAPIは呼びません。
+#   kind: x（X投稿の発見。site:x.com などを含めること） / web（一般Web）
+#   freshness: pd=24時間 / pw=1週間 / pm=1か月 / py=1年
+brave:
+  daily_limit: 4
+  queries:
+    - id: x-coding
+      kind: x
+      category: coding
+      q: 'site:x.com ("Claude Code" OR Codex OR Cursor OR "GitHub Copilot") (release OR changelog OR tested OR benchmark)'
+      search_lang: en
+      country: ALL
+      freshness: pd
+    - id: x-agents-mcp
+      kind: x
+      category: agents
+      q: 'site:x.com (MCP OR "Model Context Protocol" OR "AI agent") (released OR "now available" OR tested OR SDK)'
+      search_lang: en
+      country: ALL
+      freshness: pd
+    - id: web-models
+      kind: web
+      category: models
+      q: '(GPT OR Claude OR Gemini OR DeepSeek OR Qwen) (release OR "release notes" OR announced) model'
+      search_lang: en
+      country: ALL
+      freshness: pd
+    - id: web-api-pricing
+      kind: web
+      category: api
+      q: '(OpenAI OR Anthropic OR Gemini) API (pricing OR "rate limits" OR deprecation)'
+      search_lang: en
+      country: ALL
+      freshness: pw
+
+# Brave検索結果の品質集計に使う語（タイトル・説明文に含まれるかを数えるだけ。保存はしません）。
+# 英字は単語単位・大文字小文字を区別しない、それ以外は部分一致。バージョン番号（v1.2 など）は根拠として自動で数えます。
+quality:
+  # 具体的な根拠・一次情報らしさを示す語
+  evidence_terms: [release notes, changelog, benchmark, tested, reproduce, github.com, docs, 検証, 実機, 試した, 計測]
+  # 誇張・宣伝的な表現
+  hype_terms: [game changer, game-changer, insane, mind-blowing, "you won't believe", "🚀", "🔥", "🤯", ヤバい, やばい, 最強, 神ツール, 革命的]

@@ -1,0 +1,242 @@
+/* ai-watch: restrained editorial UI inspired by the design principles of DADS (news-watch から流用).
+   This is a project-specific stylesheet, not an official Digital Agency theme. */
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #20252b;
+  --muted: #4d5862;
+  --border: #8b949e;
+  --subtle-border: #c6cdd3;
+  --accent: #004b8d;
+  --band: #f4f6f8;
+  --error: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #16191d;
+    --surface: #16191d;
+    --text: #f0f2f4;
+    --muted: #c2c8ce;
+    --border: #909aa4;
+    --subtle-border: #68727c;
+    --accent: #a2d1ff;
+    --band: #242b32;
+    --error: #ff9e95;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.65 system-ui, -apple-system, "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+  overflow-wrap: anywhere;
+}
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.site-header {
+  background: var(--bg);
+  border-bottom: 1px solid var(--subtle-border);
+  padding: 24px 0;
+}
+.site-header h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+.lead { margin: 4px 0 20px; color: var(--muted); font-size: 1rem; }
+/* 操作エリア。flex-wrap任せにせず、画面幅ごとに行構成を固定する（高さはすべて44px）。
+   〜719px: 月 → 並び順 → 検索欄（それぞれ1行）
+   720px〜: 月｜並び順｜検索欄 を横1行（検索欄が残りの幅を使う） */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  align-items: center;
+  gap: 12px 16px;
+  min-width: 0;
+}
+.controls > * { max-width: 100%; }
+.search-box { display: flex; gap: 8px; justify-self: stretch; min-width: 0; }
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.search-box input::placeholder { color: var(--muted); opacity: 1; }
+.search-box button, .more {
+  font: inherit;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.search-box button:disabled { color: var(--muted); cursor: default; }
+.search-box button:not(:disabled):hover, .more:hover { background: var(--band); }
+.search-summary { margin: 12px 0 20px; color: var(--muted); font-size: .94rem; }
+.search-empty { margin: 0; padding: 16px 0; }
+.more { display: block; margin: 24px auto 0; }
+.more[hidden] { display: none; }
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: var(--band);
+  border-left: 3px solid var(--accent);
+}
+.notice[hidden] { display: none; }
+.notice a { color: var(--accent); }
+.order-picker { display: flex; align-items: center; gap: 8px; color: var(--text); }
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  min-height: 44px;
+  padding: 7px 36px 7px 12px;
+  max-width: 100%;
+}
+main.wrap { padding-top: 32px; padding-bottom: 72px; }
+#status { color: var(--muted); padding: 16px 0; }
+#status.error { color: var(--error); }
+.month-head {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: 8px 16px; padding-bottom: 12px;
+  border-bottom: 2px solid var(--text);
+}
+.month-head h2 { margin: 0; font-size: 1.35rem; line-height: 1.45; }
+.count { color: var(--muted); font-size: .875rem; font-weight: 400; }
+.day {
+  margin-top: 0;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--subtle-border);
+}
+.day-summary {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 52px;
+  padding: 12px 4px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 1.075rem;
+  font-weight: 650;
+  border-radius: 0;
+}
+.day-summary::-webkit-details-marker { display: none; }
+.day-summary::before {
+  content: "";
+  width: 7px; height: 7px; flex: none;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .12s;
+}
+.day[open] > .day-summary::before { transform: rotate(45deg); }
+.day-summary:hover { background: var(--band); }
+.day-title { min-width: 0; }
+.category { margin: 10px 0 24px; }
+.category-title {
+  margin: 0 0 12px;
+  padding-left: 10px;
+  border-left: 3px solid var(--text);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 650;
+}
+.category-title .count { margin-left: 12px; }
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); /* 件数が少なくても列幅を保つ */
+  gap: 12px;
+}
+.card {
+  display: flex; flex-direction: column;
+  height: 100%; min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--subtle-border);
+  border-radius: 2px;
+  padding: 16px;
+}
+.card:hover { border-color: var(--border); }
+.card-title {
+  margin: 0 0 10px;
+  font-size: 1.035rem;
+  line-height: 1.55;
+  font-weight: 650;
+}
+.card-title a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.card-title a:hover { color: var(--accent); }
+.meta {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+.card-bottom {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: auto; padding-top: 4px;
+}
+.meta-part { display: inline-block; max-width: 100%; } /* 項目の途中では改行しない（長すぎる場合のみ折り返す） */
+.open {
+  display: inline-block;
+  color: var(--accent);
+  font-size: .925rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.open:hover { text-decoration-thickness: 2px; }
+.foot {
+  margin: 0;
+  min-width: 0;
+  color: var(--muted);
+  font-size: .875rem;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.latest {
+  flex: none;
+  color: var(--accent);
+  font-size: .875rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible, .day-summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .wrap { padding: 0 16px; }
+  main.wrap { padding-top: 24px; }
+  .site-header { padding: 20px 0; }
+  .controls { gap: 8px 12px; }
+  .card { padding: 14px; }
+}
+@media (min-width: 720px) {
+  .controls { grid-template-columns: auto auto minmax(260px, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .day-summary::before { transition: none; }
+}
