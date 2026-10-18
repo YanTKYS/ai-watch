@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="生成AIの最新動向（公式発表・リリースノート）を日刊で収集し、全期間から検索できます。">
+  <title>ai-watch</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1>ai-watch</h1>
+      <p class="lead">生成AIの最新動向（公式発表・リリースノート）を日刊で収集</p>
+      <div class="controls">
+        <label>
+          <span class="visually-hidden">表示する月</span>
+          <select id="month-select" disabled></select>
+        </label>
+        <label class="order-picker">
+          <span>並び順</span>
+          <select id="order-select" disabled>
+            <option value="desc" selected>新しい順</option>
+            <option value="asc">古い順</option>
+          </select>
+        </label>
+        <div class="search-box" role="search">
+          <label for="search-input" class="visually-hidden">日刊ログを全期間からキーワード検索</label>
+          <input type="search" id="search-input" placeholder="全期間を検索（例: Codex）" autocomplete="off" enterkeyhint="search">
+          <button type="button" id="search-clear" disabled>クリア</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <p id="notice" class="notice" hidden>サンプルデータ（架空の記事）を表示しています。実際の収集結果は <a href="./">トップページ</a> で確認できます。</p>
+    <div id="status" role="status" aria-live="polite">読み込み中...</div>
+    <div id="content"></div>
+  </main>
+  <noscript><p class="wrap">このページの表示にはJavaScriptが必要です。ログは <a href="logs/">logs/</a> のMarkdownで直接読めます。</p></noscript>
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

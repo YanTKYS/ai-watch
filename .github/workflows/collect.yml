@@ -1,0 +1,66 @@
+name: Collect AI news
+
+# API収集のトリガーは schedule と workflow_dispatch のみ。
+# push / pull_request / pull_request_target では絶対に実行しない（Secretを使うため）。
+on:
+  schedule:
+    # 毎日 JST 06:41（UTC 21:41）。news-watch（JST 07:17）と時刻をずらす。
+    - cron: "41 21 * * *"
+  workflow_dispatch:
+    inputs:
+      skip_brave:
+        description: "Brave検索を行わない（公式フィードのみ取得。APIを消費しない）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-ai-news
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Brave Search API は1日（JST）1回・最大4リクエスト。同じ日の再実行（手動を含む）ではAPIを呼ばない。
+      # Jev・Gemini は v0.1.0 では使わない（キーを渡さない）。
+      - name: Collect
+        env:
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          SKIP_BRAVE: ${{ inputs.skip_brave && '--skip-brave' || '' }}
+        run: python scripts/collect.py $SKIP_BRAVE
+
+      # Pagesの横断検索用インデックス（logs/ からの派生データ）。外部APIは使わない。
+      # 失敗しても日刊ログのcommitは続ける（インデックスは次回の実行で再生成される）。
+      - name: Update search index
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: python scripts/search_index.py
+
+      # 取得の一部が失敗しても、API利用件数（brave-usage.json）と取得済みのログは必ず記録する。
+      - name: Commit and push if there are changes
+        if: ${{ !cancelled() }}
+        run: |
+          git add logs data/seen.json data/months.json data/brave-usage.json data/search-index.json
+          if git diff --cached --quiet; then
+            echo "No changes; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: collect ai news $(TZ=Asia/Tokyo date +%F)"
+          git pull --rebase --quiet origin "${GITHUB_REF_NAME}"
+          git push
