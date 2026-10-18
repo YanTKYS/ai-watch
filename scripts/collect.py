@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections import Counter
 import os
 import re
 import sys
@@ -24,6 +25,7 @@ import yaml
 
 import brave
 import feeds
+import selection
 from common import JST, ConfigError, compile_terms, domain_of, matches_any
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +46,7 @@ class Config:
     feeds: list[feeds.Feed]
     max_age_days: int
     brave: brave.BraveConfig
+    selection: selection.Selection = field(default_factory=selection.Selection)
 
     def category(self, cid: str) -> Category:
         return next(c for c in self.categories if c.id == cid)
@@ -56,6 +59,8 @@ class Item:
     category: str  # カテゴリ名（ログの見出し）
     feed: str
     published: str
+    notes: str = ""  # リリースの項目数（機械的な集計）。リリースノートの文章は保存しない
+    grouped_urls: list[str] = field(default_factory=list)  # 1件にまとめた他のリリースのURL（seen.json に記録）
 
 
 @dataclass
@@ -67,6 +72,7 @@ class Stats:
     skipped_old_or_excluded: int = 0
     skipped_unmatched: int = 0
     duplicate_items: int = 0
+    rejected: Counter = field(default_factory=Counter)  # 選定で採用しなかった理由 -> 件数
     new_items: int = 0
     same_title: int = 0
 
@@ -101,7 +107,8 @@ def load_config(path: Path) -> Config:
         raise ConfigError(f"max_age_days は 1〜31 の整数にしてください: {max_age!r}")
 
     return Config(categories=categories, classify_order=order, feeds=feeds.load_feeds(raw.get("feeds"), ids),
-                  max_age_days=max_age, brave=brave.load_brave(raw.get("brave"), raw.get("quality"), ids))
+                  max_age_days=max_age, brave=brave.load_brave(raw.get("brave"), raw.get("quality"), ids),
+                  selection=selection.load_selection(raw.get("selection")))
 
 
 def classify(config: Config, title: str) -> str | None:
@@ -139,6 +146,7 @@ def render_entry(item: Item, today: str) -> list[str]:
         f"- URL: {item.url}",
         f"- Source: {domain_of(item.url)}",
         f"- Feed: {item.feed}",
+        *([f"- Notes: {item.notes}"] if item.notes else []),
         f"- Published: {item.published}",
         f"- Retrieved: {today}",
     ]
@@ -209,9 +217,79 @@ def update_months(months_path: Path, logs_dir: Path) -> bool:
 
 
 # ---- 公式フィード ------------------------------------------------------------
-def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[list[Item], Stats]:
+def _item(config: Config, feed: feeds.Feed, e: feeds.Entry) -> Item:
+    cid = (classify(config, e.title) if feed.classify else None) or feed.category
+    return Item(url=e.url, title=feeds.display_title(feed, e.title), category=config.category(cid).name,
+                feed=feed.name, published=e.published)
+
+
+def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tuple[list[Item], dict[str, str]]:
+    """フィードの設定（select）に従って採用する記事を選ぶ。戻り値は (採用, 不採用URL -> 理由)。
+
+    判定の内訳はActionsログに1記事1行で出す（公式フィードのタイトルのみ。本文は出さない）。
+    """
+    sel = config.selection
+    adopted: list[tuple[int, feeds.Entry, str]] = []  # (点数, 記事, 備考)
+    rejected: dict[str, str] = {}
+
+    def reject(e: feeds.Entry, reason: str, detail: str) -> None:
+        rejected[e.url] = reason
+        print(f"  - rejected [{reason}] {detail}: {e.title}")
+
+    for e in entries:
+        if feed.select == "score":
+            points, matched = selection.score(sel, e.title, e.summary, e.categories)
+            detail = f"score={points} ({selection.describe(matched)})"
+            if points >= sel.min_score:
+                adopted.append((points, e, detail))
+            else:
+                reject(e, selection.rejection_reason(matched), detail)
+        elif feed.select == "release_notes":
+            counts = selection.release_counts(e.content)
+            verdict = selection.release_verdict(counts)
+            detail = f"{verdict} ({selection.format_counts(counts)}, その他 {counts['other']})"
+            if verdict == "minor":
+                reject(e, "fixes_only", detail)  # 修正・雑務のみのリリース
+            else:
+                adopted.append((1, e, detail))
+        else:
+            adopted.append((0, e, "select=all"))
+
+    adopted.sort(key=lambda x: (x[0], x[1].published), reverse=True)
+    if feed.select != "release_notes":  # リリースは下で1件にまとめるため上限の対象外
+        for points, e, detail in adopted[sel.max_new_per_feed:]:
+            reject(e, "over_limit", detail)  # 1回の収集で1フィードから採用する件数の上限
+        adopted = adopted[:sel.max_new_per_feed]
+    for _, e, detail in adopted:
+        print(f"  + adopted {detail}: {e.title}")
+    if feed.select != "release_notes" or not adopted:
+        return [_item(config, feed, e) for _, e, _ in adopted], rejected
+
+    # 同じ収集で採用したリリースは1件にまとめる（最新のリリースにリンクし、項目数を合算して添える）
+    releases = sorted((e for _, e, _ in adopted), key=lambda e: e.published, reverse=True)
+    item = _item(config, feed, releases[0])
+    if len(releases) > 1:
+        item.title = f"{item.title}（{releases[-1].title} 以降の {len(releases)} リリース）"
+    totals = Counter()
+    unknown = 0
+    for e in releases:
+        counts = selection.release_counts(e.content)
+        if selection.release_verdict(counts) == "unknown":
+            unknown += 1
+        totals.update(counts)
+    if unknown < len(releases):
+        item.notes = selection.format_counts(totals)
+        if unknown:
+            item.notes += f"（{unknown} リリースは項目を判定できず）"
+    item.grouped_urls = [e.url for e in releases[1:]]
+    return [item], rejected
+
+
+def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[list[Item], dict[str, str], Stats]:
+    """戻り値は (採用した記事, 不採用URL -> 理由, 統計)。不採用URLは seen.json に記録して復活させない。"""
     stats = Stats(feeds=len(config.feeds))
     new_items: dict[str, Item] = {}
+    rejected: dict[str, str] = {}
     for feed in config.feeds:
         stats.feed_requests += 1
         info, body = feeds.FetchInfo(), b""
@@ -230,21 +308,29 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str) -> tuple[li
         stats.entries += len(entries)
         selected = feeds.select_entries(feed, entries, today, config.max_age_days)
         stats.skipped_old_or_excluded += len(entries) - len(selected)
+        candidates = []
         for e in selected:
             if feed.require_terms and not matches_any(e.title, feed.require_terms):
                 stats.skipped_unmatched += 1  # 生成AIと関係の薄い記事（GitHub Changelog など）
                 continue
-            if e.url in seen or e.url in new_items:
+            if e.url in seen or e.url in new_items or e.url in rejected:
                 stats.duplicate_items += 1
                 continue
-            cid = (classify(config, e.title) if feed.classify else None) or feed.category
-            new_items[e.url] = Item(url=e.url, title=feeds.display_title(feed, e.title),
-                                    category=config.category(cid).name,
-                                    feed=feed.name, published=e.published)
+            candidates.append(e)
+        if not candidates:
+            continue
+        cats = Counter(c for e in candidates for c in e.categories)
+        print(f"selection: feed='{feed.name}' select={feed.select} candidates={len(candidates)}"
+              + (f" categories={dict(cats.most_common(10))}" if cats else ""))
+        chosen, feed_rejected = choose(config, feed, candidates)
+        for item in chosen:
+            new_items[item.url] = item
+        rejected.update(feed_rejected)
+        stats.rejected.update(feed_rejected.values())
     order = {c.name: i for i, c in enumerate(config.categories)}  # ログ内のカテゴリを設定の順に並べる
     items = sorted(new_items.values(), key=lambda i: order[i.category])
     stats.new_items = len(items)
-    return items, stats
+    return items, rejected, stats
 
 
 def normalize_title(title: str) -> str:
@@ -291,6 +377,8 @@ def print_stats(s: Stats) -> None:
     print(f"skipped (old / excluded): {s.skipped_old_or_excluded}")
     print(f"skipped (require_keywords): {s.skipped_unmatched}")
     print(f"duplicate items: {s.duplicate_items}")
+    print(f"rejected by selection: {sum(s.rejected.values())}"
+          + (f" ({', '.join(f'{k}={v}' for k, v in s.rejected.most_common())})" if s.rejected else ""))
     print(f"same-title items (observation only): {s.same_title}")
     print(f"new items: {s.new_items}")
 
@@ -316,12 +404,17 @@ def run(
         return 2
 
     # 1. 公式フィード（保存する）
-    items, stats = collect_feeds(config, seen, today)
+    items, rejected, stats = collect_feeds(config, seen, today)
     stats.same_title = count_same_titles(items, logs_dir, today)
     if items:
         write_log(logs_dir, today, items)  # ログ→seenの順（途中失敗時に記事を取りこぼさない）
+    if items or rejected:
         for item in items:
             seen[item.url] = {"first_seen": today}
+            for url in item.grouped_urls:
+                seen[url] = {"first_seen": today, "grouped_into": item.url}
+        for url, reason in rejected.items():  # 不採用の記事も記録し、次回以降に復活させない
+            seen[url] = {"first_seen": today, "excluded": reason}
         save_json(seen_path, seen)
     update_months(months_path, logs_dir)
     print_stats(stats)

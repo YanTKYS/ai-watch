@@ -190,6 +190,7 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
   gap: 4px 16px;
   margin-top: auto; padding-top: 4px;
 }
+.notes { margin: -4px 0 10px; color: var(--muted); font-size: .875rem; line-height: 1.5; }
 .meta-part { display: inline-block; max-width: 100%; } /* 項目の途中では改行しない（長すぎる場合のみ折り返す） */
 .open {
   display: inline-block;

@@ -1,8 +1,8 @@
 "use strict";
 // logs/YYYY/YYYY-MM.md のMarkdownを、表示用のデータ構造へ変換する（DOM操作なし。news-watch から流用）。
 //
-// 戻り値: [{ date, categories: [{ name, items: [{ title, url, source, feed,
-//           published, retrieved }] }] }]   ※ファイル中の出現順
+// 戻り値: [{ date, categories: [{ name, items: [{ title, url, source, feed, notes,
+//           published, retrieved }] }] }]   ※ファイル中の出現順（notes はまとめたリリースの項目数）
 // 見出し階層: "## 日付" > "### カテゴリ" > "#### 記事タイトル"。
 // 項目の欠落や未知の行があっても例外にせず、可能な範囲で読み取る。
 
@@ -10,6 +10,7 @@ const FIELD_KEYS = {
   url: "url",
   source: "source",
   feed: "feed",
+  notes: "notes",
   published: "published",
   retrieved: "retrieved",
 };
@@ -39,7 +40,7 @@ function parseLog(markdown) {
 
     if (line.startsWith("#### ")) {
       ensureCategory();
-      item = { title: line.slice(5).trim(), url: "", source: "", feed: "", published: "", retrieved: "" };
+      item = { title: line.slice(5).trim(), url: "", source: "", feed: "", notes: "", published: "", retrieved: "" };
       category.items.push(item);
     } else if (line.startsWith("### ")) {
       ensureCategory();

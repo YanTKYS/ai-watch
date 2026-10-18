@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- テスト用の合成データ。GitHub Releases（releases.atom）の構造を模したもので、リリース内容は架空。Stainless 形式の SDK リリースノート（Features / Chores）を模す。 -->
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:https://github.com/anthropics/anthropic-sdk-python/releases</id>
+  <link type="text/html" rel="alternate" href="https://github.com/anthropics/anthropic-sdk-python/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/anthropics/anthropic-sdk-python/releases.atom"/>
+  <title>Release notes from anthropic-sdk-python</title>
+  <updated>2026-10-17T21:00:00Z</updated>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/v9.2.0</id>
+    <updated>2026-10-17T12:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/anthropics/anthropic-sdk-python/releases/tag/v9.2.0"/>
+    <title>v9.2.0</title>
+    <content type="html">&lt;h2&gt;9.2.0 (2026-10-17)&lt;/h2&gt;
+&lt;h3&gt;Features&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;api:&lt;/strong&gt; add an example parameter&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Chores&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;internal:&lt;/strong&gt; example chore&lt;/li&gt;
+&lt;/ul&gt;</content>
+    <author>
+      <name>fixture-bot</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1?s=60&amp;v=4"/>
+  </entry>
+  <entry>
+    <id>tag:github.com,2008:Repository/1/v9.1.1</id>
+    <updated>2026-10-16T12:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://github.com/anthropics/anthropic-sdk-python/releases/tag/v9.1.1"/>
+    <title>v9.1.1</title>
+    <content type="html">&lt;h2&gt;9.1.1 (2026-10-16)&lt;/h2&gt;
+&lt;h3&gt;Chores&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;ci:&lt;/strong&gt; example chore&lt;/li&gt;
+&lt;/ul&gt;</content>
+    <author>
+      <name>fixture-bot</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/1?s=60&amp;v=4"/>
+  </entry>
+</feed>

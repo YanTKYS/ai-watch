@@ -69,6 +69,7 @@ function renderCard(item, withCategory) {
     });
     card.appendChild(meta);
   }
+  if (item.notes) card.appendChild(el("p", "notes", `リリースノートの項目数: ${item.notes}`)); // 機械的な集計
 
   // リンクと補助情報はカード下部にまとめ、行内のカードで位置を揃える。
   const bottom = el("div", "card-bottom");

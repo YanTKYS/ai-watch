@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- テスト用の合成データ。GitHub Releases（releases.atom）の構造を模したもので、リリース内容は架空。 -->
+<!-- テスト用の合成データ。GitHub Releases（releases.atom）の構造を模したもので、リリース内容は架空。項目を判定できないリリースノート（見落とさないよう採用される）を模す。 -->
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
   <id>tag:github.com,2008:https://github.com/modelcontextprotocol/modelcontextprotocol/releases</id>
   <link type="text/html" rel="alternate" href="https://github.com/modelcontextprotocol/modelcontextprotocol/releases"/>
@@ -11,7 +11,7 @@
     <updated>2026-10-15T12:00:00Z</updated>
     <link rel="alternate" type="text/html" href="https://github.com/modelcontextprotocol/modelcontextprotocol/releases/tag/2026-10-15"/>
     <title>2026-10-15</title>
-    <content type="html">&lt;h2&gt;Synthetic notes&lt;/h2&gt;</content>
+    <content type="html">&lt;p&gt;See the specification changelog for details.&lt;/p&gt;</content>
     <author>
       <name>fixture-bot</name>
     </author>

@@ -1,7 +1,7 @@
 """公式の情報源（RSS 2.0 / Atom。GitHub Releases の releases.atom を含む）を取得・解析する。
 
 - 1フィードにつきHTTPリクエストは1回（リトライ・ページングなし）。失敗したフィードは飛ばして続行する。
-- 使うのはタイトル・URL・公開日だけ（本文・要約は保存しない）。
+- 保存するのはタイトル・URL・公開日だけ。説明文・リリースノート・カテゴリは選定（selection.py）にだけ使い、保存しない。
 - DOCTYPE・ENTITY を含むXMLは解析しない（外部実体・実体展開の対策）。
 - Content-Encoding: gzip のレスポンスは、標準ライブラリ（zlib）で展開してから解析する。
   圧縮データ・展開後データのそれぞれにサイズ上限を設ける。
@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
 
+import selection
 from common import JST, USER_AGENT, ConfigError, clean_text, compile_terms, normalize_url
 
 MAX_FEEDS = 10  # 情報源を無理に増やさないための上限
@@ -33,6 +34,8 @@ DEFAULT_MAX_AGE_DAYS = 7
 ATOM = "{http://www.w3.org/2005/Atom}"
 RDF_RSS = "{http://purl.org/rss/1.0/}"
 DC_DATE = "{http://purl.org/dc/elements/1.1/}date"
+CONTENT_ENCODED = "{http://purl.org/rss/1.0/modules/content/}encoded"
+MAX_TEXT_CHARS = 200_000  # 選定に使う説明文・リリースノートの上限（メモリ上でのみ使う）
 
 
 @dataclass
@@ -41,6 +44,7 @@ class Feed:
     url: str
     category: str
     classify: bool = True
+    select: str = "all"  # all | score | release_notes（selection.py）
     require_terms: list[re.Pattern] = field(default_factory=list)
     title_prefix: str = ""
     exclude_title_patterns: list[re.Pattern] = field(default_factory=list)
@@ -62,6 +66,9 @@ class Entry:
     title: str
     url: str
     published: str  # YYYY-MM-DD（日本時間）
+    summary: str = ""  # 説明文（RSS description / Atom summary）。選定にだけ使う
+    content: str = ""  # 本文・リリースノート（HTMLのまま）。リリースの選定にだけ使う
+    categories: list[str] = field(default_factory=list)  # フィードが付けたカテゴリ
 
 
 def load_feeds(value: object, category_ids: set[str]) -> list[Feed]:
@@ -88,6 +95,8 @@ def load_feeds(value: object, category_ids: set[str]) -> list[Feed]:
             raise ConfigError(f"フィード '{name}' の category が categories にありません: {f.get('category')!r}")
         if "classify" in f and not isinstance(f["classify"], bool):
             raise ConfigError(f"フィード '{name}' の classify は true / false にしてください")
+        if f.get("select", "all") not in selection.MODES:
+            raise ConfigError(f"フィード '{name}' の select は {' / '.join(selection.MODES)} のいずれかにしてください")
         prefix = f.get("title_prefix", "")
         if not isinstance(prefix, str):
             raise ConfigError(f"フィード '{name}' の title_prefix は文字列にしてください")
@@ -99,6 +108,7 @@ def load_feeds(value: object, category_ids: set[str]) -> list[Feed]:
         except re.error as e:
             raise ConfigError(f"フィード '{name}' の exclude_title_patterns が正規表現として不正です: {e}") from e
         feeds.append(Feed(name=name, url=url, category=f["category"], classify=f.get("classify", True),
+                          select=f.get("select", "all"),
                           require_terms=compile_terms(f.get("require_keywords"), f"フィード '{name}' の require_keywords"),
                           title_prefix=prefix.strip(),
                           exclude_title_patterns=compiled))
@@ -198,25 +208,31 @@ def parse_feed(body: bytes) -> list[Entry]:
     if root_start is None or b"<!doctype" in body[:root_start.start()].lower():
         raise ValueError("DOCTYPE is not allowed")
     root = ET.fromstring(body)
-    raw: list[tuple[str, str, str | None]] = []
+    raw: list[tuple[str, str, str | None, str, str, list[str]]] = []  # title, link, date, summary, content, categories
     if root.tag == f"{ATOM}feed":
         for e in root.findall(f"{ATOM}entry"):
             when = _text(e.find(f"{ATOM}published")) or _text(e.find(f"{ATOM}updated"))
-            raw.append((_text(e.find(f"{ATOM}title")), _atom_link(e), when))
+            cats = [c.get("term", "") for c in e.findall(f"{ATOM}category")]
+            raw.append((_text(e.find(f"{ATOM}title")), _atom_link(e), when, _text(e.find(f"{ATOM}summary")),
+                        _text(e.find(f"{ATOM}content")), cats))
     elif root.tag == "rss":
         for e in root.iter("item"):
             when = _text(e.find("pubDate")) or _text(e.find(DC_DATE))
-            raw.append((_text(e.find("title")), _text(e.find("link")), when))
+            raw.append((_text(e.find("title")), _text(e.find("link")), when, _text(e.find("description")),
+                        _text(e.find(CONTENT_ENCODED)), [_text(c) for c in e.findall("category")]))
     elif root.tag.endswith("RDF"):
         for e in root.findall(f"{RDF_RSS}item"):
-            raw.append((_text(e.find(f"{RDF_RSS}title")), _text(e.find(f"{RDF_RSS}link")), _text(e.find(DC_DATE))))
+            raw.append((_text(e.find(f"{RDF_RSS}title")), _text(e.find(f"{RDF_RSS}link")), _text(e.find(DC_DATE)),
+                        _text(e.find(f"{RDF_RSS}description")), "", []))
     else:
         raise ValueError("unknown feed format")
     entries = []
-    for title, link, when in raw:
+    for title, link, when, summary, content, cats in raw:
         title, url, published = clean_text(title), normalize_url(link.strip()), parse_date(when)
         if title and url and published:
-            entries.append(Entry(title=title, url=url, published=published))
+            entries.append(Entry(title=title, url=url, published=published,
+                                 summary=clean_text(summary)[:MAX_TEXT_CHARS], content=content[:MAX_TEXT_CHARS],
+                                 categories=[c for c in (clean_text(c) for c in cats) if c]))
     return entries
 
 

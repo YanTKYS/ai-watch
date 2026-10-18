@@ -1,4 +1,5 @@
 """テスト共通の補助。実APIへの通信は一切行わない（urllib.request.urlopen をすべて差し替える）。"""
+import html
 import io
 import json
 import sys
@@ -52,10 +53,11 @@ def rss(*items):
     return f'<?xml version="1.0"?><rss version="2.0"><channel><title>x</title>{body}</channel></rss>'.encode("utf-8")
 
 
-def atom(*entries):
-    """entries: (title, href, updated)"""
+def atom(*entries, content="リリースノート本文"):
+    """entries: (title, href, updated)。content はリリースノート（HTML）で、全エントリー共通。"""
+    content = html.escape(content)
     body = "".join(f'<entry><title>{t}</title><link rel="alternate" type="text/html" href="{h}"/>'
-                   f"<updated>{u}</updated><content type=\"html\">リリースノート本文</content></entry>"
+                   f"<updated>{u}</updated><content type=\"html\">{content}</content></entry>"
                    for t, h, u in entries)
     return f'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>x</title>{body}</feed>'.encode("utf-8")
 

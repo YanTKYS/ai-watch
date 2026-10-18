@@ -228,7 +228,8 @@ class ClientSearch(unittest.TestCase):
         self.assertEqual(days[0]["date"], "2026-10-01")
         self.assertEqual(self.node("console.log(JSON.stringify([p.parseLog(''), p.parseLog('### x\\n#### t\\n- URL: u')]));"),
                          [[], [{"date": "", "categories": [{"name": "x", "items": [
-                             {"title": "t", "url": "u", "source": "", "feed": "", "published": "", "retrieved": ""}]}]}]])
+                             {"title": "t", "url": "u", "source": "", "feed": "", "notes": "", "published": "",
+                              "retrieved": ""}]}]}]])
 
 
 if __name__ == "__main__":
