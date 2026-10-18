@@ -37,7 +37,10 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
   （Brave検索をする場合は環境変数 `BRAVE_API_KEY`）。検索インデックスは `python scripts/search_index.py` で再生成します。
 - **テスト**（APIキー不要・通信なし。Node.js があればブラウザ側の検索関数も確認）: `python -m unittest discover -s tests`
   公式フィードの解析は、実際の配信形式（RSS 2.0・WordPress・GitHub Releases の Atom）を模した合成データ `tests/fixtures/` で確認しています。
-  実サイトから取得できるかは、GitHub Actions での実行ログ（`failed feeds`）で確認してください。
+  実サイトから取得できるかは、GitHub Actions での実行ログで確認してください。フィードごとに
+  `feed ok: ... status=200 content_type=... entries=N` が出ます。失敗したフィードは `feed failed` の次の行の
+  `diagnostics:` に、HTTPステータス・Content-Type・先頭の形式（`start=xml-declaration` / `html` など）・
+  XMLの解析失敗位置と前後30文字が出ます（本文全体は出しません）。Brave枠を使わずに確認する場合は `skip_brave` で手動実行します。
 
 ## API利用量の制御（Brave Search API）
 

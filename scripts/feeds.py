@@ -3,11 +3,15 @@
 - 1フィードにつきHTTPリクエストは1回（リトライ・ページングなし）。失敗したフィードは飛ばして続行する。
 - 使うのはタイトル・URL・公開日だけ（本文・要約は保存しない）。
 - DOCTYPE・ENTITY を含むXMLは解析しない（外部実体・実体展開の対策）。
+- 取得・解析に失敗したときは、原因を切り分けるための診断情報（HTTPステータス・Content-Type・
+  先頭の形式・XMLの解析失敗位置と前後数十文字）だけをActionsログに出す（本文全体は出さない）。
 """
 from __future__ import annotations
 
+import json
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -36,6 +40,16 @@ class Feed:
     require_terms: list[re.Pattern] = field(default_factory=list)
     title_prefix: str = ""
     exclude_title_patterns: list[re.Pattern] = field(default_factory=list)
+
+
+@dataclass
+class FetchInfo:
+    """取得結果の診断情報（本文は含めない）。"""
+    status: int | None = None
+    content_type: str = ""
+    content_encoding: str = ""
+    final_url: str = ""
+    size: int = 0
 
 
 @dataclass
@@ -86,14 +100,31 @@ def load_feeds(value: object, category_ids: set[str]) -> list[Feed]:
     return feeds
 
 
-def fetch(url: str) -> bytes:
-    """1回だけ取得する。失敗時は例外（リトライしない）。"""
+def _record_response(info: FetchInfo, resp, url: str) -> None:
+    headers = getattr(resp, "headers", None)
+    info.status = getattr(resp, "status", None) or getattr(resp, "code", None)
+    info.content_type = (headers.get("Content-Type") or "") if headers is not None else ""
+    info.content_encoding = (headers.get("Content-Encoding") or "") if headers is not None else ""
+    final = resp.geturl() if hasattr(resp, "geturl") else url
+    parts = urllib.parse.urlsplit(final or url)
+    info.final_url = urllib.parse.urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))  # クエリは出さない
+
+
+def fetch(url: str, info: FetchInfo | None = None) -> bytes:
+    """1回だけ取得する。失敗時は例外（リトライしない）。info には診断情報を記録する。"""
+    info = info if info is not None else FetchInfo()
     req = urllib.request.Request(url, headers={
         "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, */*;q=0.5",
         "User-Agent": USER_AGENT,
     })
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as resp:
-        body = resp.read(MAX_RESPONSE_BYTES + 1)
+    try:
+        with urllib.request.urlopen(req, timeout=TIMEOUT_SEC) as resp:
+            _record_response(info, resp, url)
+            body = resp.read(MAX_RESPONSE_BYTES + 1)
+    except urllib.error.HTTPError as e:
+        _record_response(info, e, url)
+        raise
+    info.size = len(body)
     if len(body) > MAX_RESPONSE_BYTES:
         raise ValueError("response too large")
     return body
@@ -177,3 +208,66 @@ def describe_error(e: Exception) -> str:
     if isinstance(e, urllib.error.HTTPError):
         return f"HTTP {e.code}"
     return type(e).__name__
+
+
+_CONTEXT_CHARS = 30  # 解析失敗位置の前後に出す文字数（本文全体は出さない）
+
+
+def body_start(body: bytes) -> tuple[str, str, int, bool]:
+    """(先頭の形式, 最初の要素名, 先頭の空白バイト数, BOMの有無)。形式の切り分け用。"""
+    bom = body.startswith(b"\xef\xbb\xbf")
+    rest = body[3:] if bom else body
+    stripped = rest.lstrip()
+    leading_ws = len(rest) - len(stripped)
+    head = stripped[:200].lower()
+    if not stripped:
+        kind = "empty"
+    elif stripped.startswith(b"\x1f\x8b"):
+        kind = "gzip"
+    elif head.startswith(b"<?xml"):
+        kind = "xml-declaration"
+    elif head.startswith((b"<!doctype html", b"<html")):
+        kind = "html"
+    elif head.startswith(b"<"):
+        kind = "markup"
+    elif head[:1] in (b"{", b"["):
+        kind = "json"
+    else:
+        kind = "other"
+    m = re.search(rb"<([A-Za-z][\w:.-]{0,40})", stripped[:4096])
+    return kind, (m.group(1).decode("ascii", "replace") if m else ""), leading_ws, bom
+
+
+def _error_context(body: bytes, e: Exception) -> str:
+    """ParseError の位置（行・列）の前後だけを、改行・制御文字をエスケープして返す。"""
+    position = getattr(e, "position", None)
+    if not position or not body:
+        return ""
+    line_no, col = position
+    lines = body.decode("utf-8", "replace").split("\n")
+    if not 1 <= line_no <= len(lines):
+        return ""
+    line = lines[line_no - 1]
+    return line[max(0, col - _CONTEXT_CHARS):col + _CONTEXT_CHARS]
+
+
+def diagnose(info: FetchInfo, body: bytes, e: Exception) -> str:
+    """取得・解析失敗の診断情報を1行で返す。文字列はJSON形式でエスケープする（ログのコマンド誤認を防ぐ）。"""
+    kind, element, leading_ws, bom = body_start(body)
+    parts = [
+        f"status={info.status if info.status is not None else '-'}",
+        f"content_type={json.dumps(info.content_type)}",
+        f"content_encoding={json.dumps(info.content_encoding)}",
+        f"bytes={info.size}",
+        f"final_url={json.dumps(info.final_url)}",
+        f"start={kind}",
+        f"first_element={json.dumps(element)}",
+        f"leading_whitespace={leading_ws}",
+        f"bom={'yes' if bom else 'no'}",
+    ]
+    if isinstance(e, ET.ParseError):
+        parts.append(f"parse_error={json.dumps(str(e))}")
+        parts.append(f"context={json.dumps(_error_context(body, e))}")
+    elif not isinstance(e, urllib.error.HTTPError):
+        parts.append(f"message={json.dumps(str(e)[:200])}")
+    return " ".join(parts)
