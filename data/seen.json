@@ -1,4 +1,19 @@
 {
+  "https://deepmind.google/blog/accelerating-antimicrobial-discovery": {
+    "first_seen": "2026-10-18"
+  },
+  "https://deepmind.google/blog/developing-gemini-4-argon-responsibly-and-safely": {
+    "first_seen": "2026-10-18"
+  },
+  "https://deepmind.google/blog/gemini-4-argon-for-robotics": {
+    "first_seen": "2026-10-18"
+  },
+  "https://deepmind.google/blog/introducing-gemini-4-argon": {
+    "first_seen": "2026-10-18"
+  },
+  "https://deepmind.google/blog/on-device-ai-scam-detection-mddi": {
+    "first_seen": "2026-10-18"
+  },
   "https://github.blog/changelog/2026-10-15-agentic-autofix-for-code-scanning-alerts-general-availability": {
     "first_seen": "2026-10-18"
   },
