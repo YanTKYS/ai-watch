@@ -26,6 +26,12 @@
   "https://github.blog/changelog/2026-10-15-upcoming-deprecation-of-selected-github-copilot-models-in-mid-november": {
     "first_seen": "2026-10-18"
   },
+  "https://github.blog/changelog/2026-10-19-copilot-model-policy-api-for-enterprise-orgs-and-teams": {
+    "first_seen": "2026-10-20"
+  },
+  "https://github.blog/changelog/2026-10-19-github-copilot-models-deprecated-on-october-19-2026": {
+    "first_seen": "2026-10-20"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -50,6 +56,9 @@
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.303": {
     "first_seen": "2026-10-19"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.304": {
+    "first_seen": "2026-10-20"
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
@@ -77,6 +86,10 @@
   "https://openai.com/index/itau-generative-ai": {
     "excluded": "customer_story",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/low-resource-programming-languages": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-20"
   },
   "https://openai.com/index/sentinelone": {
     "excluded": "low_score",
