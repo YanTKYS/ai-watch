@@ -39,6 +39,13 @@
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0": {
     "first_seen": "2026-10-18"
   },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.16.0": {
+    "first_seen": "2026-10-21",
+    "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.17.0"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.17.0": {
+    "first_seen": "2026-10-21"
+  },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/claude-code/releases/tag/v2.1.302"
@@ -59,6 +66,9 @@
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.304": {
     "first_seen": "2026-10-20"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.305": {
+    "first_seen": "2026-10-21"
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
@@ -91,6 +101,10 @@
     "excluded": "low_score",
     "first_seen": "2026-10-20"
   },
+  "https://openai.com/index/openai-to-acquire-orchestra-bio": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-21"
+  },
   "https://openai.com/index/sentinelone": {
     "excluded": "low_score",
     "first_seen": "2026-10-18"
@@ -106,6 +120,10 @@
   "https://openai.com/index/teaching-students-to-think-and-learn-through-questions": {
     "excluded": "education_program",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/ted-taylor-restaurant": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-21"
   },
   "https://openai.com/index/the-eus-next-chapter-in-ai-is-agentic": {
     "excluded": "policy_society",
