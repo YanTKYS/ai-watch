@@ -39,11 +39,17 @@
   "https://github.blog/changelog/2026-10-22-custom-skills-agents-and-mcp-servers-in-usage-metrics-api": {
     "first_seen": "2026-10-23"
   },
+  "https://github.blog/changelog/2026-10-22-github-copilot-in-visual-studio-september-update-2": {
+    "first_seen": "2026-10-24"
+  },
   "https://github.blog/changelog/2026-10-22-global-default-for-copilot-features-generally-available": {
     "first_seen": "2026-10-23"
   },
   "https://github.blog/changelog/2026-10-22-industry-comparisons-in-the-copilot-impact-dashboard": {
     "first_seen": "2026-10-23"
+  },
+  "https://github.blog/changelog/2026-10-23-turn-notifications-into-code-with-github-copilot-in-teams": {
+    "first_seen": "2026-10-24"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
@@ -65,6 +71,13 @@
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.1.0": {
     "first_seen": "2026-10-22"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.2.0": {
+    "first_seen": "2026-10-24",
+    "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0": {
+    "first_seen": "2026-10-24"
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
     "first_seen": "2026-10-18",
@@ -104,8 +117,14 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.309": {
     "first_seen": "2026-10-23"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.310": {
+    "first_seen": "2026-10-24"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
+  },
+  "https://github.com/openai/codex/releases/tag/rust-v0.164.0": {
+    "first_seen": "2026-10-24"
   },
   "https://openai.com/index/amp-beyond-coding": {
     "excluded": "customer_story",
@@ -149,6 +168,10 @@
     "excluded": "low_score",
     "first_seen": "2026-10-22"
   },
+  "https://openai.com/index/forward-deployed-engineering-means": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-24"
+  },
   "https://openai.com/index/higgsfield-longer-videos-voice": {
     "excluded": "low_score",
     "first_seen": "2026-10-18"
@@ -169,12 +192,24 @@
     "excluded": "low_score",
     "first_seen": "2026-10-22"
   },
+  "https://openai.com/index/openai-nask-ai-safety-security-partnership": {
+    "excluded": "partnership",
+    "first_seen": "2026-10-24"
+  },
   "https://openai.com/index/openai-to-acquire-orchestra-bio": {
     "excluded": "low_score",
     "first_seen": "2026-10-21"
   },
   "https://openai.com/index/scaling-ai-research-for-complex-biological-data": {
     "first_seen": "2026-10-22"
+  },
+  "https://openai.com/index/scaling-storage-one-billion-users-part-two": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-24"
+  },
+  "https://openai.com/index/securing-our-frontier-model-training-environment": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-24"
   },
   "https://openai.com/index/sentinelone": {
     "excluded": "low_score",
