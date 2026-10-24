@@ -74,7 +74,7 @@ body {
   border-radius: 2px;
 }
 .search-box input::placeholder { color: var(--muted); opacity: 1; }
-.search-box button, .more {
+.search-box button, .more, #load-retry {
   font: inherit;
   min-height: 44px;
   padding: 0 16px;
@@ -85,7 +85,9 @@ body {
   cursor: pointer;
 }
 .search-box button:disabled { color: var(--muted); cursor: default; }
-.search-box button:not(:disabled):hover, .more:hover { background: var(--band); }
+.search-box button:not(:disabled):hover, .more:hover, #load-retry:hover { background: var(--band); }
+#load-retry { margin-bottom: 20px; }
+#load-retry[hidden] { display: none; }
 .search-summary { margin: 12px 0 20px; color: var(--muted); font-size: .94rem; }
 .search-empty { margin: 0; padding: 16px 0; }
 .more { display: block; margin: 24px auto 0; }

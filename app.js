@@ -4,7 +4,7 @@
 // 外部由来の文字列は textContent と検証済みURLのhref設定のみで描画する（innerHTML は使わない）。
 // ?sample を付けると samples/ 以下のサンプルデータ（架空の記事）を表示する。
 
-const MONTH_RE = /^\d{4}-\d{2}$/;
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const BASE = new URLSearchParams(location.search).has("sample") ? "samples/" : "";
 const select = document.getElementById("month-select");
 const orderSelect = document.getElementById("order-select");
@@ -12,6 +12,7 @@ const searchInput = document.getElementById("search-input");
 const searchClear = document.getElementById("search-clear");
 const notice = document.getElementById("notice");
 const statusEl = document.getElementById("status");
+const retryButton = document.getElementById("load-retry");
 const content = document.getElementById("content");
 let loadToken = 0; // 連続切替時に古い応答で上書きしない
 let sortOrder = "desc"; // "desc"=新しい順 / "asc"=古い順（月を切り替えても維持。永続化はしない）
@@ -22,6 +23,9 @@ let searchQuery = ""; // 検索中のキーワード（空なら通常の日刊�
 let searchEntries = null; // buildSearchEntries の結果（初回検索時に読み込み、以後は再利用）
 let searchLoading = null; // 読み込み中の Promise（同時に複数回取得しない）
 let searchTimer = 0;
+let retryAction = null;
+
+class DataError extends Error {}
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -30,10 +34,27 @@ function el(tag, className, text) {
   return node;
 }
 
-function setStatus(message, isError) {
+function setStatus(message, isError, retry = null) {
   statusEl.textContent = message;
   statusEl.className = isError ? "error" : "";
   statusEl.hidden = !message;
+  retryAction = retry;
+  retryButton.hidden = !retry;
+  retryButton.disabled = false;
+}
+
+function loadError(label, error, retry) {
+  const message = error instanceof DataError ? `${label}のデータ形式が不正です。再試行してください。`
+    : `${label}を取得できませんでした。接続を確認して再試行してください。`;
+  setStatus(message, true, retry);
+}
+
+function parseJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new DataError("invalid JSON");
+  }
 }
 
 async function fetchText(path) {
@@ -158,15 +179,17 @@ async function showMonth(ym) {
   try {
     text = await fetchText(`logs/${ym.slice(0, 4)}/${ym}.md`);
   } catch (e) {
-    if (token === loadToken) setStatus(`${monthLabel(ym)}のログを取得できませんでした。`, true);
+    if (token === loadToken) loadError(`${monthLabel(ym)}のログ`, e, () => showMonth(ym));
     return;
   }
   if (token !== loadToken) return;
   let days;
   try {
+    // ログは寛容に解析するが、HTMLや無関係なテキストを正常な0件とは扱わない。
+    if (text.trim() && !/^#{1,4} /m.test(text)) throw new DataError("not a Markdown log");
     days = parseLog(text);
   } catch (e) {
-    setStatus(`${monthLabel(ym)}のログを解析できませんでした。`, true);
+    loadError(`${monthLabel(ym)}のログ`, new DataError("invalid log"), () => showMonth(ym));
     return;
   }
   if (days.length === 0) {
@@ -180,13 +203,17 @@ async function showMonth(ym) {
 
 async function loadMonths() {
   const token = ++loadToken;
+  setStatus("月の一覧を読み込み中...");
   let months;
   try {
-    const data = JSON.parse(await fetchText("data/months.json"));
-    if (!Array.isArray(data)) throw new Error("not an array");
+    const text = await fetchText("data/months.json");
+    if (token !== loadToken) return;
+    const data = parseJson(text);
+    if (!Array.isArray(data)) throw new DataError("not an array");
     months = data.filter((m) => typeof m === "string" && MONTH_RE.test(m));
+    if (data.length && !months.length) throw new DataError("no valid months");
   } catch (e) {
-    if (token === loadToken) setStatus("月の一覧（data/months.json）を取得できませんでした。", true);
+    if (token === loadToken) loadError("月の一覧（data/months.json）", e, loadMonths);
     return;
   }
   if (months.length === 0) {
@@ -231,7 +258,13 @@ function showDaily() {
 function loadSearchEntries() {
   if (!searchLoading) {
     searchLoading = fetchText("data/search-index.json")
-      .then((text) => { searchEntries = buildSearchEntries(JSON.parse(text)); })
+      .then((text) => {
+        const data = parseJson(text);
+        if (!Array.isArray(data)) throw new DataError("not an array");
+        const entries = buildSearchEntries(data);
+        if (data.length && !entries.length) throw new DataError("no valid articles");
+        searchEntries = entries;
+      })
       .catch((e) => { searchLoading = null; throw e; }); // 失敗時は次の検索で再試行する
   }
   return searchLoading;
@@ -246,7 +279,7 @@ async function showSearch() {
     try {
       await loadSearchEntries();
     } catch (e) {
-      if (token === loadToken) setStatus("検索データ（data/search-index.json）を取得できませんでした。", true);
+      if (token === loadToken) loadError("検索データ（data/search-index.json）", e, showSearch);
       return;
     }
     if (token !== loadToken) return;
@@ -302,6 +335,13 @@ function scheduleSearch() {
 
 function init() {
   if (BASE) notice.hidden = false;
+  retryButton.addEventListener("click", () => {
+    if (!retryAction || retryButton.disabled) return;
+    const retry = retryAction;
+    retryAction = null; // 連打・キーボード連続操作でも同じ再試行を重ねない
+    retryButton.disabled = true;
+    retry(); // 各処理の開始でボタンを隠し、loadTokenを更新する
+  });
   searchInput.addEventListener("input", (e) => {
     syncControls();
     if (e.isComposing) return; // 日本語入力の変換中は検索しない（確定時に compositionend で検索）
