@@ -1,0 +1,139 @@
+{
+  "description": "F12-inspired synthetic evaluation. Titles resemble review cases; dates, URLs, summaries and release bodies are synthetic, not archived source payloads. Expectations express review intent, not assertions that current rules satisfy it.",
+  "today": "2026-10-24",
+  "feeds": {
+    "https://openai.com/news/rss.xml": [
+      {
+        "title": "Introducing GPT-6.1",
+        "url": "https://evaluation.example.org/new-model",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Build more responsive apps with the Decisions API",
+        "url": "https://evaluation.example.org/decisions",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Terminal X matches senior investor judgment 88.6% with GPT-6.1",
+        "url": "https://evaluation.example.org/terminal",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Using thousands of AI agents to uncover new leads in biological data",
+        "url": "https://evaluation.example.org/biology",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "OpenAI models on Google Cloud",
+        "url": "https://evaluation.example.org/cloud",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "AI for low-resource programming languages",
+        "url": "https://evaluation.example.org/languages",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Expanding API access in Europe",
+        "url": "https://evaluation.example.org/region",
+        "published": "2026-10-24",
+        "summary": "Available now in the API."
+      }
+    ],
+    "https://deepmind.google/blog/rss.xml": [
+      {
+        "title": "Introducing Gemini 4 Argon",
+        "url": "https://evaluation.example.org/gemini-model",
+        "published": "2026-10-24"
+      }
+    ],
+    "https://github.blog/changelog/feed/": [
+      {
+        "title": "GitHub Copilot models deprecated on October 19, 2026",
+        "url": "https://evaluation.example.org/deprecation",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Industry comparisons in the Copilot impact dashboard",
+        "url": "https://evaluation.example.org/dashboard",
+        "published": "2026-10-24"
+      }
+    ],
+    "https://github.com/anthropics/claude-code/releases.atom": [
+      {
+        "title": "v9.0.1",
+        "url": "https://evaluation.example.org/claude-v1",
+        "published": "2026-10-24",
+        "content": "<ul><li>Bug fixes and reliability improvements</li></ul>"
+      },
+      {
+        "title": "v9.0.2",
+        "url": "https://evaluation.example.org/claude-v2",
+        "published": "2026-10-24",
+        "content": "<ul><li>Added a sandbox configuration option</li></ul>"
+      }
+    ],
+    "https://github.com/openai/codex/releases.atom": [
+      {
+        "title": "v9.1.0",
+        "url": "https://evaluation.example.org/codex",
+        "published": "2026-10-24",
+        "content": "<ul><li>Added reusable prompt presets</li></ul>"
+      }
+    ],
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom": [],
+    "https://github.com/anthropics/anthropic-sdk-python/releases.atom": [
+      {
+        "title": "v9.0.0",
+        "url": "https://evaluation.example.org/sdk-ci",
+        "published": "2026-10-24",
+        "content": "<ul><li>internal: remove preview build upload from CI</li></ul>"
+      },
+      {
+        "title": "v9.0.1",
+        "url": "https://evaluation.example.org/sdk-example",
+        "published": "2026-10-24",
+        "content": "<ul><li>mcp: remove the stray await from the async tool_runner examples</li></ul>"
+      }
+    ],
+    "https://github.com/googleapis/python-genai/releases.atom": [
+      {
+        "title": "v9.0.0",
+        "url": "https://evaluation.example.org/gemini-sdk-v1",
+        "published": "2026-10-24",
+        "content": "<h3>Features</h3><ul><li>api: add an example model parameter</li></ul>"
+      },
+      {
+        "title": "v9.0.1",
+        "url": "https://evaluation.example.org/gemini-sdk-v2",
+        "published": "2026-10-24",
+        "content": "<h3>Bug Fixes</h3><ul><li>Fixed a synthetic streaming error</li></ul>"
+      }
+    ]
+  },
+  "seen": {
+    "https://evaluation.example.org/languages": {
+      "first_seen": "2026-10-23",
+      "excluded": "low_score"
+    }
+  },
+  "expectations": {
+    "https://evaluation.example.org/new-model": "keep",
+    "https://evaluation.example.org/decisions": "keep",
+    "https://evaluation.example.org/terminal": "review",
+    "https://evaluation.example.org/biology": "review",
+    "https://evaluation.example.org/cloud": "check",
+    "https://evaluation.example.org/languages": "check",
+    "https://evaluation.example.org/region": "check",
+    "https://evaluation.example.org/gemini-model": "keep",
+    "https://evaluation.example.org/deprecation": "keep",
+    "https://evaluation.example.org/dashboard": "review",
+    "https://evaluation.example.org/claude-v1": "review",
+    "https://evaluation.example.org/claude-v2": "keep",
+    "https://evaluation.example.org/codex": "keep",
+    "https://evaluation.example.org/sdk-ci": "review",
+    "https://evaluation.example.org/sdk-example": "review",
+    "https://evaluation.example.org/gemini-sdk-v1": "keep",
+    "https://evaluation.example.org/gemini-sdk-v2": "review"
+  }
+}
