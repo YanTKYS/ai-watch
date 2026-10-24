@@ -47,6 +47,7 @@ feeds:
   - name: GitHub Changelog
     url: https://github.blog/changelog/feed/
     category: coding
+    select: score
     require_keywords: [Copilot, AI, model, models, MCP, agent, agents, agentic, Codex, Claude, Gemini, GPT, LLM]
   - name: Claude Code Releases
     url: https://github.com/anthropics/claude-code/releases.atom
@@ -109,12 +110,23 @@ selection:
       weight: 3
       terms: [pricing, price, prices, rate limit, rate limits, quota, quotas, deprecation, deprecated, deprecating,
               retire, retiring, retirement, sunset, context length]
+    # policy/Europe等の減点だけで、プログラムによる制御・提供条件の変更を落とさない。
+    - label: developer_operations
+      weight: 3
+      terms: [policy API, policy management API, data residency, regional endpoints]
+      patterns: ['\b(?:expanding|expanded|expands?)\s+API\s+access\b']
     - label: technical_detail  # タイトルだけでは判断できない記事を、説明文の具体的な技術情報で拾う
       weight: 2
       in: summary
       terms: [benchmark, benchmarks, evals, architecture, open source, open-source, context window, technical report,
               system card, available today, available now, in the API, rate limits, pricing]
     # --- 減点：導入事例・広報・政策・教育など（技術的な信号が十分あれば採用されうる） ---
+    # 組織の効果測定・導入状況だけの見出しを減点。プログラム向けAPI/SDK/CLIは巻き込まない。
+    - label: adoption_reporting
+      weight: -2
+      patterns:
+        - '^(?!.*\b(?:APIs?|SDKs?|CLIs?)\b).*\b(?:impact|adoption|usage)\s+(?:dashboards?|analytics|reports?)\b'
+        - '^(?!.*\b(?:APIs?|SDKs?|CLIs?)\b).*\b(?:ROI|return on investment|industry comparisons)\b'
     - label: customer_story
       weight: -3
       patterns: ['^How \S', '\bwith (OpenAI|ChatGPT|Codex|Gemini|Claude)\b[\w .-]{0,20}$', '\bcustomers?\b', '\bcase study\b']

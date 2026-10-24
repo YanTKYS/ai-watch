@@ -200,7 +200,7 @@
         "status": "rejected"
       },
       "reason": "この例は組織の業界比較だけで、開発者向け機能・APIの更新ではないと確定。",
-      "required": false
+      "required": true
     },
     "https://evaluation.example.org/claude-v1": {
       "feed_url": "https://github.com/anthropics/claude-code/releases.atom",

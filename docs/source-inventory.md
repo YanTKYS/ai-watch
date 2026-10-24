@@ -9,7 +9,7 @@
 | --- | --- | --- | ---: | ---: | ---: | --- |
 | OpenAI News (https://openai.com/news/rss.xml) | AIモデル / あり | score / なし / なし | 4 | 0 | 27 | 2026-10-23 |
 | Google DeepMind News (https://deepmind.google/blog/rss.xml) | AIモデル / あり | score / なし / なし | 2 | 0 | 4 | 2026-10-18 |
-| GitHub Changelog (https://github.blog/changelog/feed/) | AIコーディング / あり | all / あり / なし | 10 | 0 | 0 | 2026-10-24 |
+| GitHub Changelog (https://github.blog/changelog/feed/) | AIコーディング / あり | score / あり / なし | 10 | 0 | 0 | 2026-10-24 |
 | Claude Code Releases (https://github.com/anthropics/claude-code/releases.atom) | AIコーディング / なし | release_notes / なし / なし | 7 | 4 | 1 | 2026-10-24 |
 | OpenAI Codex Releases (https://github.com/openai/codex/releases.atom) | AIコーディング / なし | release_notes / なし / あり | 2 | 0 | 0 | 2026-10-24 |
 | MCP Specification Releases (https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom) | MCP・連携技術 / なし | release_notes / なし / なし | 0 | 0 | 0 | — |

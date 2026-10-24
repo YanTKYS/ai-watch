@@ -65,63 +65,36 @@ python scripts/collect.py --dry-run --fixtures /tmp/evaluation.json \
 
 `today` は固定の評価日。実行日に左右されず、公開から7日以内・未来日の除外も通常と同じ条件で評価する。`seen` 省略時は空履歴。既定では本番の `data/seen.json` を読まないため、評価例がすべて既読で消えることを避ける。実履歴で評価したい場合だけ `--seen` を明示する。`expectations` は品質評価用のメタデータで、通常dry-runの選定・出力・終了コードには影響しない。旧keep/review/check文字列も通常dry-runでは従来どおり無視する。
 
-## 再現できる比較例
+## 再現できる比較例（F17第2段階）
 
-以下は**検証用の仮説**として設定コピーを作る例。本番には反映しない。採用閾値を一律に上げる代わりに、業界・管理情報を減点し、提供先拡大・プログラミング言語の記事を加点、地域関連の減点を緩める。併せてGemini SDKの入力例も評価する。
+同じ現在の分類器・固定日付・フィクスチャで、変更前の設定と今回のニュース設定を比較する。過去の記事や履歴は書き換えない。
 
 ```sh
-python - <<'PY'
-from pathlib import Path
-import yaml
-raw = yaml.safe_load(Path('config/sources.yml').read_text())
-for feed in raw['feeds']:
-    if feed['name'] == 'GitHub Changelog':
-        feed['select'] = 'score'
-for rule in raw['selection']['rules']:
-    if rule['label'] == 'policy_society':
-        rule['weight'] = -1
-raw['selection']['rules'] += [
-    {'label': 'industry_or_management', 'weight': -3,
-     'terms': ['investor', 'biological data', 'impact dashboard']},
-    {'label': 'developer_availability', 'weight': 2,
-     'terms': ['Google Cloud', 'programming languages']},
-]
-raw['feeds'].append({
-    'name': 'Gemini Python SDK Releases',
-    'url': 'https://github.com/googleapis/python-genai/releases.atom',
-    'category': 'api', 'classify': False, 'select': 'release_notes',
-    'title_prefix': 'Gemini Python SDK',
-})
-Path('/tmp/ai-watch-candidate.yml').write_text(
-    yaml.safe_dump(raw, allow_unicode=True, sort_keys=False))
-PY
-python scripts/collect.py --dry-run --reconsider-excluded \
-  --compare-config /tmp/ai-watch-candidate.yml
+# 第2段階の変更前の設定を一時ファイルへ取り出す（Git履歴が必要）
+git show 839e171:config/sources.yml > /tmp/ai-watch-before-news.yml
+python scripts/collect.py --dry-run --evaluate --reconsider-excluded \
+  --config /tmp/ai-watch-before-news.yml --compare-config config/sources.yml
+python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
+  --config /tmp/ai-watch-before-news.yml --compare-config config/sources.yml \
+  --fixtures tests/fixtures/selection-validation.json
+python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
+  --config /tmp/ai-watch-before-news.yml --compare-config config/sources.yml \
+  --fixtures tests/fixtures/selection-news-validation.json
 ```
 
-### 比較結果（2026-10-24、F17第1段階の分類改善後）
+採用した変更はGitHub Changelogのscore化と2規則だけ。`adoption_reporting` は組織のimpact/adoption/usageのダッシュボード・分析・ROI等を限定的に減点し、タイトルにAPI/SDK/CLI（複数形を含む）がある場合は適用しない。`developer_operations` はポリシーAPI・データ所在・地域エンドポイント・明示的なAPIアクセス拡大を加点し、政治・地域関連の減点だけで利用条件の技術更新が落ちることを防ぐ。閾値2・各規則の既存重み・1フィード最大5件は変えない。
 
-| 指標 | 現行 | 検証案 |
-| --- | ---: | ---: |
-| 評価記事（フィード追加分を含む） | 15 | 17 |
-| 採用（集約前） | 9 | 10 |
-| 除外 | 6 | 7 |
-| 集約後のカード | 9 | 10 |
+score化だけの候補では、新ニュース境界例が一致8/不一致5のままで、policy APIやデータ所在が政治/地域語で落ちたため採用しなかった。投資家・生物分野等の語を追加して一括減点する案、Google Cloudやprogramming languagesを含むだけで加点する案、policy系の減点を一律に緩める案も採用しない。
 
-記事単位の差分は9件。採否が同じでも方式変更による理由・スコアの差分を含む。
-
-| 評価例 | 現行 → 検証案 | 判断材料 |
+| 評価セット | 変更前 → 変更後の一致/不一致 | 改善 / 悪化 / 未変化 / 保留 |
 | --- | --- | --- |
-| 新モデル発表 / Decisions API / Copilotモデル廃止 / Codex実用機能 | いずれも採用 → 採用 | F12の主要な正例をこの入力では維持 |
-| Terminal Xの投資事例 | 採用（2）→ 除外（-1） | 業界事例を抑える仮説 |
-| 生物データへのagents活用例 | 採用（4）→ 除外（1） | 技術的な実装・評価のある研究まで落とさないか追加の正例が必要 |
-| Copilot impact dashboard | all方式で採用 → 除外（-1） | 必須語だけを通す方式との差が見える |
-| OpenAI models on Google Cloud / low-resource programming languages | 除外（0）→ 採用（2） | 過剰除外の確認候補。後者は履歴で除外済みなので再評価フラグが必要 |
-| API提供地域の変更 | 除外（1）→ 採用（3） | policy系減点緩和の効果。説明文は合成であり実記事の採否を断定しない |
-| 曖昧な修正文 / SDKのinternal・examples削除 | 除外 → 除外 | F17第1段階で通常・比較案共通の分類器を改善。定型修正文はfix、内部・サンプル作業はchoreとして判定 |
-| Gemini SDKの機能追加・修正のみ | 現行は未設定 → 機能追加を採用、修正のみを除外 | 単純な合成例は扱える。Gemini APIへの通信はしていない |
+| 既存調整用（確定10、保留7） | 9/1 → 10/0 | 1 / 0 / 9 / 7 |
+| 既存検証用（確定11） | 11/0 → 11/0 | 0 / 0 / 11 / 0 |
+| 追加ニュース境界例（確定13） | 8/5 → 13/0 | 5 / 0 / 8 / 0 |
 
-**今回の判断**: この検証案は採用しない。例に合わせた語の加減点だけでは一般化を保証できず、研究の技術的知見や地域変更の重要性を評価する追加例が要る。Gemini SDKも追加候補のままとし、F12の実Atom解析成功に加えて、実リリースの形式差・プレリリース・重複を含む評価が済んでから採否を決める。dry-runは安全な比較手段を提供し、本番の選定改善・情報源変更を自動実行しない。
+既存調整用の採用・除外・集約後カード数は両設定とも9・6・9。ただし内訳は変わり、dashboardを除外し、未確定の地域アクセス例が採用側に動く。件数が同じことを無変更・品質同等の証拠にはしない。
+
+追加ニュース例は規則比較前に採否・根拠を記述し、本文・期待値を変更せず比較した。管理レポート2件が採用枠を占めて重要記事2件が上限超過になる例も含み、変更後は管理記事を除外して重要5件を採用する。上限を増やして解消したわけではない。追加例は今回のリスクに合わせて作った公開の合成例で、未知データへの一般化の証拠ではない。
 
 ## 期待値集計と品質チェック（F18）
 
@@ -131,12 +104,14 @@ F17の選定改善に向け、人が確定した期待値を通常の選定結�
 # 不一致があっても処理成功は0。各記事と設定別・split別の集計を表示
 python scripts/collect.py --dry-run --evaluate --reconsider-excluded
 python scripts/collect.py --dry-run --evaluate --reconsider-excluded \
-  --compare-config /tmp/ai-watch-candidate.yml
+  --config /tmp/ai-watch-before-news.yml --compare-config config/sources.yml
 
 # CIと同じ固定例のチェック（未解消の既知課題すべてを失敗扱いにはしない）
 python scripts/collect.py --dry-run --check-quality --reconsider-excluded
 python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
   --fixtures tests/fixtures/selection-validation.json
+python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
+  --fixtures tests/fixtures/selection-news-validation.json
 ```
 
 `--evaluate` / `--check-quality` はdry-run専用。後者は集計も行うので両方の指定は不要。比較時にチェックする対象は**candidate**、単体時は**current**。修復前のcurrentに固定例の不一致があっても、candidateで直っていればチェックは成功する。両設定の不一致は出力に残る。
@@ -181,14 +156,15 @@ python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
 
 | 評価セット | 確定 | 一致 | 不一致 | 要確認/未評価 | CI固定例 |
 | --- | ---: | ---: | ---: | --- | ---: |
-| 調整用 `selection-evaluation.json` | 10 | 9 | 1 | 未確定5、未設定フィード2 | 9 |
+| 調整用 `selection-evaluation.json` | 10 | 10 | 0 | 未確定5、未設定フィード2 | 10 |
 | 検証用 `selection-validation.json` | 11 | 11 | 0 | 0 | 9 |
+| ニュース境界例 `selection-news-validation.json` | 13 | 13 | 0 | 0 | 13 |
 
-両セットの品質チェックは成功する。F18導入時は調整用の不一致4件、検証用の不一致2件があったが、F17第1段階でリリース分類の3件/2件が改善した。残る調整用1件は今回対象外のimpact dashboard記事で、未解消として表示する。未確定5件と未設定フィード2件も引き続き分母外であり、0件の不一致へ見せかけない。
+3セットの固定品質チェックは成功する。F18導入時の調整用不一致4件のうち、F17第1段階でリリース分類3件、第2段階でdashboardの1件を改善した。検証用11例は第1段階後の結果を維持する。調整用のdashboardは期待値を変えずrequiredへ昇格。未確定5件と未設定フィード2件は依然として分母外であり、全記事の正しさを確認したことにはならない。
 
 新モデル、新API、モデル廃止、Codexの実用機能は固定正例として保護する。検証用には、説明文だけに技術的根拠のある例、技術的に有益な活用事例、新モデル提供を否定する文、修正専用リリースを含めた。公開CLIフラグの削除と公開API引数削除の本当の破壊的変更も保護し、内部・サンプル変更を除外する今後の修正で巻き添えにしない。
 
-上の比較案生成例に `--evaluate` を加えると、currentは一致9/不一致1/pending7、candidateは一致12/不一致0/pending5となる。記事単位ではdashboardの期待値が改善、悪化0、変化なし9、判断保留7。Gemini SDKの2例が未評価から一致に変わる分は、既存記事の改善と分ける。このニュース設定・情報源の変更案は本番へ採用していない。`min_score` を100にした試験用設定では新モデル等の固定正例が落ち、`--check-quality` は3、集計だけの `--evaluate` は0で終わる。
+`min_score` を100にした試験用設定では新モデル等の固定正例が落ち、`--check-quality` は3、集計だけの `--evaluate` は0で終わる。固定例を消す・期待値を現行へ寄せることで成功させず、不一致の原因を確認する。
 
 ### F17第1段階の変更前後と適用範囲
 
@@ -201,9 +177,17 @@ python scripts/collect.py --dry-run --check-quality --reconsider-excluded \
 
 調整用の定型修正文・CI削除・examples修正の3例は、期待する採否・件数を変えず `required` へ昇格した。定型修正文は実際の [Claude Code v2.1.303](https://github.com/anthropics/claude-code/releases/tag/v2.1.303)、作業文脈は [Anthropic SDK v2.3.0](https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0) でも確認し、公開フラグ削除は [Claude Code v2.1.300](https://github.com/anthropics/claude-code/releases/tag/v2.1.300) と対照した。短い抜粋と別表現の単体テスト、通常収集→集約→検索インデックスまでの統合テストで再発を保護する。検証用JSONは本文・期待値・requiredを含めて未変更で、分類器の修正後に回帰確認した。
 
-変更は今後の通常収集とdry-runで共通に使われる。既存のMarkdown正本・seen・インデックスの一括修正や再収集は行わない。既存の不採用履歴は自動で再評価されない。作業スコープ・言い回しに基づく機械分類なので、すべての利用者影響を理解できるとは主張しない。今回のニューススコア、情報源、未知内容の採用方針は変わらない。
+第1段階の変更は今後の通常収集とdry-runで共通に使われる。既存のMarkdown正本・seen・インデックスの一括修正や再収集は行わない。既存の不採用履歴は自動で再評価されない。作業スコープ・言い回しに基づく機械分類なので、すべての利用者影響を理解できるとは主張しない。第1段階ではニューススコアを変更せず、第2段階の変更は次節のとおり。情報源・未知のリリース内容の採用方針は維持する。
 
-F17で規則・分類器を調整するときは調整用で比較し、検証用は固定したまま最後の回帰確認に使う。両方とも公開された小規模な合成例で、隠れたテストや統計的な代表標本ではない。この件数をニュース全体の精度・採用率とは呼ばず、検証例を見て規則を調整した場合はその事実を明記し、新しい未調整例を加える。
+### F17第2段階の判断保留・運用への影響
+
+Terminal X、生物学のagents活用、OpenAI models on Google Cloud、low-resource programming languages、地域アクセス変更の5例はexpected:nullを維持した。今回も公式ニュース3フィードの取得がプロキシCONNECT 403で、実タイトル・説明文を追加確認できなかった。投資・研究の一括除外や、特定クラウド名だけでの加点は行わない。地域アクセス例は加点で採用に動いたが、正解が確定したとは集計しない。
+
+追加例では、具体的な推論APIのクラウド提供、APIエンドポイントが追加される地域アクセス、Copilot data residency、モデル廃止・料金・制限、技術的な活用事例と再現可能な研究評価を保護する。単にクラウド名・言語名・地域があるだけの元の未確定例と区別する。APIの語による報告記事の減点除外も機械的な手掛かりで、すべてのAPI記事が有用だと保証するものではない。
+
+今後の収集では、Changelogの新たな不採用はadoption_reporting等の理由とfirst_seenをseenへ残すため、再実行で自動復活しない。過去のseen・記事はそのままで、除外再評価は必要な場合だけ明示的に行う。上限超過は従来どおり履歴へ除外保存せず、次回の候補に残す。通常収集の統合テストで、重要5記事の保存、管理記事の除外履歴、既存履歴の保持、7件中5件→次回残り2件の採用を確認する。
+
+今後も調整用で比較し、既存検証用は固定したまま最後の回帰確認に使う。公開された小規模合成例は統計的な代表標本ではなく、件数をニュース全体の精度・採用率とは呼ばない。検証例を見て調整した場合はその事実を明記し、新しい未調整例を加える。
 
 ## 検証範囲
 
@@ -213,4 +197,4 @@ F17で規則・分類器を調整するときは調整用で比較し、検証�
 python -m unittest discover -s tests -v
 ```
 
-テストActionsは上の両セットの品質チェックを実行する。収集Actions、GitHub PagesのUI、Markdown保存形式、検索インデックス、本番の選定規則・情報源・Brave上限には変更がない。
+テストActionsは3セットの品質チェックを実行する。本番のニュース選定条件は今回変更するが、収集Actions、GitHub PagesのUI、Markdown保存形式、保存済み検索インデックス、リリース分類、情報源・Brave上限には変更がない。
