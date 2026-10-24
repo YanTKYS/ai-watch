@@ -1,5 +1,5 @@
 {
-  "description": "F12-inspired synthetic evaluation. Titles resemble review cases; dates, URLs, summaries and release bodies are synthetic, not archived source payloads. Expectations express review intent, not assertions that current rules satisfy it.",
+  "description": "F12-inspired synthetic tuning cases, not archived feed payloads. Structured expectations are explicit review decisions; unresolved cases remain null. Known quality mismatches are not production rule changes.",
   "today": "2026-10-24",
   "feeds": {
     "https://openai.com/news/rss.xml": [
@@ -118,22 +118,183 @@
     }
   },
   "expectations": {
-    "https://evaluation.example.org/new-model": "keep",
-    "https://evaluation.example.org/decisions": "keep",
-    "https://evaluation.example.org/terminal": "review",
-    "https://evaluation.example.org/biology": "review",
-    "https://evaluation.example.org/cloud": "check",
-    "https://evaluation.example.org/languages": "check",
-    "https://evaluation.example.org/region": "check",
-    "https://evaluation.example.org/gemini-model": "keep",
-    "https://evaluation.example.org/deprecation": "keep",
-    "https://evaluation.example.org/dashboard": "review",
-    "https://evaluation.example.org/claude-v1": "review",
-    "https://evaluation.example.org/claude-v2": "keep",
-    "https://evaluation.example.org/codex": "keep",
-    "https://evaluation.example.org/sdk-ci": "review",
-    "https://evaluation.example.org/sdk-example": "review",
-    "https://evaluation.example.org/gemini-sdk-v1": "keep",
-    "https://evaluation.example.org/gemini-sdk-v2": "review"
+    "https://evaluation.example.org/new-model": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "AIモデル"
+      },
+      "reason": "新モデルの提供開始は重要な技術更新。",
+      "required": true
+    },
+    "https://evaluation.example.org/decisions": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "新しい開発者向けAPIの発表。",
+      "required": true
+    },
+    "https://evaluation.example.org/terminal": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": null,
+      "reason": "投資の活用成果だけか、汎用的な技術知見があるかはこの見出しだけでは未確定。",
+      "required": false
+    },
+    "https://evaluation.example.org/biology": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": null,
+      "reason": "生物学の応用と再利用できるagentsの実装知見をこの情報だけでは区別できない。",
+      "required": false
+    },
+    "https://evaluation.example.org/cloud": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": null,
+      "reason": "提供先変更の実際の利用者影響を確認してから期待値を確定する。",
+      "required": false
+    },
+    "https://evaluation.example.org/languages": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": null,
+      "reason": "コーディング支援の具体的な知見の有無を追加確認する。",
+      "required": false
+    },
+    "https://evaluation.example.org/region": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "tuning",
+      "expected": null,
+      "reason": "提供地域・利用条件の重要性は合成説明文だけで確定しない。",
+      "required": false
+    },
+    "https://evaluation.example.org/gemini-model": {
+      "feed_url": "https://deepmind.google/blog/rss.xml",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "AIモデル"
+      },
+      "reason": "新モデル発表を落とさない。",
+      "required": true
+    },
+    "https://evaluation.example.org/deprecation": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "利用中モデルの廃止は移行が必要な重要情報。",
+      "required": true
+    },
+    "https://evaluation.example.org/dashboard": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "tuning",
+      "expected": {
+        "status": "rejected"
+      },
+      "reason": "この例は組織の業界比較だけで、開発者向け機能・APIの更新ではないと確定。",
+      "required": false
+    },
+    "https://evaluation.example.org/claude-v1": {
+      "feed_url": "https://github.com/anthropics/claude-code/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "rejected",
+        "release_counts": {
+          "fix": 1,
+          "change": 0,
+          "breaking": 0,
+          "other": 0
+        }
+      },
+      "reason": "合成本文は定型的な修正文のみで具体的な新機能はない。unknown採用は既知の不一致として残す。",
+      "required": false
+    },
+    "https://evaluation.example.org/claude-v2": {
+      "feed_url": "https://github.com/anthropics/claude-code/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "AIコーディング",
+        "release_counts": {
+          "feature": 1,
+          "breaking": 0
+        }
+      },
+      "reason": "利用者が設定できるsandbox機能の追加。",
+      "required": true
+    },
+    "https://evaluation.example.org/codex": {
+      "feed_url": "https://github.com/openai/codex/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "AIコーディング",
+        "release_counts": {
+          "feature": 1
+        }
+      },
+      "reason": "実際に使えるプロンプト保存機能の追加。",
+      "required": true
+    },
+    "https://evaluation.example.org/sdk-ci": {
+      "feed_url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "rejected",
+        "release_counts": {
+          "chore": 1,
+          "breaking": 0
+        }
+      },
+      "reason": "CIのpreviewアップロード削除はSDK利用者の破壊的変更ではない。",
+      "required": false
+    },
+    "https://evaluation.example.org/sdk-example": {
+      "feed_url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "rejected",
+        "release_counts": {
+          "chore": 1,
+          "breaking": 0
+        }
+      },
+      "reason": "サンプルのawait修正だけで、公開APIの廃止や新機能ではない。",
+      "required": false
+    },
+    "https://evaluation.example.org/gemini-sdk-v1": {
+      "feed_url": "https://github.com/googleapis/python-genai/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限",
+        "release_counts": {
+          "feature": 1
+        }
+      },
+      "reason": "パラメータ追加はAPI利用者向けの新機能。未設定フィードなら評価対象外。",
+      "required": false
+    },
+    "https://evaluation.example.org/gemini-sdk-v2": {
+      "feed_url": "https://github.com/googleapis/python-genai/releases.atom",
+      "split": "tuning",
+      "expected": {
+        "status": "rejected",
+        "release_counts": {
+          "fix": 1,
+          "breaking": 0
+        }
+      },
+      "reason": "この合成例は修正のみ。未設定フィードなら評価対象外。",
+      "required": false
+    }
   }
 }

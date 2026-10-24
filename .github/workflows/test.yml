@@ -24,3 +24,7 @@ jobs:
           node-version: "22"
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
+      - name: Check fixed selection quality examples
+        run: |
+          python scripts/collect.py --dry-run --check-quality --reconsider-excluded
+          python scripts/collect.py --dry-run --check-quality --reconsider-excluded --fixtures tests/fixtures/selection-validation.json
