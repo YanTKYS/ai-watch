@@ -723,7 +723,7 @@ class RepoLayout(unittest.TestCase):
     def test_no_weekly_monthly_or_external_ai_calls(self):
         names = {p.name for p in (ROOT / "scripts").glob("*.py")}
         self.assertEqual(names, {"collect.py", "feeds.py", "brave.py", "common.py", "search_index.py", "selection.py",
-                                 "source_report.py"})
+                                 "source_report.py", "selection_preview.py"})
         code = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "scripts").glob("*.py"))
         for needle in ("typesafe.ai", "generativelanguage", "JEV_API_KEY", "GEMINI_API_KEY"):
             self.assertNotIn(needle, code)

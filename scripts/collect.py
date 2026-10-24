@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Callable
 from collections import Counter
 import os
 import re
@@ -78,6 +79,19 @@ class Stats:
     rejected: Counter = field(default_factory=Counter)  # 選定で採用しなかった理由 -> 件数
     new_items: int = 0
     same_title: int = 0
+
+
+@dataclass
+class Decision:
+    feed: str
+    url: str
+    title: str
+    status: str
+    category: str
+    reason: str
+    score: int | None = None  # score方式以外の内部ソート値は点数として表示しない
+    detail: str = ""
+    grouped_into: str = ""
 
 
 # ---- 設定 ---------------------------------------------------------------
@@ -228,7 +242,8 @@ def _item(config: Config, feed: feeds.Feed, e: feeds.Entry) -> Item:
                 feed=feed.name, published=e.published)
 
 
-def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tuple[list[Item], dict[str, str]]:
+def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry],
+           decisions: dict[tuple[str, str], Decision] | None = None) -> tuple[list[Item], dict[str, str]]:
     """フィードの設定（select）に従って採用する記事を選ぶ。戻り値は (採用, 不採用URL -> 理由)。
 
     判定の内訳はActionsログに1記事1行で出す（公式フィードのタイトルのみ。本文は出さない）。
@@ -236,15 +251,28 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
     sel = config.selection
     adopted: list[tuple[int, feeds.Entry, str]] = []  # (点数, 記事, 備考)
     rejected: dict[str, str] = {}
+    records = {e.url: Decision(feed.name, e.url, e.title, "adopted", _item(config, feed, e).category, feed.select)
+               for e in entries} if decisions is not None else {}
+
+    def describe(e: feeds.Entry, detail: str, points: int | None = None, reason: str = "") -> None:
+        if decisions is not None:
+            records[e.url].detail = detail
+            records[e.url].score = points
+            if reason:
+                records[e.url].reason = reason
 
     def reject(e: feeds.Entry, reason: str, detail: str) -> None:
         rejected[e.url] = reason
+        if decisions is not None:
+            records[e.url].status = "rejected"
+            records[e.url].reason = reason
         print(f"  - rejected [{reason}] {detail}: {e.title}")
 
     for e in entries:
         if feed.select == "score":
             points, matched = selection.score(sel, e.title, e.summary, e.categories)
             detail = f"score={points} ({selection.describe(matched)})"
+            describe(e, detail, points)
             if points >= sel.min_score:
                 adopted.append((points, e, detail))
             else:
@@ -253,11 +281,13 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
             counts = selection.release_counts(e.content)
             verdict = selection.release_verdict(counts)
             detail = f"{verdict} ({selection.format_counts(counts)}, その他 {counts['other']})"
+            describe(e, detail, reason=verdict)
             if verdict == "minor":
                 reject(e, "fixes_only", detail)  # 修正・雑務のみのリリース
             else:
                 adopted.append((1, e, detail))
         else:
+            describe(e, "select=all")
             adopted.append((0, e, "select=all"))
 
     adopted.sort(key=lambda x: (x[0], x[1].published), reverse=True)
@@ -267,6 +297,8 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
         adopted = adopted[:sel.max_new_per_feed]
     for _, e, detail in adopted:
         print(f"  + adopted {detail}: {e.title}")
+    if decisions is not None:
+        decisions.update({(feed.url, url): record for url, record in records.items()})
     if feed.select != "release_notes" or not adopted:
         return [_item(config, feed, e) for _, e, _ in adopted], rejected
 
@@ -290,26 +322,36 @@ def choose(config: Config, feed: feeds.Feed, entries: list[feeds.Entry]) -> tupl
     if len(releases) > 1:  # まとめた各リリースのリリースノートにもアクセスできるようにする
         item.releases = [(e.title, e.url) for e in releases]
     item.grouped_urls = [e.url for e in releases[1:]]
+    if decisions is not None:
+        for e in releases:
+            records[e.url].category = item.category
+            records[e.url].grouped_into = item.url if e.url != item.url else ""
     return [item], rejected
 
 
 def collect_feeds(config: Config, seen: dict[str, dict], today: str,
-                  reconsider_excluded: bool = False) -> tuple[list[Item], dict[str, str], Stats]:
+                  reconsider_excluded: bool = False, *,
+                  entry_source: Callable[[str], list[feeds.Entry]] | None = None,
+                  decisions: dict[tuple[str, str], Decision] | None = None) -> tuple[list[Item], dict[str, str], Stats]:
     """戻り値は (採用した記事, 不採用URL -> 理由, 統計)。不採用URLは seen.json に記録して復活させない。
 
     reconsider_excluded: 選定ルールを変えたときに、seen.json で不採用（excluded）の記事を、
     フィードにまだ載っている（max_age_days 以内の）ものに限って現在の設定で再評価する。
+    entry_source: 指定時はHTTP取得の代わりに解析済みの合成記事を読む。decisionsは評価用の判断記録。
     """
     stats = Stats(feeds=len(config.feeds))
     new_items: dict[str, Item] = {}
     rejected: dict[str, str] = {}
     for feed in config.feeds:
-        stats.feed_requests += 1
         info, body = feeds.FetchInfo(), b""
         try:
-            body = feeds.fetch(feed.url, info)
-            body = feeds.decode_body(body, info)  # 展開に失敗した場合、診断には受信データの先頭形式を出す
-            entries = feeds.parse_feed(body)
+            if entry_source is None:
+                stats.feed_requests += 1
+                body = feeds.fetch(feed.url, info)
+                body = feeds.decode_body(body, info)  # 展開に失敗した場合、診断には受信データの先頭形式を出す
+                entries = feeds.parse_feed(body)
+            else:
+                entries = entry_source(feed.url)
         except Exception as e:  # 1件の失敗で全体を止めない。本文全体は出力せず、切り分け用の診断情報だけを出す。
             stats.failed_feeds.append(feed.name)
             print(f"::warning::feed failed: feed='{feed.name}' error={feeds.describe_error(e)}")
@@ -321,16 +363,29 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str,
         stats.entries += len(entries)
         selected = feeds.select_entries(feed, entries, today, config.max_age_days)
         stats.skipped_old_or_excluded += len(entries) - len(selected)
+
+        def skipped(e: feeds.Entry, reason: str) -> None:
+            if decisions is not None:
+                decisions.setdefault((feed.url, e.url), Decision(
+                    feed.name, e.url, e.title, "skipped", _item(config, feed, e).category, reason))
+
+        if decisions is not None:
+            selected_ids = {id(e) for e in selected}
+            for e in entries:
+                if id(e) not in selected_ids:
+                    skipped(e, "age/title/max_items")
         candidates = []
         for e in selected:
             if feed.require_terms and not matches_any(e.title, feed.require_terms):
                 stats.skipped_unmatched += 1  # 生成AIと関係の薄い記事（GitHub Changelog など）
+                skipped(e, "require_keywords")
                 continue
             known = seen.get(e.url)
             if reconsider_excluded and known is not None and "excluded" in known:
                 known = None
             if known is not None or e.url in new_items or e.url in rejected:
                 stats.duplicate_items += 1
+                skipped(e, "seen:excluded" if known and "excluded" in known else "seen/duplicate")
                 continue
             candidates.append(e)
         if not candidates:
@@ -338,7 +393,7 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str,
         cats = Counter(c for e in candidates for c in e.categories)
         print(f"selection: feed='{feed.name}' select={feed.select} candidates={len(candidates)}"
               + (f" categories={dict(cats.most_common(10))}" if cats else ""))
-        chosen, feed_rejected = choose(config, feed, candidates)
+        chosen, feed_rejected = choose(config, feed, candidates, decisions=decisions)
         for item in chosen:
             new_items[item.url] = item
         rejected.update(feed_rejected)
@@ -471,8 +526,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-brave", action="store_true", help="Brave検索を行わない（公式フィードのみ）")
     parser.add_argument("--reconsider-excluded", action="store_true",
                         help="不採用として記録済みの記事のうち、フィードにまだ載っているものを現在の設定で再評価する")
+    parser.add_argument("--config", type=Path, default=ROOT / "config/sources.yml", help="収集・評価に使う設定")
+    parser.add_argument("--dry-run", action="store_true", help="合成フィクスチャを通信・書き込みなしで評価")
+    parser.add_argument("--compare-config", type=Path, help="比較対象の完全な設定ファイル（dry-run専用）")
+    parser.add_argument("--fixtures", type=Path, help="評価用JSON（dry-run専用、省略時は同梱のF12評価データ）")
+    parser.add_argument("--seen", type=Path, help="評価に使う採否履歴（dry-run専用、省略時はフィクスチャ内の履歴）")
     args = parser.parse_args(argv)
-    return run(skip_brave=args.skip_brave, reconsider_excluded=args.reconsider_excluded)
+    if not args.dry_run and (args.compare_config or args.fixtures or args.seen):
+        parser.error("--compare-config / --fixtures / --seen require --dry-run")
+    if args.dry_run:
+        from selection_preview import preview
+        return preview(args.config, args.compare_config,
+                       args.fixtures or ROOT / "tests/fixtures/selection-evaluation.json",
+                       args.seen, args.reconsider_excluded)
+    return run(config_path=args.config, skip_brave=args.skip_brave, reconsider_excluded=args.reconsider_excluded)
 
 
 if __name__ == "__main__":
