@@ -57,6 +57,23 @@ class IndexBase(unittest.TestCase):
 
 
 class BuildIndex(IndexBase):
+    def test_release_details_optional_fields_and_invalid_links(self):
+        text = ('## 2026-10-24\n### AIコーディング\n#### Grouped\n'
+                '- URL: https://a.example.com/group\n- Notes: 新機能 2 / 修正 1\n'
+                '- Highlight: Added a command\n'
+                '- Release: v1.2 https://a.example.com/v1.2\n'
+                '- Release: version 1.1 https://a.example.com/v1.1\n'
+                '- Release: broken\n- Release: bad javascript:alert(1)\n'
+                '- Release: bad data:text/html,bad\n- Release: bad https://\n'
+                '#### Legacy\n- URL: https://a.example.com/legacy\n')
+        grouped, legacy = search_index.parse_log(text)
+        self.assertEqual(grouped['notes'], '新機能 2 / 修正 1')
+        self.assertEqual(grouped['highlights'], ['Added a command'])
+        self.assertEqual(grouped['releases'], [{'label': 'v1.2', 'url': 'https://a.example.com/v1.2'},
+                                              {'label': 'version 1.1', 'url': 'https://a.example.com/v1.1'}])
+        for field in ('notes', 'highlights', 'releases'):
+            self.assertNotIn(field, legacy)
+
     def test_multiple_months_and_years_newest_first(self):
         self.write("2025-12", [("2025-12-31", "AIモデル", "年末の記事", "https://a.example.com/1", "2025-12-31")])
         self.write("2026-01", [("2026-01-01", "AIモデル", "元日の記事", "https://a.example.com/2", "2026-01-01"),
@@ -219,28 +236,113 @@ class ClientSearch(unittest.TestCase):
         ])
 
     def test_release_fields_and_search_by_highlight(self):
-        log = ("## 2026-10-18\n\n### AIコーディング\n\n#### Claude Code v2.1.302（v2.1.301 以降の 2 リリース）\n\n"
+        log = ("## 2026-10-18\n\n### AIコーディング\n\n#### Claude Code v2.1.302（v2.1.299 以降の 4 リリース）\n\n"
                "- URL: https://github.com/a/v2.1.302\n- Feed: Claude Code Releases\n- Notes: 新機能 2 / 修正 3\n"
                "- Highlight: 新機能（v2.1.302）: Added CLAUDE_CODE_AUTO_MODE_MODEL\n"
                "- Highlight: 新機能（v2.1.301）: Added the % motion to vim mode\n"
                "- Release: v2.1.302 https://github.com/a/v2.1.302\n- Release: v2.1.301 https://github.com/a/v2.1.301\n"
+               "- Release: v2.1.300 https://github.com/a/v2.1.300\n"
+               "- Release: v2.1.299 https://github.com/a/v2.1.299\n"
                "- Release: broken\n- Published: 2026-10-17\n- Retrieved: 2026-10-18\n")
         days = self.node("console.log(JSON.stringify(p.parseLog(process.argv[1])));", log)
         item = days[0]["categories"][0]["items"][0]
         self.assertEqual(item["highlights"], ["新機能（v2.1.302）: Added CLAUDE_CODE_AUTO_MODE_MODEL",
                                               "新機能（v2.1.301）: Added the % motion to vim mode"])
         self.assertEqual(item["releases"], [{"label": "v2.1.302", "url": "https://github.com/a/v2.1.302"},
-                                            {"label": "v2.1.301", "url": "https://github.com/a/v2.1.301"}])
+                                            {"label": "v2.1.301", "url": "https://github.com/a/v2.1.301"},
+                                            {"label": "v2.1.300", "url": "https://github.com/a/v2.1.300"},
+                                            {"label": "v2.1.299", "url": "https://github.com/a/v2.1.299"}])
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "2026" / "2026-10.md"
             path.parent.mkdir()
             path.write_text("# 2026年10月\n\n" + log, encoding="utf-8")
             index = search_index.build_index(Path(d))
         self.assertEqual(index[0]["highlights"], item["highlights"])  # 抜粋も検索対象
+        self.assertEqual(index[0]["notes"], item["notes"])
+        self.assertEqual(index[0]["releases"], item["releases"])
+        entry = self.node("console.log(JSON.stringify(p.buildSearchEntries(JSON.parse(process.argv[1]))[0]));",
+                          json.dumps(index, ensure_ascii=False))
+        for field in ("notes", "highlights", "releases"):
+            self.assertEqual(entry[field], item[field])
         got = self.node("const e = p.buildSearchEntries(JSON.parse(process.argv[1]));"
-                        "console.log(JSON.stringify(['vim motion', 'AUTO_MODE', 'vim 料金'].map(q => p.searchArticles(e, q).length)));",
+                        "console.log(JSON.stringify(['vim motion', 'AUTO_MODE', 'vim 料金', 'Ｖ２.１.３００'].map(q => p.searchArticles(e, q).length)));",
                         json.dumps(index, ensure_ascii=False))
-        self.assertEqual(got, [1, 1, 0])
+        self.assertEqual(got, [1, 1, 0, 1])
+
+    def test_release_metadata_old_indexes_and_malformed_values(self):
+        data = [{"title": "Group", "url": "https://a.example/group", "notes": 123,
+                 "releases": [None, 123, "bad", {}, {"label": 42, "url": "https://a.example/numeric"},
+                              {"label": "bad-js", "url": "javascript:alert(1)"},
+                              {"label": "bad-data", "url": "data:text/html,x"},
+                              {"label": "bad-host", "url": "https://"},
+                              {"label": "bad-type", "url": []},
+                              {"label": "", "url": "https://a.example/empty"},
+                              {"label": "v1.0", "url": "https://a.example/v1.0"}]},
+                {"title": "Legacy", "url": "https://a.example/legacy"},
+                {"title": "Wrong types", "url": "https://a.example/types", "releases": {}, "highlights": "bad"}]
+        got = self.node("console.log(JSON.stringify(p.buildSearchEntries(JSON.parse(process.argv[1]))));", json.dumps(data))
+        self.assertEqual(got[0]["releases"], [{"label": "v1.0", "url": "https://a.example/v1.0"}])
+        for entry in got:
+            self.assertEqual(entry["notes"], "")
+        for entry in got[1:]:
+            self.assertEqual(entry["releases"], [])
+            self.assertEqual(entry["highlights"], [])
+        self.assertNotIn("bad-js", got[0]["haystack"])
+
+    def test_daily_and_search_cards_keep_release_details_as_text(self):
+        # ブート処理だけ除外して実際のrenderCardを最小DOM上で実行。新規依存は不要。
+        got = self.node(r"""
+const fs = require('node:fs');
+const vm = require('node:vm');
+class Node {
+  constructor(tag, text = '') { this.tag = tag; this.text = text; this.childNodes = []; }
+  set textContent(value) { this.text = String(value); this.childNodes = []; }
+  get textContent() { return this.text + this.childNodes.map(n => n.textContent).join(''); }
+  appendChild(node) { this.childNodes.push(node); return node; }
+}
+const context = vm.createContext({
+  URL, URLSearchParams, location: { search: '' },
+  document: { getElementById: () => new Node('div'), createElement: tag => new Node(tag),
+              createTextNode: text => new Node('#text', text) },
+});
+const source = fs.readFileSync(process.argv[1], 'utf8').replace(/\ninit\(\);\s*$/, '');
+vm.runInContext(fs.readFileSync(process.argv[2], 'utf8') + '\n' + source, context);
+context.log = process.argv[3];
+context.index = JSON.parse(process.argv[4]);
+const result = vm.runInContext(`
+  const daily = parseLog(log)[0].categories[0].items[0];
+  const searched = buildSearchEntries(index)[0];
+  function details(card) {
+    const walk = node => [node, ...node.childNodes.flatMap(walk)];
+    const nodes = walk(card);
+    return { notes: nodes.filter(n => n.className === 'notes').map(n => n.textContent),
+             highlights: nodes.filter(n => n.tag === 'li').map(n => n.textContent),
+             links: nodes.filter(n => n.tag === 'a').map(n => [n.textContent, n.href, n.target, n.rel]),
+             tags: nodes.map(n => n.tag) };
+  }
+  [details(renderCard(daily, false)), details(renderCard(searched, true)),
+   details(renderCard(buildSearchEntries([{title:'Legacy',url:'https://a.example/old'}])[0], true))];
+`, context);
+console.log(JSON.stringify(result));
+""", str(ROOT / 'app.js'), str(ROOT / 'parser.js'),
+            '## 2026-10-24\n### Coding\n#### <img src=x onerror=alert(1)>\n'
+            '- URL: https://a.example/group\n- Notes: <script>alert(1)</script>\n'
+            '- Highlight: <b>Added text</b>\n'
+            '- Release: <img> https://a.example/v1\n- Release: unsafe javascript:alert(1)\n',
+            json.dumps(search_index.parse_log(
+                '## 2026-10-24\n### Coding\n#### <img src=x onerror=alert(1)>\n'
+                '- URL: https://a.example/group\n- Notes: <script>alert(1)</script>\n'
+                '- Highlight: <b>Added text</b>\n'
+                '- Release: <img> https://a.example/v1\n- Release: unsafe javascript:alert(1)\n')))
+        for field in ('notes', 'highlights', 'links'):
+            self.assertEqual(got[0][field], got[1][field])
+        self.assertIn('リリースノートの項目数: <script>alert(1)</script>', got[1]['notes'])
+        self.assertEqual(got[1]['highlights'], ['<b>Added text</b>'])
+        self.assertIn(['<img>', 'https://a.example/v1', '_blank', 'noopener noreferrer'], got[1]['links'])
+        self.assertTrue(all(link[1].startswith('https://') for link in got[1]['links']))
+        self.assertFalse({'img', 'script', 'b'} & set(got[1]['tags']))
+        self.assertEqual(got[2]['notes'], [])
+        self.assertEqual(got[2]['highlights'], [])
 
     def test_parse_log_matches_collect_output(self):
         text = (ROOT / "samples" / "logs" / "2026" / "2026-10.md").read_text(encoding="utf-8")

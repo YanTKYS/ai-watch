@@ -123,6 +123,7 @@ URLが異なる同一話題は、まず実際の収集状況を確認するた�
 `index.html` / `parser.js` / `app.js` / `style.css` / `favicon.svg`。日付別・カテゴリ別のカード表示、月の切り替え、
 新しい順／古い順、全期間横断検索（タイトル・カテゴリ・情報源・配信元。部分一致・空白区切りのAND・50件ずつ追加表示）、
 ライト／ダークモードに対応しています。検索は `data/search-index.json` をブラウザで読むだけで、外部APIは使いません。
+検索結果にもリリースの項目数・主な変更・各バージョンへのリンクを表示し、抜粋にない個別バージョン名でも検索できます。
 
 - 公開URL例: `https://yantkys.github.io/ai-watch/`
 - サンプルデータ（架空の記事、`samples/`）: `https://yantkys.github.io/ai-watch/?sample`

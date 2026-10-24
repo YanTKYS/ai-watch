@@ -7,6 +7,7 @@
 - 内容が変わらなければ書き込まない（collect.yml で変更があるときだけcommitされる）。
 - collect.yml では収集の後の別ステップで実行し、失敗しても日刊ログのcommitは妨げない。
 - ログには公式フィードのタイトル・URL・公開日などだけが入る（Brave検索結果は保存しないため含まれない）。
+- リリースのnotes・highlights・releasesは、存在する場合だけ表示・検索用に引き継ぐ。
 """
 from __future__ import annotations
 
@@ -57,6 +58,10 @@ def parse_log(text: str) -> list[dict]:
                        "published": cur["published"], "retrieved": retrieved, "category": category}
             if cur["highlights"]:  # リリースの抜粋（公式リリースノートの記載）も検索対象にする
                 article["highlights"] = cur["highlights"]
+            if cur["notes"]:
+                article["notes"] = cur["notes"]
+            if cur["releases"]:
+                article["releases"] = cur["releases"]
             articles.append(article)
 
     for raw in text.split("\n"):
@@ -66,7 +71,7 @@ def parse_log(text: str) -> list[dict]:
         if line.startswith("#### "):
             flush()
             cur = {"title": line[5:].strip(), "url": "", "source": "", "feed": "", "published": "", "retrieved": "",
-                   "highlights": []}
+                   "highlights": [], "notes": "", "releases": []}
         elif line.startswith("#"):
             flush()
             cur = None
@@ -77,10 +82,14 @@ def parse_log(text: str) -> list[dict]:
         elif cur is not None:
             m = _FIELD_RE.match(line)
             key = m.group(1).lower() if m else None
-            if key in ("url", "source", "feed", "published", "retrieved"):
+            if key in ("url", "source", "feed", "published", "retrieved", "notes"):
                 cur[key] = m.group(2).strip()
             elif key == "highlight":
                 cur["highlights"].append(m.group(2).strip())
+            elif key == "release":
+                release = re.fullmatch(r"(.*\S)\s+(\S+)", m.group(2).strip())
+                if release and (url := safe_url(release.group(2))):
+                    cur["releases"].append({"label": release.group(1), "url": url})
     flush()
     return articles
 
