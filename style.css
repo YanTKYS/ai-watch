@@ -36,6 +36,9 @@ body {
   overflow-wrap: anywhere;
 }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+.skip-link { position: absolute; top: 8px; left: 8px; z-index: 1; padding: 10px 16px; background: var(--surface); color: var(--accent); transform: translateY(-160%); }
+.skip-link:focus { transform: none; }
+.link-hint { margin: 0 0 12px; color: var(--muted); font-size: .875rem; }
 .site-header {
   background: var(--bg);
   border-bottom: 1px solid var(--subtle-border);
@@ -88,6 +91,7 @@ body {
 .search-box button:not(:disabled):hover, .more:hover, #load-retry:hover { background: var(--band); }
 #load-retry { margin-bottom: 20px; }
 #load-retry[hidden] { display: none; }
+#load-retry[aria-disabled="true"] { color: var(--muted); cursor: wait; }
 .search-summary { margin: 12px 0 20px; color: var(--muted); font-size: .94rem; }
 .search-empty { margin: 0; padding: 16px 0; }
 .more { display: block; margin: 24px auto 0; }
@@ -153,7 +157,7 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
 }
 .day[open] > .day-summary::before { transform: rotate(45deg); }
 .day-summary:hover { background: var(--band); }
-.day-title { min-width: 0; }
+.day-title { display: flex; align-items: center; gap: 12px; min-width: 0; margin: 0; font: inherit; }
 .category { margin: 10px 0 24px; }
 .category-title {
   margin: 0 0 12px;
@@ -239,6 +243,11 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
+#main-content:focus, #view-heading:focus, .card-title:focus, #status:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+#main-content:focus { outline-offset: -3px; }
 @media (max-width: 480px) {
   .wrap { padding: 0 16px; }
   main.wrap { padding-top: 24px; }
