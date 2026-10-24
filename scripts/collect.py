@@ -531,14 +531,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--compare-config", type=Path, help="比較対象の完全な設定ファイル（dry-run専用）")
     parser.add_argument("--fixtures", type=Path, help="評価用JSON（dry-run専用、省略時は同梱のF12評価データ）")
     parser.add_argument("--seen", type=Path, help="評価に使う採否履歴（dry-run専用、省略時はフィクスチャ内の履歴）")
+    parser.add_argument("--evaluate", action="store_true", help="明示的な期待値との一致・不一致・要確認を集計（dry-run専用）")
+    parser.add_argument("--check-quality", action="store_true", help="期待値集計に加え、固定した重要例の不一致で終了コード3（dry-run専用）")
     args = parser.parse_args(argv)
-    if not args.dry_run and (args.compare_config or args.fixtures or args.seen):
-        parser.error("--compare-config / --fixtures / --seen require --dry-run")
+    if not args.dry_run and (args.compare_config or args.fixtures or args.seen or args.evaluate or args.check_quality):
+        parser.error("--compare-config / --fixtures / --seen / --evaluate / --check-quality require --dry-run")
     if args.dry_run:
         from selection_preview import preview
         return preview(args.config, args.compare_config,
                        args.fixtures or ROOT / "tests/fixtures/selection-evaluation.json",
-                       args.seen, args.reconsider_excluded)
+                       args.seen, args.reconsider_excluded, evaluate=args.evaluate, check_quality=args.check_quality)
     return run(config_path=args.config, skip_brave=args.skip_brave, reconsider_excluded=args.reconsider_excluded)
 
 

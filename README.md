@@ -73,6 +73,7 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 
 選定ルールを変える前に `python scripts/collect.py --dry-run` で、同梱の合成データを通信・書き込みなしで評価できます。
 `--compare-config` と `--reconsider-excluded` による比較例・結果は [選定ルールのdry-run](docs/selection-dry-run.md) を参照してください。
+`--evaluate` で確定した期待値との一致・不一致・要確認を集計し、`--check-quality` では固定した重要例の不一致を終了コード3で検出できます。
 
 情報源の役割・収集範囲・記事の有用性・追加候補は [情報源の品質評価](docs/source-quality.md)、
 設定と保存実績の一覧は [情報源一覧](docs/source-inventory.md) を参照してください。
