@@ -296,6 +296,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 class Node {
   constructor(tag, text = '') { this.tag = tag; this.text = text; this.childNodes = []; }
+  setAttribute(key, value) { this[key] = value; }
   set textContent(value) { this.text = String(value); this.childNodes = []; }
   get textContent() { return this.text + this.childNodes.map(n => n.textContent).join(''); }
   appendChild(node) { this.childNodes.push(node); return node; }

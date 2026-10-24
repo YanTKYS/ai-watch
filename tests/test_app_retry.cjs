@@ -1,65 +1,8 @@
 // 実app.jsを通信・タイマー待ちなしで実行し、遅延応答の順番も制御する。
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const vm = require('node:vm');
-const path = require('node:path');
-
-class Element {
-  constructor(tag, text = '') {
-    this.tag = tag; this.text = text; this.childNodes = []; this.listeners = {};
-    this.hidden = false; this.disabled = false; this.selectedValue = null;
-  }
-  set textContent(value) { this.text = String(value); this.childNodes = []; }
-  get textContent() { return this.text + this.childNodes.map(n => n.textContent).join(''); }
-  get options() { return this.childNodes; }
-  get value() { return this.selectedValue ?? (this.tag === 'select' ? this.options[0]?.value ?? '' : ''); }
-  set value(value) { this.selectedValue = value; }
-  appendChild(node) {
-    this.childNodes.push(...(node.tag === '#fragment' ? node.childNodes : [node]));
-    return node;
-  }
-  replaceChildren(...nodes) { this.childNodes = []; nodes.forEach(n => this.appendChild(n)); }
-  addEventListener(name, fn) { (this.listeners[name] ??= []).push(fn); }
-  emit(name, event = {}) { for (const fn of this.listeners[name] ?? []) fn(event); }
-  focus() {}
-}
-
-function harness() {
-  const nodes = {};
-  const requests = [];
-  const context = vm.createContext({
-    URL, URLSearchParams, location: { search: '' },
-    // 検索はEnterで確定し、debounceの実時間待ちは不要。
-    setTimeout: () => 1, clearTimeout: () => {},
-    document: {
-      getElementById: id => nodes[id] ??= new Element(id.endsWith('-select') ? 'select' : 'div'),
-      createElement: tag => new Element(tag), createTextNode: text => new Element('#text', text),
-      createDocumentFragment: () => new Element('#fragment'),
-    },
-    fetch: url => new Promise((resolve, reject) => requests.push({ url, resolve, reject })),
-  });
-  const root = path.join(__dirname, '..');
-  vm.runInContext(fs.readFileSync(path.join(root, 'parser.js'), 'utf8') + '\n' +
-                  fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
-  return {
-    nodes, requests, get: expression => vm.runInContext(expression, context),
-    respond(i, text, ok = true) { requests[i].resolve({ ok, status: ok ? 200 : 503, text: async () => text }); },
-    fail(i) { requests[i].reject(new Error('offline')); },
-    search(query) { nodes['search-input'].value = query; nodes['search-input'].emit('keydown', { key: 'Enter' }); },
-    retry() { nodes['load-retry'].emit('click'); },
-  };
-}
-const settle = () => new Promise(resolve => setImmediate(resolve));
-const log = (title = 'Daily', ym = '2026-10') => `# Month\n## ${ym}-02\n### Coding\n#### ${title}\n- URL: https://a.example/${title}\n`;
-const entries = Array.from({ length: 60 }, (_, i) => ({ title: `Alpha ${i}`, url: `https://a.example/${i}` }));
-const walk = node => [node, ...node.childNodes.flatMap(walk)];
-async function ready() {
-  const h = harness();
-  h.respond(0, '["2026-10","2026-09"]'); await settle();
-  h.respond(1, log()); await settle();
-  return h;
-}
+const { harness, settle, log, ready, walk, entries: allEntries } = require('./app_harness.cjs');
+const entries = allEntries.slice(0, 60);
 
 test('month list: offline -> retry only months once -> daily, preserving order', async () => {
   const h = harness();
@@ -70,7 +13,8 @@ test('month list: offline -> retry only months once -> daily, preserving order',
   h.retry(); h.retry();
   assert.equal(h.requests.length, 2);
   assert.equal(h.requests[1].url, 'data/months.json');
-  assert.equal(h.nodes['load-retry'].hidden, true);
+  assert.equal(h.nodes['load-retry'].hidden, false); // 待機中も操作位置を保つ
+  assert.equal(h.nodes['load-retry'].getAttribute('aria-disabled'), 'true');
   h.respond(1, '["2026-10"]'); await settle(); h.respond(2, log()); await settle();
   assert.equal(h.get('sortOrder'), 'asc');
   assert.equal(h.get('current.ym'), '2026-10');

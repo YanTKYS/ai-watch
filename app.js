@@ -12,6 +12,7 @@ const searchInput = document.getElementById("search-input");
 const searchClear = document.getElementById("search-clear");
 const notice = document.getElementById("notice");
 const statusEl = document.getElementById("status");
+const announcement = document.getElementById("view-announcement");
 const retryButton = document.getElementById("load-retry");
 const content = document.getElementById("content");
 let loadToken = 0; // 連続切替時に古い応答で上書きしない
@@ -24,6 +25,9 @@ let searchEntries = null; // buildSearchEntries の結果（初回検索時に�
 let searchLoading = null; // 読み込み中の Promise（同時に複数回取得しない）
 let searchTimer = 0;
 let retryAction = null;
+let activeRetry = null;
+let composing = false;
+let inputPending = false;
 
 class DataError extends Error {}
 
@@ -39,8 +43,26 @@ function setStatus(message, isError, retry = null) {
   statusEl.className = isError ? "error" : "";
   statusEl.hidden = !message;
   retryAction = retry;
-  retryButton.hidden = !retry;
+  retryButton.hidden = !retry && !activeRetry;
   retryButton.disabled = false;
+  retryButton.setAttribute("aria-disabled", activeRetry ? "true" : "false");
+  announce(message);
+}
+
+function announce(message) {
+  if (announcement.textContent !== message) announcement.textContent = message;
+}
+
+function beginView(retry = null) {
+  if (activeRetry !== retry) activeRetry = null;
+  return ++loadToken;
+}
+
+function viewHeading(text) {
+  const heading = el("h2", "", text);
+  heading.id = "view-heading";
+  heading.tabIndex = -1;
+  return heading;
 }
 
 function loadError(label, error, retry) {
@@ -68,6 +90,7 @@ function externalLink(text, url, className) {
   a.href = url;
   a.target = "_blank";
   a.rel = "noopener noreferrer";
+  a.setAttribute("aria-describedby", "new-tab-hint");
   return a;
 }
 
@@ -75,7 +98,8 @@ function renderCard(item, withCategory) {
   const card = el("article", "card");
   const url = safeUrl(item.url);
 
-  const title = el("h5", "card-title");
+  const title = el(withCategory ? "h3" : "h5", "card-title");
+  title.tabIndex = -1;
   if (url) title.appendChild(externalLink(item.title || url, url));
   else title.textContent = item.title || "（タイトルなし）";
   card.appendChild(title);
@@ -142,7 +166,7 @@ function renderMonth(ym, days, order) {
   const frag = document.createDocumentFragment();
 
   const head = el("div", "month-head");
-  head.appendChild(el("h2", "", monthLabel(ym)));
+  head.appendChild(viewHeading(monthLabel(ym)));
   head.appendChild(el("span", "count", `${total}件`));
   frag.appendChild(head);
 
@@ -150,9 +174,10 @@ function renderMonth(ym, days, order) {
     const section = el("details", "day");
     section.open = day.date === latest;
     const summary = el("summary", "day-summary");
-    summary.appendChild(el("span", "day-title", dateLabel(day.date)));
-    summary.appendChild(el("span", "count", `${countItems(day.categories)}件`));
-    if (latest && day.date === latest) summary.appendChild(el("span", "latest", "最新"));
+    const dayHeading = el("h3", "day-title", dateLabel(day.date));
+    dayHeading.appendChild(el("span", "count", `${countItems(day.categories)}件`));
+    if (latest && day.date === latest) dayHeading.appendChild(el("span", "latest", "最新"));
+    summary.appendChild(dayHeading);
     section.appendChild(summary);
     for (const category of day.categories) {
       const block = el("div", "category");
@@ -167,11 +192,12 @@ function renderMonth(ym, days, order) {
     frag.appendChild(section);
   }
   content.replaceChildren(frag);
+  announce(`日刊: ${monthLabel(ym)}、${total}件。${order === "asc" ? "古い順" : "新しい順"}。`);
 }
 
-async function showMonth(ym) {
+async function showMonth(ym, retry = null) {
   if (searchQuery) return;
-  const token = ++loadToken;
+  const token = beginView(retry);
   current = null; // 読み込み中・失敗時に旧月を並び順変更で再描画しない
   content.replaceChildren();
   setStatus("読み込み中...");
@@ -179,7 +205,7 @@ async function showMonth(ym) {
   try {
     text = await fetchText(`logs/${ym.slice(0, 4)}/${ym}.md`);
   } catch (e) {
-    if (token === loadToken) loadError(`${monthLabel(ym)}のログ`, e, () => showMonth(ym));
+    if (token === loadToken) loadError(`${monthLabel(ym)}のログ`, e, request => showMonth(ym, request));
     return;
   }
   if (token !== loadToken) return;
@@ -189,7 +215,7 @@ async function showMonth(ym) {
     if (text.trim() && !/^#{1,4} /m.test(text)) throw new DataError("not a Markdown log");
     days = parseLog(text);
   } catch (e) {
-    loadError(`${monthLabel(ym)}のログ`, new DataError("invalid log"), () => showMonth(ym));
+    loadError(`${monthLabel(ym)}のログ`, new DataError("invalid log"), request => showMonth(ym, request));
     return;
   }
   if (days.length === 0) {
@@ -201,8 +227,8 @@ async function showMonth(ym) {
   renderMonth(ym, days, sortOrder);
 }
 
-async function loadMonths() {
-  const token = ++loadToken;
+async function loadMonths(retry = null) {
+  const token = beginView(retry);
   setStatus("月の一覧を読み込み中...");
   let months;
   try {
@@ -228,7 +254,7 @@ async function loadMonths() {
     }
   }
   syncControls();
-  if (token === loadToken && !searchQuery) showMonth(select.value); // months.json は新しい順。先頭=最新月
+  if (token === loadToken && !searchQuery) await showMonth(select.value, retry); // months.json は新しい順。先頭=最新月
 }
 
 // 検索中は月の選択・並び順を無効にする（検索は全期間・新しい順）。
@@ -244,7 +270,7 @@ function showDaily() {
   if (searchQuery) {
     showSearch();
   } else if (current) {
-    ++loadToken; // 検索の読み込み中の応答で上書きしない
+    beginView(); // 検索の読み込み中の応答で上書きしない
     setStatus("");
     renderMonth(current.ym, current.days, sortOrder);
   } else if (select.value) {
@@ -270,8 +296,8 @@ function loadSearchEntries() {
   return searchLoading;
 }
 
-async function showSearch() {
-  const token = ++loadToken;
+async function showSearch(retry = null) {
+  const token = beginView(retry);
   const query = searchQuery;
   if (searchEntries === null) {
     content.replaceChildren();
@@ -288,10 +314,11 @@ async function showSearch() {
 }
 
 function renderSearch(query, results) {
+  const token = loadToken;
   setStatus("");
   const frag = document.createDocumentFragment();
   const head = el("div", "month-head");
-  head.appendChild(el("h2", "", "検索結果"));
+  head.appendChild(viewHeading("検索結果"));
   head.appendChild(el("span", "count", `${results.length}件`));
   frag.appendChild(head);
   frag.appendChild(el("p", "search-summary", `「${query}」を全期間の日刊ログから検索（取得日の新しい順）`));
@@ -299,6 +326,7 @@ function renderSearch(query, results) {
     frag.appendChild(el("p", "search-empty",
       "該当する記事はありません。キーワードを減らすか、別の表記（略称・正式名称など）でお試しください。"));
     content.replaceChildren(frag);
+    announce(`「${query}」の検索結果: 0件。`);
     return;
   }
   const cards = el("div", "cards search-results");
@@ -306,23 +334,38 @@ function renderSearch(query, results) {
   const more = el("button", "more");
   more.type = "button";
   let shown = 0;
-  const showMore = () => {
+  const showMore = (activated = false) => {
+    if (activated && (token !== loadToken || shown >= results.length)) return;
     const next = results.slice(shown, shown + SEARCH_PAGE_SIZE);
-    for (const item of next) cards.appendChild(renderCard(item, true));
+    let firstAdded;
+    for (const item of next) {
+      const card = renderCard(item, true);
+      if (!firstAdded) firstAdded = card.firstChild;
+      cards.appendChild(card);
+    }
     shown += next.length;
+    // 最後の追加で消えるボタンから、新しく追加した記事へ移る。通常の検索では移動しない。
+    if (activated && shown >= results.length && document.activeElement === more) firstAdded.focus();
     more.hidden = shown >= results.length;
     more.textContent = `さらに表示（残り${results.length - shown}件）`;
+    if (activated) announce(`${results.length}件中${shown}件を表示しました。`);
   };
-  more.addEventListener("click", showMore);
+  more.addEventListener("click", () => showMore(true));
   showMore();
   frag.appendChild(more);
   content.replaceChildren(frag);
+  announce(`「${query}」の検索結果: ${results.length}件。${shown}件を表示しています。`);
+}
+
+function normalizedQuery(value) {
+  return value.trim().replace(/\s+/g, " ");
 }
 
 function applySearch(value) {
   clearTimeout(searchTimer);
-  const query = value.trim().replace(/\s+/g, " ");
-  if (query === searchQuery) return; // 空白の追加など、結果が変わらない入力では再描画しない
+  const query = normalizedQuery(value);
+  if (query === searchQuery && !inputPending) return; // 空白の追加など、結果が変わらない入力では再描画しない
+  inputPending = false;
   searchQuery = query;
   syncControls();
   showDaily(); // 空欄に戻したら通常の日刊表示へ
@@ -333,26 +376,54 @@ function scheduleSearch() {
   searchTimer = setTimeout(() => applySearch(searchInput.value), SEARCH_DELAY_MS);
 }
 
+function invalidateInput() {
+  clearTimeout(searchTimer);
+  // debounce/IME待ちの間にも旧応答の描画・通知・再試行のフォーカス移動を無効にする。
+  if (composing || normalizedQuery(searchInput.value) !== searchQuery) {
+    inputPending = true;
+    beginView();
+    setStatus("");
+  }
+}
+
 function init() {
   if (BASE) notice.hidden = false;
-  retryButton.addEventListener("click", () => {
-    if (!retryAction || retryButton.disabled) return;
+  retryButton.addEventListener("click", async () => {
+    if (!retryAction || activeRetry) return;
     const retry = retryAction;
+    const request = {};
+    activeRetry = request;
     retryAction = null; // 連打・キーボード連続操作でも同じ再試行を重ねない
-    retryButton.disabled = true;
-    retry(); // 各処理の開始でボタンを隠し、loadTokenを更新する
+    // 待機中も要素を残す。native disabledによるフォーカス消失を避け、ハンドラで連打を防ぐ。
+    try {
+      await retry(request);
+    } finally {
+      if (activeRetry === request) {
+        activeRetry = null;
+        if (!retryAction && document.activeElement === retryButton) {
+          (document.getElementById("view-heading") || statusEl).focus();
+        }
+        retryButton.hidden = !retryAction;
+        retryButton.setAttribute("aria-disabled", "false");
+      }
+    }
   });
   searchInput.addEventListener("input", (e) => {
     syncControls();
-    if (e.isComposing) return; // 日本語入力の変換中は検索しない（確定時に compositionend で検索）
+    if (e.isComposing) composing = true;
+    invalidateInput();
+    if (composing) return; // 日本語入力の変換中は検索しない（確定時に compositionend で検索）
     scheduleSearch();
   });
-  searchInput.addEventListener("compositionend", scheduleSearch);
+  searchInput.addEventListener("compositionstart", () => { composing = true; invalidateInput(); });
+  searchInput.addEventListener("compositionend", () => { composing = false; scheduleSearch(); });
   searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.isComposing) applySearch(searchInput.value);
+    if (e.key === "Enter" && !e.isComposing && !composing) applySearch(searchInput.value);
   });
   searchClear.addEventListener("click", () => {
     searchInput.value = "";
+    composing = false;
+    syncControls();
     applySearch("");
     searchInput.focus();
   });
