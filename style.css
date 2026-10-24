@@ -77,7 +77,7 @@ body {
   border-radius: 2px;
 }
 .search-box input::placeholder { color: var(--muted); opacity: 1; }
-.search-box button, .more, #load-retry {
+.search-box button, .more, #load-retry, .filter-button {
   font: inherit;
   min-height: 44px;
   padding: 0 16px;
@@ -88,6 +88,22 @@ body {
   cursor: pointer;
 }
 .search-box button:disabled { color: var(--muted); cursor: default; }
+.filter-button:disabled, .filter-button[aria-disabled="true"] { color: var(--muted); cursor: default; }
+.filter-button[hidden] { display: none; }
+.filter-panel { margin-top: 16px; }
+.filter-panel > summary { padding: 8px 0; min-height: 44px; cursor: pointer; }
+.filter-panel a { color: var(--accent); }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-bottom: 16px; }
+.filter-grid fieldset { margin: 0; padding: 8px 12px; border: 1px solid var(--subtle-border); min-width: 0; }
+.filter-choices { max-height: 240px; overflow-y: auto; }
+.filter-choices label { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px; cursor: pointer; }
+.filter-choices input { width: 18px; height: 18px; flex: none; accent-color: var(--accent); }
+.filter-dates { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-bottom: 16px; }
+.filter-dates label { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }
+.filter-dates input { min-width: 0; width: 100%; min-height: 44px; padding: 7px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 2px; }
+.filter-dates input[aria-invalid="true"] { border-color: var(--error); }
+#mode-hint { margin: 16px 0 8px; }
+.active-conditions { margin: 8px 0 12px; font-size: .94rem; }
 .search-box button:not(:disabled):hover, .more:hover, #load-retry:hover { background: var(--band); }
 #load-retry { margin-bottom: 20px; }
 #load-retry[hidden] { display: none; }
@@ -239,7 +255,7 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible, .day-summary:focus-visible {
+a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible, .day-summary:focus-visible, #filter-toggle:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
 }

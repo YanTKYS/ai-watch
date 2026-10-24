@@ -83,7 +83,7 @@ test('search: retry same query once, keep controls, paginate 50 then 60, reuse c
   const more = walk(h.nodes.content).find(n => n.className === 'more');
   more.emit('click'); assert.equal(cards().length, 60); assert.equal(more.hidden, true);
   h.nodes['search-clear'].emit('click');
-  assert.equal(h.get('searchQuery'), ''); assert.equal(h.get('current.ym'), '2026-10');
+  assert.equal(h.get('viewState.query'), ''); assert.equal(h.get('current.ym'), '2026-10');
   h.search('Alpha 1'); await settle();
   assert.equal(h.requests.length, 4); assert.equal(h.nodes['load-retry'].hidden, true);
 });

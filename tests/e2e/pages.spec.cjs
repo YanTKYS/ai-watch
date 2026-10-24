@@ -207,3 +207,108 @@ test('production health snapshot: success/partial/404/broken remain independent 
     await expect(page.locator('#load-retry')).toBeHidden();
   }
 });
+
+const filterResults = [
+  ...results.map(item => ({...item, retrieved:'2026-10-02',feed:'Claude Code Releases'})),
+  {title:'Alpha boundary',url:'https://news.example.com/boundary',category:'AIコーディング',feed:'Claude Code Releases',retrieved:'2026-09-30'},
+  {title:'Alpha model',url:'https://news.example.com/model',category:'AIモデル',feed:'OpenAI News',retrieved:'2026-10-01'},
+  {title:'Legacy metadata',url:'https://news.example.com/legacy'},
+];
+
+test('320px filters: queryless combination, three clears and return to selected daily month/order', async ({ page }) => {
+  await page.setViewportSize({width:320,height:800});
+  let indexRequests=0;
+  await page.route('**/samples/data/search-index.json',route=>{
+    indexRequests++;
+    return route.fulfill({json:filterResults});
+  });
+  await page.goto('/?sample');
+  await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+  const month=page.getByRole('combobox',{name:'表示する月'});
+  const order=page.getByRole('combobox',{name:'並び順'});
+  await month.selectOption('2026-09'); await order.selectOption('asc');
+  await expect(page.locator('#view-heading')).toHaveText('2026年9月');
+  const toggle=page.locator('#filter-toggle');
+  await tabTo(page,toggle); await page.keyboard.press('Enter');
+  const category=page.getByRole('checkbox',{name:'AIコーディング',exact:true});
+  await expect(category).toBeVisible(); await tabTo(page,category); await page.keyboard.press('Space');
+  await expect(category).toBeFocused();
+  const feed=page.getByRole('checkbox',{name:'Claude Code Releases',exact:true});
+  await tabTo(page,feed); await page.keyboard.press('Space');
+  await expect(page.locator('#view-announcement')).toContainText('絞り込み結果: 121件');
+  await page.locator('#filter-from').fill('2026-10-02');
+  await page.locator('#filter-to').fill('2026-10-02');
+  await expect(page.locator('#view-announcement')).toContainText('絞り込み結果: 120件');
+  await expect(page.locator('#view-heading')).toHaveText('絞り込み結果');
+  await expect(month).toBeDisabled(); await expect(order).toBeDisabled();
+  await expect(page.getByRole('checkbox',{name:'OpenAI News',exact:true})).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveValue('');
+  const filteredCards=page.locator('.search-results .card');
+  await expect(filteredCards).toHaveCount(50);
+  const filteredMore=page.getByRole('button',{name:/さらに表示/});
+  await filteredMore.click(); await expect(filteredCards).toHaveCount(100);
+  await filteredMore.press('Enter'); await expect(filteredCards).toHaveCount(120);
+  await expect(filteredMore).toBeHidden();
+  await expect(filteredCards.nth(100).getByRole('heading',{level:3})).toBeFocused();
+  await noOverflow(page);
+
+  const input=page.getByRole('searchbox');
+  await input.fill('NoMatch'); await input.press('Enter');
+  await expect(page.locator('.search-empty')).toContainText('条件に一致する記事はありません');
+  await expect(page.locator('#active-conditions')).toContainText('Claude Code Releases');
+  await expect(page.locator('#active-conditions')).toContainText('2026-10-02');
+  const clearQuery=page.getByRole('button',{name:'検索語をクリア',exact:true});
+  await tabTo(page,clearQuery); await page.keyboard.press('Enter');
+  await expect(input).toBeFocused(); await expect(category).toBeChecked();
+  await expect(page.locator('#view-heading')).toHaveText('絞り込み結果');
+  await expect(page.locator('#view-announcement')).toContainText('絞り込み結果: 120件');
+
+  await input.fill('Alpha'); await input.press('Enter');
+  const clearFilters=page.getByRole('button',{name:'フィルターだけ解除'});
+  await tabTo(page,clearFilters); await page.keyboard.press('Enter');
+  await expect(toggle).toBeFocused(); await expect(category).not.toBeChecked();
+  await expect(input).toHaveValue('Alpha');
+  await expect(page.locator('#view-heading')).toHaveText('検索結果');
+  await expect(page.locator('#view-announcement')).toContainText('122件');
+  const clearAll=page.getByRole('button',{name:'すべての条件を解除'});
+  await tabTo(page,clearAll); await page.keyboard.press('Enter');
+  await expect(input).toBeFocused(); await expect(input).toHaveValue('');
+  await expect(page.locator('#view-heading')).toHaveText('2026年9月');
+  await expect(month).toHaveValue('2026-09'); await expect(order).toHaveValue('asc');
+  await expect(month).toBeEnabled(); await expect(page.locator('#active-conditions')).toBeHidden();
+  expect(indexRequests).toBe(1);
+  await noOverflow(page);
+});
+
+test('filter fetch failures keep daily, F05 retry keeps dates, invalid range is not zero results', async ({page})=>{
+  let indexRequests=0;
+  await page.route('**/samples/data/search-index.json',route=>{
+    indexRequests++;
+    return indexRequests<3 ? route.fulfill({status:503,body:'unavailable'}) : route.fulfill({json:filterResults});
+  });
+  await page.goto('/?sample'); await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+  await page.locator('#filter-toggle').click();
+  await expect(page.getByRole('button',{name:'候補を再試行'})).toBeVisible();
+  await expect(page.locator('.day[open] .card').first()).toBeVisible();
+  await page.locator('#filter-from').fill('2026-10-02');
+  const retry=page.getByRole('button',{name:'再試行',exact:true});
+  await expect(retry).toBeVisible();
+  await tabTo(page,retry); await page.keyboard.press('Enter');
+  await expect(page.locator('#view-heading')).toHaveText('絞り込み結果');
+  await expect(page.locator('#view-heading')).toBeFocused();
+  await expect(page.locator('#filter-from')).toHaveValue('2026-10-02');
+  await expect(page.locator('#view-announcement')).toContainText('120件');
+  await expect(page.getByRole('button',{name:'候補を再試行'})).toBeHidden();
+  await page.locator('#filter-to').fill('2026-10-01');
+  await expect(page.locator('#status')).toContainText('開始日は終了日以前');
+  await expect(page.locator('#filter-to')).toHaveAttribute('aria-invalid','true');
+  await expect(page.locator('#content')).toBeEmpty();
+  await expect(page.locator('#view-announcement')).not.toContainText('0件');
+  await expect(retry).toBeHidden();
+  await page.locator('#filter-to').fill('2026-10-02');
+  await expect(page.locator('#view-announcement')).toContainText('120件');
+  await expect(page.locator('#filter-to')).toBeFocused();
+  expect(indexRequests).toBe(3);
+  await page.getByRole('button',{name:'すべての条件を解除'}).click();
+  await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+});
