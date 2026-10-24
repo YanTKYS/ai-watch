@@ -1,0 +1,213 @@
+{
+  "description": "Predeclared synthetic news boundary cases for F17 stage 2. Not archived articles or a statistical sample. Expected outcomes explain developer impact; fixture authored before rule comparison.",
+  "today": "2026-10-24",
+  "feeds": {
+    "https://openai.com/news/rss.xml": [
+      {
+        "title": "Expanding API access in Europe",
+        "url": "https://news-validation.example.org/regional-access",
+        "published": "2026-10-24",
+        "summary": "New regional endpoints make the API available now to developers in additional supported locations."
+      },
+      {
+        "title": "Model inference API now available on Google Cloud",
+        "url": "https://news-validation.example.org/cloud-serving",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "How a retailer uses ChatGPT for stock planning",
+        "url": "https://news-validation.example.org/retailer-story",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "How a retailer built a reproducible agent harness on the Responses API",
+        "url": "https://news-validation.example.org/technical-story",
+        "published": "2026-10-24",
+        "summary": "The architecture and benchmark results explain the implementation."
+      }
+    ],
+    "https://deepmind.google/blog/rss.xml": [
+      {
+        "title": "Introducing Gemini 10 API pricing in Europe",
+        "url": "https://news-validation.example.org/pricing",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "A reproducible benchmark for agent planning",
+        "url": "https://news-validation.example.org/agent-benchmark",
+        "published": "2026-10-24"
+      }
+    ],
+    "https://github.blog/changelog/feed/": [
+      {
+        "title": "Copilot adoption analytics for engineering leadership",
+        "url": "https://news-validation.example.org/adoption",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Return on investment report for GitHub Copilot",
+        "url": "https://news-validation.example.org/roi",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Copilot model policy API for enterprise, orgs, and teams",
+        "url": "https://news-validation.example.org/policy-api",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Custom agents and MCP servers in the Copilot usage metrics API",
+        "url": "https://news-validation.example.org/metrics-api",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "GitHub Copilot models deprecated next month",
+        "url": "https://news-validation.example.org/retirement",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Copilot data residency expands to Europe",
+        "url": "https://news-validation.example.org/residency",
+        "published": "2026-10-24"
+      },
+      {
+        "title": "Copilot code review supports repository instructions",
+        "url": "https://news-validation.example.org/code-review",
+        "published": "2026-10-24"
+      }
+    ],
+    "https://github.com/anthropics/claude-code/releases.atom": [],
+    "https://github.com/openai/codex/releases.atom": [],
+    "https://github.com/modelcontextprotocol/modelcontextprotocol/releases.atom": [],
+    "https://github.com/anthropics/anthropic-sdk-python/releases.atom": []
+  },
+  "seen": {},
+  "expectations": {
+    "https://news-validation.example.org/adoption": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "rejected"
+      },
+      "reason": "組織の利用浸透状況の分析のみで、開発機能やAPIの変更ではない。",
+      "required": true
+    },
+    "https://news-validation.example.org/roi": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "rejected"
+      },
+      "reason": "投資効果の報告だけの合成例。",
+      "required": true
+    },
+    "https://news-validation.example.org/policy-api": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "モデル利用ポリシーをプログラムから制御するAPI。政治的policy記事と区別。",
+      "required": true
+    },
+    "https://news-validation.example.org/metrics-api": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "利用状況を取得するAPIの新しいフィールドは実装者向け。単なる効果測定と区別。",
+      "required": true
+    },
+    "https://news-validation.example.org/retirement": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "モデル切替が必要な廃止通知。",
+      "required": true
+    },
+    "https://news-validation.example.org/residency": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "AIコーディング"
+      },
+      "reason": "保存場所と利用可能地域が変わる製品更新。",
+      "required": true
+    },
+    "https://news-validation.example.org/code-review": {
+      "feed_url": "https://github.blog/changelog/feed/",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "AIコーディング"
+      },
+      "reason": "開発機能の対応範囲が変わる。",
+      "required": true
+    },
+    "https://news-validation.example.org/regional-access": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "この合成例の説明文は呼出先の追加を明記。元の未確定例とは別の技術的な提供変更として評価。",
+      "required": true
+    },
+    "https://news-validation.example.org/cloud-serving": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "具体的な推論APIのクラウド提供開始。",
+      "required": true
+    },
+    "https://news-validation.example.org/retailer-story": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "rejected"
+      },
+      "reason": "この例は事業成果だけの導入事例。APIや再現手順の追加はない。",
+      "required": true
+    },
+    "https://news-validation.example.org/technical-story": {
+      "feed_url": "https://openai.com/news/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "活用事例でも実装・評価の技術的知見を残す。",
+      "required": true
+    },
+    "https://news-validation.example.org/pricing": {
+      "feed_url": "https://deepmind.google/blog/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "API・料金・制限"
+      },
+      "reason": "モデル・API料金・提供地域の実用的な変更を保持。",
+      "required": true
+    },
+    "https://news-validation.example.org/agent-benchmark": {
+      "feed_url": "https://deepmind.google/blog/rss.xml",
+      "split": "validation",
+      "expected": {
+        "status": "adopted",
+        "category": "AIエージェント"
+      },
+      "reason": "研究という理由だけでは落とさず再現可能な評価を残す。",
+      "required": true
+    }
+  }
+}

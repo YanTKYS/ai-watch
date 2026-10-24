@@ -28,3 +28,4 @@ jobs:
         run: |
           python scripts/collect.py --dry-run --check-quality --reconsider-excluded
           python scripts/collect.py --dry-run --check-quality --reconsider-excluded --fixtures tests/fixtures/selection-validation.json
+          python scripts/collect.py --dry-run --check-quality --reconsider-excluded --fixtures tests/fixtures/selection-news-validation.json

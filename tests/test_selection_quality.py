@@ -40,13 +40,13 @@ class SelectionQuality(Base):
                     rows[row['url'].rsplit('/', 1)[-1]] = row
         return code, rows, out.getvalue(), err.getvalue()
 
-    def test_confirmed_pending_and_known_mismatches_are_separate(self):
+    def test_confirmed_pending_and_fixed_cases_are_separate(self):
         code, rows, out, err = self.evaluate(check=True)
         self.assertEqual(code, 0, err)
-        self.assertIn('confirmed=10 match=9 mismatch=1 pending=7 required_failed=0', out)
+        self.assertIn('confirmed=10 match=10 mismatch=0 pending=7 required_failed=0', out)
         self.assertIn('undecided=5 not_configured=2', out)
         self.assertEqual(rows['new-model']['current']['result'], 'match')
-        self.assertEqual(rows['dashboard']['current']['result'], 'mismatch')
+        self.assertEqual(rows['dashboard']['current']['result'], 'match')
         self.assertEqual(rows['terminal']['current']['result'], 'pending')
         self.assertIsNone(rows['terminal']['current']['expected'])
         self.assertEqual(rows['gemini-sdk-v1']['current']['pending_reason'], '設定にフィードがない')
@@ -73,6 +73,10 @@ class SelectionQuality(Base):
 
     def test_candidate_improvement_and_regression_and_guard_exit(self):
         raw = yaml.safe_load(self.config.read_text())
+        # 評価器の差分テストには、意図的に旧all方式の基準を作る。本番の不一致に依存しない。
+        baseline = copy.deepcopy(raw)
+        next(f for f in baseline['feeds'] if f['name'] == 'GitHub Changelog')['select'] = 'all'
+        self.config.write_text(yaml.safe_dump(baseline))
         raw['selection']['min_score'] = 100
         for feed in raw['feeds']:
             if feed['name'] == 'GitHub Changelog':
@@ -157,6 +161,7 @@ class SelectionQuality(Base):
         commands = '\n'.join(s.get('run', '') for s in workflow['jobs']['test']['steps'])
         self.assertIn('python scripts/collect.py --dry-run --check-quality --reconsider-excluded', commands)
         self.assertIn('--fixtures tests/fixtures/selection-validation.json', commands)
+        self.assertIn('--fixtures tests/fixtures/selection-news-validation.json', commands)
         raw = yaml.safe_load(self.config.read_text())
         raw['selection']['min_score'] = 100
         self.candidate.write_text(yaml.safe_dump(raw))
@@ -171,6 +176,10 @@ class SelectionQuality(Base):
     def test_mixed_field_changes_and_zero_cases_are_not_hidden(self):
         self.raw['expectations']['https://evaluation.example.org/dashboard']['expected']['category'] = 'AIモデル'
         raw = yaml.safe_load(self.config.read_text())
+        baseline = copy.deepcopy(raw)
+        next(f for f in baseline['feeds'] if f['name'] == 'GitHub Changelog')['select'] = 'all'
+        self.config.write_text(yaml.safe_dump(baseline))
+        raw['selection']['rules'] = [r for r in raw['selection']['rules'] if r['label'] != 'adoption_reporting']
         for feed in raw['feeds']:
             if feed['name'] == 'GitHub Changelog':
                 feed['select'] = 'score'

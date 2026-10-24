@@ -20,10 +20,12 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
   OpenAI Codex Releases（プレリリース除外）/ MCP Specification Releases / Anthropic SDK Releases。
   Anthropicのニュースには公式RSSが無いため、Claude Code と公式SDK（Claude API の変更）の GitHub Releases を使っています。
 - **記事の選定**（v0.1.3）: 基準は「読むと AI・AIコーディングツールについて新しい技術的知見が得られるか」です。
-  - 幅広い記事を配信するニュース（OpenAI・DeepMind）は、タイトル・説明文に `selection.rules` で点数を付け、
+  - ニュース（OpenAI・DeepMind・GitHub Changelog）は、タイトル・説明文に `selection.rules` で点数を付け、
     新モデル・提供開始・API・料金変更・技術的な検証などを採用し、導入事例・政策・教育などは原則として採用しません
     （減点の規則があっても、技術的な信号が十分あれば採用されます）。1回の収集で1フィードから最大5件で、
     上限を超えた記事は記録せず、次回の収集で（公開から7日以内なら）改めて評価します。
+    GitHub ChangelogはAI関連のタイトル必須語を通した後に採点します。組織の効果測定だけの記事は減点し、
+    API/SDK/CLIによる取得・制御や、ポリシーAPI・データ所在・API提供範囲の変更を巻き込まないよう区別します。
   - リリース（Claude Code・Codex・MCP・SDK）は、リリースノートの項目を「新機能・変更・破壊的変更・修正・雑務」に機械的に分類し、
     修正・雑務だけのリリースを除外します。判定できないリリースは見落とさないよう採用します。
     同じ収集で採用したリリースは1件にまとめ、項目数（`Notes`）、公式リリースノートから機械的に選んだ最大3項目
