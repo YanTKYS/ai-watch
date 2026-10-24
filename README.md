@@ -71,6 +71,11 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 
 ## 設定（`config/sources.yml`）
 
+情報源の役割・収集範囲・記事の有用性・追加候補は [情報源の品質評価](docs/source-quality.md)、
+設定と保存実績の一覧は [情報源一覧](docs/source-inventory.md) を参照してください。
+一覧は `python scripts/source_report.py --since YYYY-MM-DD --until YYYY-MM-DD` で再集計できます
+（通信なし・収集データの変更なし、更新手順と数値の注意点は品質評価資料に記載）。
+
 コードを変えずに次を調整できます。
 
 - `categories`: カテゴリ（ログの見出し・表示順）と、フィード記事の分類に使うキーワード。`classify_order` で優先順位を指定。
