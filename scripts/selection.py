@@ -103,7 +103,7 @@ KIND_LABELS = {"feature": "新機能", "change": "変更・改善", "breaking": 
 _SECTION_RULES = [  # 見出しの語 → 項目の種類（上から順に判定）
     ("breaking", re.compile(r"breaking|deprecat|remov", re.I)),
     ("fix", re.compile(r"\bfix|bug", re.I)),
-    ("chore", re.compile(r"chore|doc|internal|test|\bci\b|build|depend|refactor|merged|contributor|style", re.I)),
+    ("chore", re.compile(r"chore|doc|internal|test|\bci\b|build|depend|refactor|contributor|style|\bexamples?\b|\bsamples?\b", re.I)),
     ("feature", re.compile(r"feature|highlight|\bnew\b|added|addition", re.I)),
     ("change", re.compile(r"change|improv|update|perf|enhance", re.I)),
 ]
@@ -120,6 +120,20 @@ _LEAD = re.compile(r"^(?:\[[^\]]{1,40}\]\s*|[A-Za-z][\w .-]{0,30}:\s+)+")  # "[V
 _BLOCK = re.compile(r"</?(p|li|ul|ol|div|br|tr|pre|blockquote)\b[^>]*>", re.I)
 _HEADING = re.compile(r"<h[1-6][^>]*>", re.I)
 _TAG = re.compile(r"<[^>]+>")
+# 明示された作業スコープ・対象だけを雑務とする。API/CLIのremove一般を除外しない。
+_MAINTENANCE_SCOPE = re.compile(r"(?:^|:\s*|\]\s*)(?:internal|ci|build|docs?|documentation|examples?|samples?|tests?|chore)\s*:", re.I)
+_MAINTENANCE_TARGET = re.compile(
+    r"^(?:add(?:ed|s)?|update[sd]?|improve[sd]?|remove[sd]?|drop(?:ped|s)?|delete[sd]?|fix(?:ed|es)?)\s+"
+    r"(?:(?:the|an?|obsolete|old|outdated|unused|stale)\s+)*"
+    r"(?:examples|samples|snippets|docs|documentation|tests|(?:ci|build)\s+(?:artifacts?|uploads?|workflows?))\b", re.I)
+_EXAMPLE_LOCATION = re.compile(
+    r"\b(?:in|from)\s+(?:(?!\b(?:and|but|then)\b)[\w'-]+\s+){0,6}(?:examples?|samples?|snippets?|documentation|docs)\b", re.I)
+_PUBLIC_BREAKING_TARGET = re.compile(
+    r"(?<!\w)--[\w-]+|\b(?:public\s+)?(?:api|cli|request)\s+(?:parameters?|arguments?|flags?|options?|methods?|endpoints?)\b", re.I)
+_EXPLICIT_BREAKING = re.compile(r"^breaking(?:[ -]changes?)?\s*:", re.I)
+_ROUTINE_FIX = re.compile(
+    r"^(?:(?:various|minor|general)\s+)?(?:bug\s+)?fixes"
+    r"(?:\s+(?:and|&)\s+(?:(?:reliability|stability|performance)\s+)?improvements)?[.!]?$", re.I)
 
 
 def note_lines(content: str) -> list[tuple[bool, str]]:
@@ -137,14 +151,29 @@ def note_lines(content: str) -> list[tuple[bool, str]]:
 
 
 def classify_item(line: str, section: str | None) -> str:
+    # Markdownの強調・inline codeは分類時だけ外す。保存・抜粋する原文は変更しない。
+    line = re.sub(r"[*`]", "", line)
     m = _CONVENTIONAL.match(line)
     if m:
         if m.group(3):  # feat!: など
             return "breaking"
+        if m.group(2) and _MAINTENANCE_SCOPE.fullmatch(m.group(2)[1:-1] + ":"):
+            return "chore"
         return _CONVENTIONAL_KIND.get(m.group(1).lower(), "chore")
-    for body in (line, _LEAD.sub("", line)):  # "Improved artifacts: ..." と "[VSCode] Fixed ..." の両方を扱う
+    body = _LEAD.sub("", line)
+    if _EXPLICIT_BREAKING.match(line) or _EXPLICIT_BREAKING.match(body):
+        return "breaking"
+    prefix = _LEAD.match(line)
+    if ((prefix and _MAINTENANCE_SCOPE.search(prefix.group())) or _MAINTENANCE_TARGET.match(body)
+            or (re.match(r"^(?:remove[sd]?|drop(?:ped|s)?)\b", body, re.I) and _EXAMPLE_LOCATION.search(body))):
+        return "chore"
+    if _ROUTINE_FIX.fullmatch(body):
+        return "fix"
+    for candidate in (line, body):  # "Improved artifacts: ..." と "[VSCode] Fixed ..." の両方を扱う
         for kind, rx in _PREFIX_RULES:
-            if rx.match(body):
+            if rx.match(candidate):
+                if section == "chore" and not (kind == "breaking" and _PUBLIC_BREAKING_TARGET.search(body)):
+                    return "chore"
                 return kind
     return section or "other"
 
@@ -153,13 +182,20 @@ def classified_items(content: str) -> list[tuple[str, str]]:
     """リリースノートの各項目を (種類, 1行のテキスト) にする（記載順）。"""
     items = []
     section: str | None = None
+    pending_fix_heading = None
     for heading, line in note_lines(content):
         if heading:
+            if pending_fix_heading is not None:
+                items.append(("fix", pending_fix_heading))
             section = next((kind for kind, rx in _SECTION_RULES if rx.search(line)), None)
+            pending_fix_heading = line if _ROUTINE_FIX.fullmatch(line) else None
             continue
         if len(line) < 4 or line.lower().startswith(("full changelog", "what's changed", "new contributors")):
             continue
+        pending_fix_heading = None  # 項目があれば見出しを件数へ二重計上しない
         items.append((classify_item(line, section), line))
+    if pending_fix_heading is not None:
+        items.append(("fix", pending_fix_heading))
     return items
 
 

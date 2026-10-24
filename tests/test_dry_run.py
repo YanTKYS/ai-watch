@@ -59,12 +59,13 @@ class DryRun(Base):
         added = next(row for row in rows if row['url'].endswith('/gemini-sdk-v1'))
         self.assertIsNone(added['current'])
         self.assertEqual(added['candidate']['status'], 'adopted')
-        # F12の正例は保つ。内部変更の誤分類は設定の比較だけで直ったことにしない。
+        # F12の正例は保つ。F17の分類改善は両設定で共通に使う。
         for slug in ('new-model', 'decisions', 'deprecation', 'codex'):
             row = next(row for row in rows if row['url'].endswith('/' + slug))
             self.assertEqual(row['candidate']['status'], 'adopted')
         sdk = next(row for row in rows if row['url'].endswith('/sdk-ci'))
-        self.assertIn('破壊的変更・廃止 1', sdk['candidate']['detail'])
+        self.assertEqual(sdk['candidate']['status'], 'rejected')
+        self.assertIn('破壊的変更・廃止 0', sdk['candidate']['detail'])
 
     def test_reconsider_preserves_history_and_adopted_entries_stay_skipped(self):
         self.raw['seen']['https://evaluation.example.org/new-model'] = {'first_seen': '2026-10-23'}
@@ -82,6 +83,8 @@ class DryRun(Base):
         self.assertEqual(self.raw, original)
 
     def test_limits_grouped_releases_and_early_skips(self):
+        # 既定データの定型修正文はF17で除外されるため、集約の検証には具体的な機能を2件用意する。
+        self.raw['feeds']['https://github.com/anthropics/claude-code/releases.atom'][0]['content'] = '<ul><li>Added another configuration option</li></ul>'
         news = 'https://openai.com/news/rss.xml'
         self.raw['feeds'][news] = [{'title': f'Introducing GPT-9.{i}', 'url': f'https://e.example/{i}',
                                     'published': '2026-10-24'} for i in range(7)]
