@@ -27,6 +27,7 @@ import yaml
 import brave
 import feeds
 import selection
+import collection_status
 from common import JST, ConfigError, compile_terms, domain_of, matches_any
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -79,6 +80,7 @@ class Stats:
     rejected: Counter = field(default_factory=Counter)  # 選定で採用しなかった理由 -> 件数
     new_items: int = 0
     same_title: int = 0
+    feed_results: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -354,6 +356,7 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str,
                 entries = entry_source(feed.url)
         except Exception as e:  # 1件の失敗で全体を止めない。本文全体は出力せず、切り分け用の診断情報だけを出す。
             stats.failed_feeds.append(feed.name)
+            stats.feed_results.append({"name": feed.name, "status": "failed", "candidates": None, "adopted": None})
             print(f"::warning::feed failed: feed='{feed.name}' error={feeds.describe_error(e)}")
             print(f"  diagnostics: {feeds.diagnose(info, body, e)}")
             continue
@@ -361,6 +364,8 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str,
               f"content_encoding={json.dumps(info.content_encoding)} bytes={info.size} "
               f"decoded_bytes={info.decoded_size} entries={len(entries)}")
         stats.entries += len(entries)
+        feed_result = {"name": feed.name, "status": "success", "candidates": 0, "adopted": 0}
+        stats.feed_results.append(feed_result)
         selected = feeds.select_entries(feed, entries, today, config.max_age_days)
         stats.skipped_old_or_excluded += len(entries) - len(selected)
 
@@ -388,12 +393,14 @@ def collect_feeds(config: Config, seen: dict[str, dict], today: str,
                 skipped(e, "seen:excluded" if known and "excluded" in known else "seen/duplicate")
                 continue
             candidates.append(e)
+        feed_result["candidates"] = len(candidates)
         if not candidates:
             continue
         cats = Counter(c for e in candidates for c in e.categories)
         print(f"selection: feed='{feed.name}' select={feed.select} candidates={len(candidates)}"
               + (f" categories={dict(cats.most_common(10))}" if cats else ""))
         chosen, feed_rejected = choose(config, feed, candidates, decisions=decisions)
+        feed_result["adopted"] = len(chosen)
         for item in chosen:
             new_items[item.url] = item
         rejected.update(feed_rejected)
@@ -465,32 +472,54 @@ def run(
     skip_brave: bool = False,
     reconsider_excluded: bool = False,
     sleep=time.sleep,
+    status_path: Path | None = None,
 ) -> int:
     env = os.environ if env is None else env
     today = today or datetime.now(JST).date().isoformat()
+    status_path = status_path or months_path.parent / "collection-status.json"
+    attempted_at = collection_status.timestamp()
+
+    def record(fn, *args) -> bool:
+        try:
+            fn(status_path, *args)
+            return True
+        except (OSError, ValueError):
+            print("ERROR: 収集状態を保存できませんでした。", file=sys.stderr)
+            return False
+
+    status_saved = record(collection_status.begin, attempted_at)
     try:
         config = load_config(config_path)
         seen = load_seen(seen_path)
     except ConfigError as e:
+        record(collection_status.finish, attempted_at, "error", [], None)
         print(f"ERROR: {e}", file=sys.stderr)
         return 2
 
     # 1. 公式フィード（保存する）
-    items, rejected, stats = collect_feeds(config, seen, today, reconsider_excluded)
-    stats.same_title = count_same_titles(items, logs_dir, today)
-    if items:
-        write_log(logs_dir, today, items)  # ログ→seenの順（途中失敗時に記事を取りこぼさない）
-    if items or rejected:
-        for item in items:
-            seen[item.url] = {"first_seen": today}
-            for url in item.grouped_urls:
-                seen[url] = {"first_seen": today, "grouped_into": item.url}
-        for url, reason in rejected.items():  # 不採用の記事も記録し、次回以降に復活させない
-            if reason not in RETRY_REASONS:
-                first = seen.get(url, {}).get("first_seen", today)  # 再評価で再び不採用になった場合は初出日を保つ
-                seen[url] = {"first_seen": first, "excluded": reason}
-        save_json(seen_path, seen)
-    update_months(months_path, logs_dir)
+    stats = Stats()
+    try:
+        items, rejected, stats = collect_feeds(config, seen, today, reconsider_excluded)
+        stats.same_title = count_same_titles(items, logs_dir, today)
+        if items:
+            write_log(logs_dir, today, items)  # ログ→seenの順（途中失敗時に記事を取りこぼさない）
+        if items or rejected:
+            for item in items:
+                seen[item.url] = {"first_seen": today}
+                for url in item.grouped_urls:
+                    seen[url] = {"first_seen": today, "grouped_into": item.url}
+            for url, reason in rejected.items():  # 不採用の記事も記録し、次回以降に復活させない
+                if reason not in RETRY_REASONS:
+                    first = seen.get(url, {}).get("first_seen", today)
+                    seen[url] = {"first_seen": first, "excluded": reason}
+            save_json(seen_path, seen)
+        update_months(months_path, logs_dir)
+    except Exception:
+        record(collection_status.finish, attempted_at, "error", stats.feed_results, None)
+        raise
+    result = ("unknown" if not stats.feeds else "success" if not stats.failed_feeds
+              else "failed" if len(stats.failed_feeds) == stats.feeds else "partial")
+    status_saved = record(collection_status.finish, attempted_at, result, stats.feed_results, stats.new_items) and status_saved
     print_stats(stats)
 
     # 2. Brave検索（保存しない。品質の件数のみ記録）
@@ -515,8 +544,10 @@ def run(
 
     attempted = stats.feed_requests + (probe.requests if probe else 0)
     failed = len(stats.failed_feeds) + (probe.failed if probe else 0)
-    if attempted and failed == attempted:
+    if (stats.feed_requests and len(stats.failed_feeds) == stats.feed_requests) or (attempted and failed == attempted):
         print("ERROR: すべての取得が失敗しました。", file=sys.stderr)
+        return 1
+    if not status_saved:
         return 1
     return 0
 

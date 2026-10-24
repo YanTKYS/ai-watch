@@ -49,7 +49,7 @@ GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）�
 ## 実行
 
 - **自動実行**: 毎日 JST 6:41 頃（`.github/workflows/collect.yml`。news-watch の 7:17 と時刻をずらしています）。
-  変更があったときだけ `logs/`・`data/` をcommitします。
+  `logs/`・`data/` の差分をcommitします。収集状態の時刻も記録するため、採用0件の日も状態更新が残ります。
 - **手動実行**: Actions → `Collect AI news` → Run workflow。`skip_brave` を選ぶと公式フィードだけを取得します。
   `reconsider_excluded` を選ぶと、不採用として記録済みの記事を現在の選定ルールで再評価します。
 - **ローカル実行**（任意）: `pip install -r requirements.txt` のあと `python scripts/collect.py [--skip-brave]`
@@ -130,6 +130,9 @@ URLが異なる同一話題は、まず実際の収集状況を確認するた�
 ライト／ダークモードに対応しています。検索は `data/search-index.json` をブラウザで読むだけで、外部APIは使いません。
 検索結果にもリリースの項目数・主な変更・各バージョンへのリンクを表示し、抜粋にない個別バージョン名でも検索できます。
 月一覧・日刊ログ・検索データの読み込みに失敗した場合は、表示される「再試行」から月・並び順・検索語を保って読み直せます。
+収集状況には最後に公開された公式フィードの結果と検索インデックス生成結果を別々に表示します。
+状態が36時間を超えて古いと「更新遅延」、状態ファイルがない旧環境等は「状態不明」とし、記事の閲覧は継続できます。
+記録項目・判定・配信との違いは [収集状況と鮮度](docs/collection-health.md) を参照してください。`?sample` では本番状態を表示しません。
 
 - 公開URL例: `https://yantkys.github.io/ai-watch/`
 - サンプルデータ（架空の記事、`samples/`）: `https://yantkys.github.io/ai-watch/?sample`
