@@ -15,12 +15,23 @@ const statusEl = document.getElementById("status");
 const announcement = document.getElementById("view-announcement");
 const retryButton = document.getElementById("load-retry");
 const content = document.getElementById("content");
+const filterPanel = document.getElementById("filter-panel");
+const filterToggle = document.getElementById("filter-toggle");
+const filterFrom = document.getElementById("filter-from");
+const filterTo = document.getElementById("filter-to");
+const filtersClear = document.getElementById("filters-clear");
+const conditionsClear = document.getElementById("conditions-clear");
+const optionsStatus = document.getElementById("filter-options-status");
+const optionsRetry = document.getElementById("filter-options-retry");
+const filterCheckboxes = { categories: [], feeds: [] };
+let filterOptionsLoading = false;
 let loadToken = 0; // 連続切替時に古い応答で上書きしない
 let sortOrder = "desc"; // "desc"=新しい順 / "asc"=古い順（月を切り替えても維持。永続化はしない）
 let current = null; // 表示中の月 { ym, days }。並び順変更時の再描画に使う
 const SEARCH_PAGE_SIZE = 50; // 検索結果は50件ずつ表示する（「さらに表示」で追加）
 const SEARCH_DELAY_MS = 250; // 入力が止まってから検索する（入力途中の再描画を抑える）
-let searchQuery = ""; // 検索中のキーワード（空なら通常の日刊表示）
+// F02が接続できる閲覧条件。入力途中の不正日付フラグ以外は文字列/配列だけで表す。
+let viewState = { query: "", categories: [], feeds: [], from: "", to: "", invalidDateInput: false };
 let searchEntries = null; // buildSearchEntries の結果（初回検索時に読み込み、以後は再利用）
 let searchLoading = null; // 読み込み中の Promise（同時に複数回取得しない）
 let searchTimer = 0;
@@ -196,7 +207,7 @@ function renderMonth(ym, days, order) {
 }
 
 async function showMonth(ym, retry = null) {
-  if (searchQuery) return;
+  if (resultsMode()) return;
   const token = beginView(retry);
   current = null; // 読み込み中・失敗時に旧月を並び順変更で再描画しない
   content.replaceChildren();
@@ -254,20 +265,77 @@ async function loadMonths(retry = null) {
     }
   }
   syncControls();
-  if (token === loadToken && !searchQuery) await showMonth(select.value, retry); // months.json は新しい順。先頭=最新月
+  if (token === loadToken && !resultsMode()) await showMonth(select.value, retry); // months.json は新しい順。先頭=最新月
 }
 
-// 検索中は月の選択・並び順を無効にする（検索は全期間・新しい順）。
+function resultsMode() {
+  return Boolean(viewState.query || hasArticleFilters(viewState));
+}
+
+function conditionsSummary() {
+  const parts = [];
+  if (viewState.query) parts.push(`検索語「${viewState.query}」`);
+  if (viewState.categories.length) parts.push(`カテゴリ: ${viewState.categories.join("、")}`);
+  if (viewState.feeds.length) parts.push(`情報源: ${viewState.feeds.join("、")}`);
+  if (viewState.from || viewState.to) parts.push(`取得日: ${viewState.from || "指定なし"} 〜 ${viewState.to || "指定なし"}（両端を含む）`);
+  if (viewState.invalidDateInput) parts.push("取得日: 入力途中の年月日を確認してください");
+  return parts.join(" ／ ");
+}
+
+// 閲覧条件の更新はこの経路へ集約する。データ取得やURL保存は状態に含めない。
+function updateViewState(patch) {
+  const next = { ...viewState, ...patch };
+  if (JSON.stringify(next) === JSON.stringify(viewState) && !inputPending) return;
+  viewState = next;
+  for (const [key, input] of [["from", filterFrom], ["to", filterTo]]) {
+    if (key in patch && input.value !== next[key]) input.value = next[key];
+  }
+  syncControls();
+  if (composing) {
+    inputPending = true;
+    beginView();
+    setStatus("");
+    return; // フィルターを変えてもIME途中の検索結果を通知しない
+  }
+  inputPending = false;
+  showDaily();
+}
+
+function applyFilterChange(patch) {
+  clearTimeout(searchTimer);
+  updateViewState({ ...patch, query: composing ? viewState.query : normalizedQuery(searchInput.value) });
+}
+
+function clearFilterValues() {
+  filterFrom.value = "";
+  filterTo.value = ""; // 空のvalueでもnative dateの入力途中状態をリセットする
+  return { categories: [], feeds: [], from: "", to: "", invalidDateInput: false };
+}
+
+// 全期間モードでは月・日刊の並び順を無効にし、条件と解除方法を明示する。
 function syncControls() {
-  const off = Boolean(searchQuery) || !select.options.length;
+  const off = resultsMode() || !select.options.length;
   select.disabled = off;
   orderSelect.disabled = off;
   searchClear.disabled = !searchInput.value;
+  const active = resultsMode();
+  document.getElementById("mode-hint").hidden = !active;
+  const summary = document.getElementById("active-conditions");
+  summary.textContent = active ? `適用中の条件: ${conditionsSummary()}` : "";
+  summary.hidden = !active;
+  conditionsClear.hidden = !active;
+  filtersClear.disabled = !hasArticleFilters(viewState);
+  const invalid = Boolean(validateFilterDates(viewState));
+  filterFrom.setAttribute("aria-invalid", String(invalid));
+  filterTo.setAttribute("aria-invalid", String(invalid));
+  for (const key of ["categories", "feeds"]) {
+    for (const checkbox of filterCheckboxes[key]) checkbox.checked = viewState[key].includes(checkbox.value);
+  }
 }
 
 // 検索中なら検索結果、そうでなければ選択中の月（取得済みなら再取得せず再描画）。
 function showDaily() {
-  if (searchQuery) {
+  if (resultsMode()) {
     showSearch();
   } else if (current) {
     beginView(); // 検索の読み込み中の応答で上書きしない
@@ -290,15 +358,70 @@ function loadSearchEntries() {
         const entries = buildSearchEntries(data);
         if (data.length && !entries.length) throw new DataError("no valid articles");
         searchEntries = entries;
+        populateFilterOptions(entries);
       })
       .catch((e) => { searchLoading = null; throw e; }); // 失敗時は次の検索で再試行する
   }
   return searchLoading;
 }
 
+function populateFilterOptions(entries) {
+  const options = articleFilterOptions(entries);
+  for (const [key, id] of [["categories", "filter-categories"], ["feeds", "filter-feeds"]]) {
+    const list = document.getElementById(id);
+    filterCheckboxes[key] = options[key].map(value => {
+      const label = el("label");
+      const checkbox = el("input");
+      checkbox.type = "checkbox";
+      checkbox.value = value;
+      checkbox.checked = viewState[key].includes(value);
+      checkbox.addEventListener("change", () => {
+        const selected = viewState[key].filter(v => v !== value);
+        if (checkbox.checked) selected.push(value);
+        applyFilterChange({ [key]: selected });
+      });
+      label.appendChild(checkbox);
+      label.appendChild(el("span", "", value));
+      list.appendChild(label);
+      return checkbox;
+    });
+    if (!options[key].length) list.appendChild(el("p", "meta", "保存済み検索データには候補がありません。"));
+  }
+  document.getElementById("filter-category-field").disabled = false;
+  document.getElementById("filter-feed-field").disabled = false;
+  optionsStatus.textContent = "";
+  if (document.activeElement === optionsRetry) (filterCheckboxes.categories[0] || filterToggle).focus();
+  optionsRetry.hidden = true;
+}
+
+async function loadFilterOptions() {
+  if (searchEntries !== null || filterOptionsLoading) return;
+  const token = loadToken;
+  filterOptionsLoading = true;
+  optionsStatus.textContent = "カテゴリ・情報源の候補を読み込み中…（日刊の閲覧は続けられます）";
+  optionsRetry.setAttribute("aria-disabled", "true");
+  try {
+    await loadSearchEntries(); // 初回検索・条件指定と同じPromise/キャッシュを共有する
+  } catch (e) {
+    optionsStatus.textContent = e instanceof DataError ? "候補データの形式が不正です。候補を再試行してください。"
+      : "候補を取得できませんでした。候補を再試行してください。";
+    optionsRetry.hidden = false;
+    if (!resultsMode() && token === loadToken && filterPanel.open) announce(optionsStatus.textContent);
+  } finally {
+    filterOptionsLoading = false;
+    optionsRetry.setAttribute("aria-disabled", "false");
+  }
+}
+
 async function showSearch(retry = null) {
   const token = beginView(retry);
-  const query = searchQuery;
+  const state = viewState;
+  const error = validateFilterDates(state);
+  if (error) {
+    content.replaceChildren();
+    setStatus(error, true);
+    return;
+  }
   if (searchEntries === null) {
     content.replaceChildren();
     setStatus("検索データを読み込み中...");
@@ -310,23 +433,27 @@ async function showSearch(retry = null) {
     }
     if (token !== loadToken) return;
   }
-  renderSearch(query, searchArticles(searchEntries, query));
+  renderSearch(state, filterArticles(searchEntries, state));
 }
 
-function renderSearch(query, results) {
+function renderSearch(state, results) {
   const token = loadToken;
+  const filtered = hasArticleFilters(state);
+  const resultLabel = filtered ? "絞り込み結果" : `「${state.query}」の検索結果`;
   setStatus("");
   const frag = document.createDocumentFragment();
   const head = el("div", "month-head");
-  head.appendChild(viewHeading("検索結果"));
+  head.appendChild(viewHeading(filtered ? "絞り込み結果" : "検索結果"));
   head.appendChild(el("span", "count", `${results.length}件`));
   frag.appendChild(head);
-  frag.appendChild(el("p", "search-summary", `「${query}」を全期間の日刊ログから検索（取得日の新しい順）`));
+  frag.appendChild(el("p", "search-summary", filtered ? "保存済み検索データの全期間から絞り込み（取得日の新しい順）"
+    : `「${state.query}」を全期間の日刊ログから検索（取得日の新しい順）`));
   if (results.length === 0) {
     frag.appendChild(el("p", "search-empty",
-      "該当する記事はありません。キーワードを減らすか、別の表記（略称・正式名称など）でお試しください。"));
+      filtered ? "条件に一致する記事はありません。検索語やフィルターを見直すか、すべての条件を解除してください。"
+        : "該当する記事はありません。キーワードを減らすか、別の表記（略称・正式名称など）でお試しください。"));
     content.replaceChildren(frag);
-    announce(`「${query}」の検索結果: 0件。`);
+    announce(`${resultLabel}: 0件。`);
     return;
   }
   const cards = el("div", "cards search-results");
@@ -354,7 +481,7 @@ function renderSearch(query, results) {
   showMore();
   frag.appendChild(more);
   content.replaceChildren(frag);
-  announce(`「${query}」の検索結果: ${results.length}件。${shown}件を表示しています。`);
+  announce(`${resultLabel}: ${results.length}件。${shown}件を表示しています。`);
 }
 
 function normalizedQuery(value) {
@@ -364,11 +491,8 @@ function normalizedQuery(value) {
 function applySearch(value) {
   clearTimeout(searchTimer);
   const query = normalizedQuery(value);
-  if (query === searchQuery && !inputPending) return; // 空白の追加など、結果が変わらない入力では再描画しない
-  inputPending = false;
-  searchQuery = query;
-  syncControls();
-  showDaily(); // 空欄に戻したら通常の日刊表示へ
+  if (query === viewState.query && !inputPending) return; // 空白の追加など、結果が変わらない入力では再描画しない
+  updateViewState({ query }); // 検索語だけ空にしてもフィルターがあれば全期間モードを維持
 }
 
 function scheduleSearch() {
@@ -379,7 +503,7 @@ function scheduleSearch() {
 function invalidateInput() {
   clearTimeout(searchTimer);
   // debounce/IME待ちの間にも旧応答の描画・通知・再試行のフォーカス移動を無効にする。
-  if (composing || normalizedQuery(searchInput.value) !== searchQuery) {
+  if (composing || normalizedQuery(searchInput.value) !== viewState.query) {
     inputPending = true;
     beginView();
     setStatus("");
@@ -388,6 +512,23 @@ function invalidateInput() {
 
 function init() {
   if (BASE) notice.hidden = false;
+  filterPanel.addEventListener("toggle", () => { if (filterPanel.open) loadFilterOptions(); });
+  optionsRetry.addEventListener("click", loadFilterOptions);
+  const changeDates = () => applyFilterChange({ from: filterFrom.value, to: filterTo.value,
+    invalidDateInput: Boolean(filterFrom.validity?.badInput || filterTo.validity?.badInput) });
+  filterFrom.addEventListener("input", changeDates);
+  filterTo.addEventListener("input", changeDates);
+  filtersClear.addEventListener("click", () => {
+    applyFilterChange(clearFilterValues());
+    filterToggle.focus();
+  });
+  conditionsClear.addEventListener("click", () => {
+    clearTimeout(searchTimer);
+    searchInput.value = "";
+    composing = false;
+    updateViewState({ ...clearFilterValues(), query: "" });
+    searchInput.focus();
+  });
   retryButton.addEventListener("click", async () => {
     if (!retryAction || activeRetry) return;
     const retry = retryAction;
@@ -430,7 +571,7 @@ function init() {
   select.addEventListener("change", () => showMonth(select.value));
   orderSelect.addEventListener("change", () => {
     sortOrder = orderSelect.value === "asc" ? "asc" : "desc";
-    if (current && !searchQuery) renderMonth(current.ym, current.days, sortOrder); // 再取得せず再描画
+    if (current && !resultsMode()) renderMonth(current.ym, current.days, sortOrder); // 再取得せず再描画
   });
   loadMonths();
 }

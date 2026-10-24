@@ -30,9 +30,34 @@
         <div class="search-box" role="search">
           <label for="search-input" class="visually-hidden">日刊ログを全期間からキーワード検索</label>
           <input type="search" id="search-input" placeholder="全期間を検索（例: Codex）" autocomplete="off" enterkeyhint="search">
-          <button type="button" id="search-clear" disabled>クリア</button>
+          <button type="button" id="search-clear" aria-label="検索語をクリア" disabled>クリア</button>
         </div>
       </div>
+      <details id="filter-panel" class="filter-panel">
+        <summary id="filter-toggle">絞り込み（カテゴリ・情報源・取得日）</summary>
+        <p class="meta">同じ項目の複数選択は「いずれか」、項目間・検索語とは「すべて一致」で絞り込みます。<a href="https://github.com/YanTKYS/ai-watch/blob/main/docs/source-quality.md" target="_blank" rel="noopener noreferrer">収集範囲と選定方針（GitHub・新しいタブ）</a></p>
+        <p id="filter-options-status" class="meta">開くとカテゴリ・情報源の候補を読み込みます。</p>
+        <button type="button" id="filter-options-retry" class="filter-button" aria-describedby="filter-options-status" hidden>候補を再試行</button>
+        <div class="filter-grid">
+          <fieldset id="filter-category-field" disabled>
+            <legend>カテゴリ（複数選択可）</legend>
+            <div id="filter-categories" class="filter-choices"></div>
+          </fieldset>
+          <fieldset id="filter-feed-field" disabled>
+            <legend>情報源（複数選択可）</legend>
+            <div id="filter-feeds" class="filter-choices"></div>
+          </fieldset>
+        </div>
+        <p id="filter-date-help" class="meta">取得日はこのサイトが記事を収録した日です。元記事の公開日ではありません。開始・終了日を含み、片方だけの指定もできます。</p>
+        <div class="filter-dates">
+          <label>取得日の開始日<input id="filter-from" type="date" aria-describedby="filter-date-help status"></label>
+          <label>取得日の終了日<input id="filter-to" type="date" aria-describedby="filter-date-help status"></label>
+        </div>
+        <button type="button" id="filters-clear" class="filter-button" disabled>フィルターだけ解除</button>
+      </details>
+      <p id="mode-hint" class="meta" hidden>保存済み検索データの全期間を表示中。月・並び順は日刊用です。クリアは検索語だけを解除します。</p>
+      <p id="active-conditions" class="active-conditions" hidden></p>
+      <button type="button" id="conditions-clear" class="filter-button" hidden>すべての条件を解除</button>
     </div>
   </header>
   <main id="main-content" class="wrap" tabindex="-1">

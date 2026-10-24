@@ -147,8 +147,44 @@ function searchArticles(entries, query) {
   return entries.filter((e) => words.every((w) => e.haystack.includes(w)));
 }
 
+// 閲覧条件だけを扱う。記事・インデックスの内容や順序は変更しない。
+function hasArticleFilters(state) {
+  return Boolean(state.categories?.length || state.feeds?.length || state.from || state.to || state.invalidDateInput);
+}
+
+function validFilterDate(value) {
+  if (typeof value !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) || value.startsWith("0000")) return false;
+  const date = new Date(value + "T00:00:00Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function validateFilterDates(state) {
+  if (state.invalidDateInput) return "取得日は年月日をすべて入力してください。";
+  if (state.from && !validFilterDate(state.from)) return "取得日の開始日はYYYY-MM-DDの実在する日付を指定してください。";
+  if (state.to && !validFilterDate(state.to)) return "取得日の終了日はYYYY-MM-DDの実在する日付を指定してください。";
+  if (state.from && state.to && state.from > state.to) return "取得日の開始日は終了日以前にしてください。";
+  return "";
+}
+
+function articleFilterOptions(entries) {
+  const values = key => [...new Set(entries.map(e => textOf(e[key]).trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+  return { categories: values("category"), feeds: values("feed") };
+}
+
+function filterArticles(entries, state) {
+  const error = validateFilterDates(state);
+  if (error) throw new RangeError(error);
+  const candidates = splitKeywords(state.query).length ? searchArticles(entries, state.query) : entries;
+  return candidates.filter(e => (!state.categories?.length || state.categories.includes(textOf(e.category).trim()))
+    && (!state.feeds?.length || state.feeds.includes(textOf(e.feed).trim()))
+    && (!(state.from || state.to) || (validFilterDate(e.retrieved)
+      && (!state.from || e.retrieved >= state.from) && (!state.to || e.retrieved <= state.to))));
+}
+
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     parseLog, safeUrl, monthLabel, dateLabel, normalizeText, splitKeywords, buildSearchEntries, searchArticles,
+    hasArticleFilters, validFilterDate, validateFilterDates, articleFilterOptions, filterArticles,
   };
 }
