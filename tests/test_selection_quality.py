@@ -43,7 +43,7 @@ class SelectionQuality(Base):
     def test_confirmed_pending_and_known_mismatches_are_separate(self):
         code, rows, out, err = self.evaluate(check=True)
         self.assertEqual(code, 0, err)
-        self.assertIn('confirmed=10 match=6 mismatch=4 pending=7 required_failed=0', out)
+        self.assertIn('confirmed=10 match=9 mismatch=1 pending=7 required_failed=0', out)
         self.assertIn('undecided=5 not_configured=2', out)
         self.assertEqual(rows['new-model']['current']['result'], 'match')
         self.assertEqual(rows['dashboard']['current']['result'], 'mismatch')
@@ -114,15 +114,17 @@ class SelectionQuality(Base):
         self.raw = json.loads((ROOT / 'tests/fixtures/selection-validation.json').read_text())
         code, rows, out, err = self.evaluate(check=True)
         self.assertEqual(code, 0, err)
-        self.assertIn('validation: confirmed=11 match=9 mismatch=2 pending=0', out)
+        self.assertIn('validation: confirmed=11 match=11 mismatch=0 pending=0', out)
         for slug in ('public-breaking', 'api-breaking'):
             row = rows[slug]['current']
             self.assertEqual(row['result'], 'match')
             self.assertEqual(row['actual']['release_counts']['breaking'], 1)
         for slug in ('internal-html', 'example-html'):
             row = rows[slug]['current']
-            self.assertEqual(row['result'], 'mismatch')
-            self.assertEqual(row['differences']['release_counts.breaking'], {'expected': 0, 'actual': 1})
+            self.assertEqual(row['result'], 'match')
+            self.assertEqual(row['actual']['release_counts']['breaking'], 0)
+            self.assertEqual(row['actual']['release_counts']['chore'], 1)
+            self.assertEqual(row['differences'], {})
         self.assertEqual(rows['routine-fix']['current']['result'], 'match')
 
     def test_invalid_expectations_are_input_errors_not_quality_failures(self):

@@ -214,8 +214,8 @@
           "other": 0
         }
       },
-      "reason": "合成本文は定型的な修正文のみで具体的な新機能はない。unknown採用は既知の不一致として残す。",
-      "required": false
+      "reason": "合成本文は定型的な修正文のみ。fixとして集計し、具体的な新機能のないリリースを除外する。",
+      "required": true
     },
     "https://evaluation.example.org/claude-v2": {
       "feed_url": "https://github.com/anthropics/claude-code/releases.atom",
@@ -255,7 +255,7 @@
         }
       },
       "reason": "CIのpreviewアップロード削除はSDK利用者の破壊的変更ではない。",
-      "required": false
+      "required": true
     },
     "https://evaluation.example.org/sdk-example": {
       "feed_url": "https://github.com/anthropics/anthropic-sdk-python/releases.atom",
@@ -268,7 +268,7 @@
         }
       },
       "reason": "サンプルのawait修正だけで、公開APIの廃止や新機能ではない。",
-      "required": false
+      "required": true
     },
     "https://evaluation.example.org/gemini-sdk-v1": {
       "feed_url": "https://github.com/googleapis/python-genai/releases.atom",
