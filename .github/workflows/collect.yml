@@ -42,6 +42,7 @@ jobs:
       # Brave Search API は1日（JST）1回・最大4リクエスト。同じ日の再実行（手動を含む）ではAPIを呼ばない。
       # Jev・Gemini は v0.1.0 では使わない（キーを渡さない）。
       - name: Collect
+        id: collect
         env:
           BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
           SKIP_BRAVE: ${{ inputs.skip_brave && '--skip-brave' || '' }}
@@ -51,15 +52,21 @@ jobs:
       # Pagesの横断検索用インデックス（logs/ からの派生データ）。外部APIは使わない。
       # 失敗しても日刊ログのcommitは続ける（インデックスは次回の実行で再生成される）。
       - name: Update search index
+        id: search_index
         if: ${{ !cancelled() }}
         continue-on-error: true
         run: python scripts/search_index.py
+
+      # outcomeはcontinue-on-error前の実際の成否。生成成功とcommit/Pages配信成功は区別する。
+      - name: Record collection and index status
+        if: ${{ !cancelled() }}
+        run: python scripts/collection_status.py --collect-result "${{ steps.collect.outcome }}" --index-result "${{ steps.search_index.outcome }}"
 
       # 取得の一部が失敗しても、API利用件数（brave-usage.json）と取得済みのログは必ず記録する。
       - name: Commit and push if there are changes
         if: ${{ !cancelled() }}
         run: |
-          git add logs data/seen.json data/months.json data/brave-usage.json data/search-index.json
+          git add logs data/seen.json data/months.json data/brave-usage.json data/search-index.json data/collection-status.json
           if git diff --cached --quiet; then
             echo "No changes; nothing to commit."
             exit 0
