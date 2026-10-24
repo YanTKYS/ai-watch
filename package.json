@@ -1,0 +1,13 @@
+{
+  "name": "ai-watch-e2e",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

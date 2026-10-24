@@ -29,3 +29,29 @@ jobs:
           python scripts/collect.py --dry-run --check-quality --reconsider-excluded
           python scripts/collect.py --dry-run --check-quality --reconsider-excluded --fixtures tests/fixtures/selection-validation.json
           python scripts/collect.py --dry-run --check-quality --reconsider-excluded --fixtures tests/fixtures/selection-news-validation.json
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Test static Pages with Chromium
+        id: browser_tests
+        run: npm run test:e2e
+      - name: Save failure traces
+        if: ${{ failure() && steps.browser_tests.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: chromium-e2e-failure-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
