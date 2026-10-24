@@ -123,10 +123,17 @@ function buildSearchEntries(data) {
     const item = {
       title: textOf(a.title), url, source: textOf(a.source), feed: textOf(a.feed), published: textOf(a.published),
       retrieved: textOf(a.retrieved), category: textOf(a.category),
+      notes: textOf(a.notes),
       highlights: Array.isArray(a.highlights) ? a.highlights.filter((h) => typeof h === "string") : [],
+      releases: (Array.isArray(a.releases) ? a.releases : [])
+        .filter((r) => r && typeof r === "object")
+        .map((r) => ({ label: textOf(r.label).trim(), url: safeUrl(textOf(r.url)) }))
+        .filter((r) => r.label && r.url),
     };
-    // 検索対象: タイトル・カテゴリ・情報源・配信元・リリースの抜粋。改行で区切り、項目をまたいで一致しないようにする。
-    item.haystack = normalizeText([item.title, item.category, item.source, item.feed, ...item.highlights].join("\n"));
+    // 検索対象: タイトル・カテゴリ・情報源・配信元・リリースの抜粋と個別バージョン名。
+    // 改行で区切り、項目をまたいで一致しないようにする。
+    item.haystack = normalizeText([item.title, item.category, item.source, item.feed, ...item.highlights,
+      ...item.releases.map((r) => r.label)].join("\n"));
     entries.push(item);
   }
   // 安定ソートのため、同じ取得日はインデックスの順（ログの出現順）を保つ
