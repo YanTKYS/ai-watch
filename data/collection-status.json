@@ -1,5 +1,61 @@
 {
   "schema_version": 1,
-  "collection": null,
-  "index": null
+  "collection": {
+    "attempted_at": "2026-10-25T08:39:02+09:00",
+    "completed_at": "2026-10-25T08:39:03+09:00",
+    "last_all_success_at": "2026-10-25T08:39:03+09:00",
+    "result": "success",
+    "new_articles": 0,
+    "feeds": [
+      {
+        "name": "OpenAI News",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "Google DeepMind News",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "GitHub Changelog",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "Claude Code Releases",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "OpenAI Codex Releases",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "MCP Specification Releases",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      },
+      {
+        "name": "Anthropic SDK Releases",
+        "status": "success",
+        "candidates": 0,
+        "adopted": 0
+      }
+    ],
+    "run_key": "40143589412:1"
+  },
+  "index": {
+    "checked_at": "2026-10-25T08:39:09+09:00",
+    "result": "success",
+    "last_success_at": "2026-10-25T08:39:09+09:00",
+    "for_collection": "2026-10-25T08:39:02+09:00"
+  }
 }
