@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "collection": {
-    "attempted_at": "2026-10-25T08:39:02+09:00",
-    "completed_at": "2026-10-25T08:39:03+09:00",
-    "last_all_success_at": "2026-10-25T08:39:03+09:00",
+    "attempted_at": "2026-10-26T08:30:33+09:00",
+    "completed_at": "2026-10-26T08:30:36+09:00",
+    "last_all_success_at": "2026-10-26T08:30:36+09:00",
     "result": "success",
     "new_articles": 0,
     "feeds": [
@@ -50,12 +50,12 @@
         "adopted": 0
       }
     ],
-    "run_key": "40143589412:1"
+    "run_key": "40245072496:1"
   },
   "index": {
-    "checked_at": "2026-10-25T08:39:09+09:00",
+    "checked_at": "2026-10-26T08:30:42+09:00",
     "result": "success",
-    "last_success_at": "2026-10-25T08:39:09+09:00",
-    "for_collection": "2026-10-25T08:39:02+09:00"
+    "last_success_at": "2026-10-26T08:30:42+09:00",
+    "for_collection": "2026-10-26T08:30:33+09:00"
   }
 }
