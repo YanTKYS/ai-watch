@@ -40,8 +40,11 @@ F04の収集/生成状態は独立して表示する。生成失敗の表示が�
 
 `app.js` の `viewState` は `{ query, categories, feeds, from, to, invalidDateInput }`。検索語/日付は文字列、複数選択は文字列配列とし、`updateViewState()` に更新を集約する。`invalidDateInput` はnative date入力が途中でvalueを返せない場合のUIエラーフラグで、保存用の条件にはしない。取得済み記事・Promise・月のキャッシュは別で管理する。
 
-DOMを使わない候補抽出・日付検証・絞り込みは `parser.js` に置く。キーワード判定は既存の `searchArticles()` を使い、記事順や採否を変更しない。F02が状態をURLと接続できる形にするが、今回はURLパラメータ・履歴・共有・永続化を追加しない。
+DOMを使わない候補抽出・日付検証・絞り込みは `parser.js` に置く。キーワード判定は既存の `searchArticles()` を使い、記事順や採否を変更しない。F02で月・並び順も状態へ追加し、URLパラメータ・履歴・共有に接続する。ローカルストレージ等への永続化は行わない。
 
 `loadToken` で古い結果/エラーを無効にし、入力の250ms debounceとIME確定を維持する。変換中のフィルター変更は条件だけ更新し、検索結果の描画・通知は確定後へ回す。候補の読み込み完了は検索結果や日刊の通知を上書きしない。
 
 `tests/test_filters.cjs` の11ケースを通常のunittestから呼び、OR/AND、境界・月またぎ・欠損・不正日付、キャッシュ/失敗/再試行、3種類の解除、元の月と並び順、非同期競合、debounce/IMEを検証する。[Chromium E2E](browser-tests.md) にも320pxの代表操作と、取得失敗・不正期間の2ケースを追加した。外部APIや実データの書き換えは使わない。
+
+
+表示条件のURL復元・戻る／進む・記事リンクは [F02の仕様](view-urls.md) を参照。

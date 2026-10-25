@@ -20,7 +20,7 @@ const test = base.extend({
 
 async function tabTo(page, target, backward = false) {
   // 追加表示後の記事リンクも通れる上限を定め、タイムアウトまで回り続けない。
-  for (let i = 0; i < 300; i++) {
+  for (let i = 0; i < 450; i++) {
     if (await target.evaluateAll(nodes => nodes.includes(document.activeElement))) return;
     await page.keyboard.press(backward ? 'Shift+Tab' : 'Tab');
   }
@@ -311,4 +311,114 @@ test('filter fetch failures keep daily, F05 retry keeps dates, invalid range is 
   expect(indexRequests).toBe(3);
   await page.getByRole('button',{name:'すべての条件を解除'}).click();
   await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+});
+
+
+test('shared filters: reload/new tab restores multiple choices and an article beyond page 50 at 320px', async ({page,context})=>{
+  await page.setViewportSize({width:320,height:800});
+  await context.route('**/samples/data/search-index.json',route=>route.fulfill({json:filterResults}));
+  await page.goto('/?sample&month=2026-09&order=asc&q=Alpha&category=AIモデル&category=AIコーディング&category=AIモデル&feed=OpenAI+News&feed=Claude+Code+Releases&from=2026-09-30&to=2026-10-02');
+  await expect(page.locator('#view-announcement')).toContainText('122件');
+  await expect(page.locator('#month-select')).toHaveValue('2026-09');
+  await expect(page.locator('#order-select')).toHaveValue('asc');
+  expect(new URL(page.url()).searchParams.getAll('category')).toEqual(['AIコーディング','AIモデル']);
+  const restored=page.url(); await page.reload();
+  await expect(page.locator('#view-announcement')).toContainText('122件');
+  expect(page.url()).toBe(restored);
+  await page.locator('#filter-toggle').click();
+  for(const name of ['AIコーディング','AIモデル','OpenAI News','Claude Code Releases']) {
+    await expect(page.getByRole('checkbox',{name,exact:true})).toBeChecked();
+  }
+  await expect(page.locator('#filter-from')).toHaveValue('2026-09-30');
+  await expect(page.locator('#filter-to')).toHaveValue('2026-10-02');
+  await page.getByRole('button',{name:/さらに表示/}).click();
+  await page.getByRole('button',{name:/さらに表示/}).click();
+  const share=await page.locator('.card').nth(110).getByRole('link',{name:'このサイト内で共有'}).getAttribute('href');
+  const copy=await context.newPage(), errors=[];copy.on('pageerror',e=>errors.push(e.message));
+  await copy.setViewportSize({width:320,height:800});await copy.goto(share);
+  await expect(copy.locator('.search-results .card')).toHaveCount(122);
+  await expect(copy.getByRole('heading',{name:'（E2E合成）Alpha 110',exact:true})).toBeFocused();
+  await expect(copy.locator('#view-announcement')).toContainText('共有記事へ移動');
+  await expect(copy.locator('#collection-health')).toBeHidden();await noOverflow(copy);
+  await copy.reload();await expect(copy.getByRole('heading',{name:'（E2E合成）Alpha 110',exact:true})).toBeFocused();
+  await copy.getByRole('button',{name:'検索語をクリア',exact:true}).click();
+  expect(new URL(copy.url()).searchParams.has('q')).toBe(false);
+  expect(new URL(copy.url()).searchParams.getAll('category')).toHaveLength(2);
+  await copy.getByRole('button',{name:'すべての条件を解除'}).click();
+  await expect(copy.locator('#view-heading')).toHaveText('2026年9月');
+  await expect(copy.locator('#order-select')).toHaveValue('asc');
+  expect(new URL(copy.url()).searchParams.has('category')).toBe(false);
+  expect(errors).toEqual([]);await copy.close();
+});
+
+test('history: debounced typing has one boundary, confirmed filters restore with Back and Forward',async({page})=>{
+  await page.route('**/samples/data/search-index.json',route=>route.fulfill({json:filterResults}));
+  await page.goto('/?sample&month=2026-09&order=asc');await expect(page.locator('#view-heading')).toHaveText('2026年9月');
+  const before=await page.evaluate(()=>history.length),input=page.getByRole('searchbox');
+  for(const word of ['A','Al','Alpha']) {
+    await input.fill(word);
+    await expect.poll(()=>new URL(page.url()).searchParams.get('q')).toBe(word);
+  }
+  expect(await page.evaluate(()=>history.length)).toBe(before+1);
+  await input.press('Enter');
+  await page.locator('#filter-toggle').click();
+  await page.getByRole('checkbox',{name:'AIモデル',exact:true}).check();
+  await expect(page.locator('#view-announcement')).toContainText('絞り込み結果: 1件');
+  await page.goBack();await expect(page.locator('#view-heading')).toHaveText('検索結果');
+  await expect(input).toHaveValue('Alpha');expect(new URL(page.url()).searchParams.has('category')).toBe(false);
+  await page.goBack();await expect(page.locator('#view-heading')).toHaveText('2026年9月');
+  await expect(input).toHaveValue('');await expect(page.locator('#order-select')).toHaveValue('asc');
+  await page.goForward();await expect(page.locator('#view-heading')).toHaveText('検索結果');
+  await page.goForward();await expect(page.locator('#view-announcement')).toContainText('絞り込み結果: 1件');
+  await expect(page.getByRole('checkbox',{name:'AIモデル',exact:true})).toBeChecked();
+  expect(await page.evaluate(()=>history.length)).toBe(before+2);
+});
+
+test('project-page article URL opens a closed daily date and supports a keyboard share link',async({page,context})=>{
+  // Serve the same files under a synthetic GitHub Pages project prefix without editing fixtures.
+  await context.route('**/ai-watch/**',route=>{
+    const url=new URL(route.request().url());url.pathname=url.pathname.replace(/^\/ai-watch/,'');
+    return route.continue({url:url.href});
+  });
+  await page.goto('/ai-watch/?sample&month=2026-09&order=asc');
+  await expect(page.locator('#view-heading')).toHaveText('2026年9月');
+  const day=page.locator('.day').first();
+  await expect(day).toHaveJSProperty('open',false);
+  const share=day.locator('.share').first(),href=await share.getAttribute('href');
+  const title=await day.locator('.card-title').first().textContent();
+  expect(href).toMatch(/^\/ai-watch\/\?sample=/);
+  const copy=await context.newPage(),errors=[];copy.on('pageerror',e=>errors.push(e.message));
+  await copy.goto(href);await expect(copy.locator('.card-title').filter({hasText:title})).toBeFocused();
+  const target=copy.locator('article').filter({has:copy.locator('.card-title').filter({hasText:title})});
+  await expect(target).toBeVisible();
+  expect(await target.evaluate(card=>card.closest('details').open)).toBe(true);
+  await expect(copy.locator('#view-announcement')).toContainText('共有記事へ移動');
+  await day.locator('summary').click();await share.focus();await page.keyboard.press('Enter');
+  await expect(page.locator('.card-title').filter({hasText:title})).toBeFocused();
+  expect(new URL(page.url()).hash).toBe(new URL(href,'https://local.example').hash);
+  await noOverflow(page);expect(errors).toEqual([]);await copy.close();
+});
+
+test('restoration cancels IME and old fetches; invalid/missing links return to the current list',async({page})=>{
+  let pending;
+  await page.route('**/samples/data/search-index.json',route=>new Promise(resolve=>{pending={route,resolve};}));
+  await page.goto('/?sample');await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+  const input=page.getByRole('searchbox');await input.fill('Alpha');await input.press('Enter');
+  await expect.poll(()=>Boolean(pending)).toBe(true);
+  await input.dispatchEvent('compositionstart');await input.fill('変換中');
+  await page.goBack();await expect(page.locator('#view-heading')).toHaveText('2026年10月');
+  await pending.route.fulfill({json:filterResults});pending.resolve();
+  await expect(input).toHaveValue('');await expect(page.locator('#view-announcement')).toContainText('日刊:');
+  expect(new URL(page.url()).searchParams.has('q')).toBe(false);
+  await page.goForward();await expect(page.locator('#view-heading')).toHaveText('検索結果');
+  await expect(input).toHaveValue('Alpha');
+  await page.unroute('**/samples/data/search-index.json');
+  await page.route('**/samples/data/search-index.json',route=>route.fulfill({json:filterResults}));
+  await page.goto('/?sample&month=bad&order=bad&q=Alpha&category=Unknown&from=2026-02-30#article-missing');
+  await expect(page.locator('.search-results .card')).toHaveCount(50);
+  await expect(page.locator('#url-notice')).toContainText('現在の一覧にありません');
+  expect(new URL(page.url()).hash).toBe('');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('Alpha');
+  expect(new URL(page.url()).searchParams.has('category')).toBe(false);
+  await expect(page.locator('#load-retry')).toBeHidden();
 });

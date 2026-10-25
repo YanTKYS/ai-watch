@@ -8,6 +8,15 @@ function harness(search = '') {
   const nodes = {}, requests = [], timers = new Map(), announcements = [];
   let timerId = 0;
   const document = {};
+  let url = new URL('https://local.example/project/' + search), historyIndex = 0;
+  const historyURLs = [url.href], windowListeners = {};
+  const location = { get href() { return url.href; }, get pathname() { return url.pathname; },
+    get search() { return url.search; }, get hash() { return url.hash; }, reload() {} };
+  const history = {
+    pushState(_state, _title, value) { url = new URL(value, url); historyURLs.splice(++historyIndex); historyURLs.push(url.href); },
+    replaceState(_state, _title, value) { url = new URL(value, url); historyURLs[historyIndex] = url.href; },
+    go(delta) { historyIndex += delta; url = new URL(historyURLs[historyIndex]); for (const fn of windowListeners.popstate || []) fn(); },
+  };
   class Element {
     constructor(tag, text = '') {
       this.tag = tag; this.text = text; this.childNodes = []; this.listeners = {}; this.attributes = {};
@@ -28,6 +37,7 @@ function harness(search = '') {
     get value() { return this.selectedValue ?? (this.tag === 'select' ? this.options[0]?.value ?? '' : ''); }
     set value(value) { this.selectedValue = value; }
     appendChild(node) {
+      for (const child of node.tag === '#fragment' ? node.childNodes : [node]) child.parentElement = this;
       this.childNodes.push(...(node.tag === '#fragment' ? node.childNodes : [node]));
       return node;
     }
@@ -40,11 +50,14 @@ function harness(search = '') {
     addEventListener(name, fn) { (this.listeners[name] ??= []).push(fn); }
     emit(name, event = {}) { for (const fn of this.listeners[name] ?? []) fn(event); }
     focus() { document.activeElement = this; }
+    contains(node) { return walk(this).includes(node); }
+    closest(tag) { return this.tag === tag ? this : this.parentElement?.closest(tag) || null; }
+    scrollIntoView() { this.scrolled = true; }
   }
   Object.assign(document, {
     body: new Element('body'),
     getElementById(id) {
-      if (id === 'view-heading') return nodes.content && walk(nodes.content).find(n => n.id === id) || null;
+      if (id === 'view-heading' || id.startsWith('article-')) return nodes.content && walk(nodes.content).find(n => n.id === id) || null;
       return nodes[id] ??= new Element(id.endsWith('-select') ? 'select' : 'div');
     },
     createElement: tag => new Element(tag), createTextNode: text => new Element('#text', text),
@@ -52,16 +65,18 @@ function harness(search = '') {
   });
   document.activeElement = document.body;
   const context = vm.createContext({
-    URL, URLSearchParams, location: { search }, document,
+    URL, URLSearchParams, location, history, document,
+    window: { addEventListener(name, fn) { (windowListeners[name] ??= []).push(fn); } },
     setTimeout: fn => { timers.set(++timerId, fn); return timerId; },
     clearTimeout: id => timers.delete(id),
     fetch: url => new Promise((resolve, reject) => requests.push({ url, resolve, reject })),
   });
   const root = path.join(__dirname, '..');
   vm.runInContext(fs.readFileSync(path.join(root, 'parser.js'), 'utf8') + '\n' +
+                  fs.readFileSync(path.join(root, 'view-url.js'), 'utf8') + '\n' +
                   fs.readFileSync(path.join(root, 'app.js'), 'utf8'), context);
   return {
-    nodes, requests, document, announcements, timers, get: expression => vm.runInContext(expression, context),
+    nodes, requests, document, announcements, timers, location, history, historyURLs, get: expression => vm.runInContext(expression, context),
     flushTimers() { const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); },
     respond(i, text, ok = true) { requests[i].resolve({ ok, status: ok ? 200 : 503, text: async () => text }); },
     fail(i) { requests[i].reject(new Error('offline')); },
