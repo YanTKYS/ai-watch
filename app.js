@@ -26,12 +26,14 @@ const optionsRetry = document.getElementById("filter-options-retry");
 const filterCheckboxes = { categories: [], feeds: [] };
 let filterOptionsLoading = false;
 let loadToken = 0; // 連続切替時に古い応答で上書きしない
-let sortOrder = "desc"; // "desc"=新しい順 / "asc"=古い順（月を切り替えても維持。永続化はしない）
+let sortOrder = "desc"; // viewState.orderと同期する日刊の並び順
 let current = null; // 表示中の月 { ym, days }。並び順変更時の再描画に使う
 const SEARCH_PAGE_SIZE = 50; // 検索結果は50件ずつ表示する（「さらに表示」で追加）
 const SEARCH_DELAY_MS = 250; // 入力が止まってから検索する（入力途中の再描画を抑える）
-// F02が接続できる閲覧条件。入力途中の不正日付フラグ以外は文字列/配列だけで表す。
-let viewState = { query: "", categories: [], feeds: [], from: "", to: "", invalidDateInput: false };
+// URLで復元する閲覧条件。invalidDateInputだけは一時的な入力状態。
+let viewState = { month: "", order: "desc", query: "", categories: [], feeds: [], from: "", to: "", invalidDateInput: false };
+let articleTarget = "";
+let editSession = "";
 let searchEntries = null; // buildSearchEntries の結果（初回検索時に読み込み、以後は再利用）
 let searchLoading = null; // 読み込み中の Promise（同時に複数回取得しない）
 let searchTimer = 0;
@@ -105,9 +107,10 @@ function externalLink(text, url, className) {
   return a;
 }
 
-function renderCard(item, withCategory) {
+function renderCard(item, withCategory, id = articleId(item.url)) {
   const card = el("article", "card");
   const url = safeUrl(item.url);
+  if (id) card.id = id;
 
   const title = el(withCategory ? "h3" : "h5", "card-title");
   title.tabIndex = -1;
@@ -148,6 +151,18 @@ function renderCard(item, withCategory) {
   // リンクと補助情報はカード下部にまとめ、行内のカードで位置を揃える。
   const bottom = el("div", "card-bottom");
   if (url) bottom.appendChild(externalLink("元記事を開く →", url, "open"));
+  if (id) {
+    const share = el("a", "share", "このサイト内で共有");
+    share.href = writeViewURL(location.href, viewState, id);
+    share.addEventListener("click", event => {
+      if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      articleTarget = id;
+      syncURL("push");
+      moveToArticle();
+    });
+    bottom.appendChild(share);
+  }
   const parts = [];
   if (item.retrieved) parts.push(`取得日: ${item.retrieved}`);
   if (withCategory && item.category) parts.push(`カテゴリ: ${item.category}`); // 検索結果のみ（日刊表示では見出し）
@@ -181,6 +196,14 @@ function renderMonth(ym, days, order) {
   head.appendChild(el("span", "count", `${total}件`));
   frag.appendChild(head);
 
+  // Assign occurrences in log order, before sorting, so changing order preserves IDs.
+  const ids = new Map(), counts = new Map();
+  for (const day of days) for (const category of day.categories) for (const item of category.items) {
+    const base = articleId(item.url);
+    const n = (counts.get(base) || 0) + 1;
+    counts.set(base, n);
+    ids.set(item, base ? base + (n > 1 ? `~${n}` : "") : "");
+  }
   for (const day of sortDays(days, order)) {
     const section = el("details", "day");
     section.open = day.date === latest;
@@ -196,7 +219,7 @@ function renderMonth(ym, days, order) {
       h.appendChild(el("span", "count", `${category.items.length}件`));
       block.appendChild(h);
       const cards = el("div", "cards"); // カテゴリごとに独立したGrid
-      for (const item of category.items) cards.appendChild(renderCard(item, false));
+      for (const item of category.items) cards.appendChild(renderCard(item, false, ids.get(item)));
       block.appendChild(cards);
       section.appendChild(block);
     }
@@ -204,6 +227,7 @@ function renderMonth(ym, days, order) {
   }
   content.replaceChildren(frag);
   announce(`日刊: ${monthLabel(ym)}、${total}件。${order === "asc" ? "古い順" : "新しい順"}。`);
+  moveToArticle();
 }
 
 async function showMonth(ym, retry = null) {
@@ -231,6 +255,7 @@ async function showMonth(ym, retry = null) {
   }
   if (days.length === 0) {
     setStatus(`${monthLabel(ym)}に表示できる記事がありません。`);
+    moveToArticle();
     return;
   }
   setStatus("");
@@ -264,8 +289,17 @@ async function loadMonths(retry = null) {
       select.appendChild(opt);
     }
   }
+  if (!months.includes(viewState.month)) {
+    if (viewState.month) urlNotice("指定された月がないため、最新月を表示します。");
+    viewState = { ...viewState, month: months[0] };
+  }
+  select.value = viewState.month;
+  syncURL("replace");
   syncControls();
-  if (token === loadToken && !resultsMode()) await showMonth(select.value, retry); // months.json は新しい順。先頭=最新月
+  if (token === loadToken) {
+    if (resultsMode()) await showSearch(retry);
+    else await showMonth(select.value, retry);
+  } // months.json は新しい順。先頭=最新月
 }
 
 function resultsMode() {
@@ -283,14 +317,21 @@ function conditionsSummary() {
 }
 
 // 閲覧条件の更新はこの経路へ集約する。データ取得やURL保存は状態に含めない。
-function updateViewState(patch) {
+function updateViewState(patch, historyMode = "push") {
   const next = { ...viewState, ...patch };
   if (JSON.stringify(next) === JSON.stringify(viewState) && !inputPending) return;
   viewState = next;
+  urlNotice("");
+  articleTarget = "";
+  sortOrder = next.order;
+  if (next.month) select.value = next.month;
+  orderSelect.value = next.order;
   for (const [key, input] of [["from", filterFrom], ["to", filterTo]]) {
     if (key in patch && input.value !== next[key]) input.value = next[key];
   }
   syncControls();
+  syncURL(historyMode);
+  if (Object.keys(patch).length === 1 && "order" in patch && !current && !resultsMode()) return;
   if (composing) {
     inputPending = true;
     beginView();
@@ -301,9 +342,9 @@ function updateViewState(patch) {
   showDaily();
 }
 
-function applyFilterChange(patch) {
+function applyFilterChange(patch, historyMode = "push") {
   clearTimeout(searchTimer);
-  updateViewState({ ...patch, query: composing ? viewState.query : normalizedQuery(searchInput.value) });
+  updateViewState({ ...patch, query: composing ? viewState.query : normalizedQuery(searchInput.value) }, historyMode);
 }
 
 function clearFilterValues() {
@@ -337,12 +378,13 @@ function syncControls() {
 function showDaily() {
   if (resultsMode()) {
     showSearch();
-  } else if (current) {
+  } else if (current && current.ym === viewState.month) {
     beginView(); // 検索の読み込み中の応答で上書きしない
     setStatus("");
     renderMonth(current.ym, current.days, sortOrder);
-  } else if (select.value) {
-    showMonth(select.value);
+  } else if (select.options.length) {
+    if (![...select.options].some(o => o.value === viewState.month)) { loadMonths(); return; }
+    showMonth(viewState.month);
   } else {
     loadMonths();
   }
@@ -415,7 +457,7 @@ async function loadFilterOptions() {
 
 async function showSearch(retry = null) {
   const token = beginView(retry);
-  const state = viewState;
+  let state = viewState;
   const error = validateFilterDates(state);
   if (error) {
     content.replaceChildren();
@@ -432,6 +474,17 @@ async function showSearch(retry = null) {
       return;
     }
     if (token !== loadToken) return;
+  }
+  // Unknown selections can only be checked against the successfully loaded index.
+  const options = articleFilterOptions(searchEntries);
+  const categories = state.categories.filter(v => options.categories.includes(v));
+  const feeds = state.feeds.filter(v => options.feeds.includes(v));
+  if (categories.length !== state.categories.length || feeds.length !== state.feeds.length) {
+    viewState = state = { ...state, categories, feeds };
+    urlNotice("保存済み検索データにないカテゴリ・情報源を解除しました。");
+    syncControls();
+    syncURL("replace");
+    if (!resultsMode()) { showDaily(); return; }
   }
   renderSearch(state, filterArticles(searchEntries, state));
 }
@@ -454,6 +507,7 @@ function renderSearch(state, results) {
         : "該当する記事はありません。キーワードを減らすか、別の表記（略称・正式名称など）でお試しください。"));
     content.replaceChildren(frag);
     announce(`${resultLabel}: 0件。`);
+    moveToArticle();
     return;
   }
   const cards = el("div", "cards search-results");
@@ -479,25 +533,28 @@ function renderSearch(state, results) {
   };
   more.addEventListener("click", () => showMore(true));
   showMore();
+  const targetIndex = articleTarget ? results.findIndex(item => articleId(item.url) === articleTarget) : -1;
+  while (targetIndex >= shown) showMore();
   frag.appendChild(more);
   content.replaceChildren(frag);
   announce(`${resultLabel}: ${results.length}件。${shown}件を表示しています。`);
+  moveToArticle();
 }
 
 function normalizedQuery(value) {
-  return value.trim().replace(/\s+/g, " ");
+  return normalizeViewQuery(value);
 }
 
-function applySearch(value) {
+function applySearch(value, historyMode = "push") {
   clearTimeout(searchTimer);
   const query = normalizedQuery(value);
   if (query === viewState.query && !inputPending) return; // 空白の追加など、結果が変わらない入力では再描画しない
-  updateViewState({ query }); // 検索語だけ空にしてもフィルターがあれば全期間モードを維持
+  updateViewState({ query }, historyMode); // 検索語だけ空にしてもフィルターがあれば全期間モードを維持
 }
 
 function scheduleSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => applySearch(searchInput.value), SEARCH_DELAY_MS);
+  searchTimer = setTimeout(() => applySearch(searchInput.value, "query"), SEARCH_DELAY_MS);
 }
 
 function invalidateInput() {
@@ -515,9 +572,10 @@ function init() {
   filterPanel.addEventListener("toggle", () => { if (filterPanel.open) loadFilterOptions(); });
   optionsRetry.addEventListener("click", loadFilterOptions);
   const changeDates = () => applyFilterChange({ from: filterFrom.value, to: filterTo.value,
-    invalidDateInput: Boolean(filterFrom.validity?.badInput || filterTo.validity?.badInput) });
+    invalidDateInput: Boolean(filterFrom.validity?.badInput || filterTo.validity?.badInput) }, "dates");
   filterFrom.addEventListener("input", changeDates);
   filterTo.addEventListener("input", changeDates);
+  for (const input of [filterFrom, filterTo, searchInput]) input.addEventListener("change", () => { editSession = ""; });
   filtersClear.addEventListener("click", () => {
     applyFilterChange(clearFilterValues());
     filterToggle.focus();
@@ -559,7 +617,10 @@ function init() {
   searchInput.addEventListener("compositionstart", () => { composing = true; invalidateInput(); });
   searchInput.addEventListener("compositionend", () => { composing = false; scheduleSearch(); });
   searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.isComposing && !composing) applySearch(searchInput.value);
+    if (e.key === "Enter" && !e.isComposing && !composing) {
+      applySearch(searchInput.value, editSession === "query" ? "replace" : "push");
+      editSession = "";
+    }
   });
   searchClear.addEventListener("click", () => {
     searchInput.value = "";
@@ -568,12 +629,68 @@ function init() {
     applySearch("");
     searchInput.focus();
   });
-  select.addEventListener("change", () => showMonth(select.value));
+  select.addEventListener("change", () => updateViewState({ month: select.value }));
   orderSelect.addEventListener("change", () => {
-    sortOrder = orderSelect.value === "asc" ? "asc" : "desc";
-    if (current && !resultsMode()) renderMonth(current.ym, current.days, sortOrder); // 再取得せず再描画
+    updateViewState({ order: orderSelect.value === "asc" ? "asc" : "desc" });
   });
-  loadMonths();
+  window.addEventListener("popstate", () => restoreURL());
+  restoreURL(true);
+}
+
+function urlNotice(message, append = true) {
+  const node = document.getElementById("url-notice");
+  const previous = append && message && !node.hidden ? node.textContent : "";
+  node.textContent = previous && !previous.includes(message) ? previous + " " + message : message || "";
+  node.hidden = !node.textContent;
+}
+
+function syncURL(mode) {
+  if (validateFilterDates(viewState)) return; // Keep the last valid URL during incomplete date input.
+  const url = writeViewURL(location.href, viewState, articleTarget);
+  const previous = location.pathname + location.search + location.hash;
+  const editing = mode === "query" || mode === "dates";
+  const replace = mode === "replace" || (editing && editSession === mode);
+  if (url !== previous) history[replace ? "replaceState" : "pushState"](null, "", url);
+  editSession = editing ? mode : "";
+}
+
+function restoreURL(initial = false) {
+  const parsed = readViewURL(location.href);
+  if (parsed.sample !== Boolean(BASE)) { location.reload(); return; }
+  clearTimeout(searchTimer);
+  composing = inputPending = false;
+  editSession = "";
+  beginView();
+  viewState = parsed.state;
+  articleTarget = parsed.article;
+  sortOrder = viewState.order;
+  searchInput.value = viewState.query;
+  filterFrom.value = viewState.from;
+  filterTo.value = viewState.to;
+  orderSelect.value = sortOrder;
+  if (viewState.month) select.value = viewState.month;
+  urlNotice(parsed.warnings.length ? "URLの不正・長すぎる条件を補正しました（" + parsed.warnings.join("、") + "）。" : "", false);
+  syncControls();
+  syncURL("replace");
+  if (initial) loadMonths();
+  else showDaily();
+}
+
+function moveToArticle() {
+  if (!articleTarget) return;
+  const card = document.getElementById(articleTarget);
+  if (!card || !content.contains(card)) {
+    urlNotice("指定された記事は現在の一覧にありません。条件や検索データの範囲を確認してください。");
+    articleTarget = "";
+    syncURL("replace");
+    announce(document.getElementById("url-notice").textContent);
+    return;
+  }
+  const day = card.closest("details");
+  if (day) day.open = true;
+  card.firstChild.focus({ preventScroll: true });
+  card.scrollIntoView({ block: "center" });
+  announce("共有記事へ移動しました: " + card.firstChild.textContent);
 }
 
 init();

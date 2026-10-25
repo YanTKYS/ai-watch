@@ -13,13 +13,13 @@ test('daily heading hierarchy and shared new-tab description survive sample mode
     const day = walk(h.nodes.content).find(n => n.tag === 'summary');
     assert.equal(day.firstChild.tag, 'h3');
     assert.match(day.textContent, /10月2日/);
-    for (const a of walk(h.nodes.content).filter(n => n.tag === 'a')) {
+    for (const a of walk(h.nodes.content).filter(n => n.tag === 'a' && n.className !== 'share')) {
       assert.equal(a.target, '_blank');
       assert.equal(a.rel, 'noopener noreferrer');
       assert.equal(a.getAttribute('aria-describedby'), 'new-tab-hint');
     }
     const releaseCard = h.get('renderCard({title:"Group",url:"https://a.example/group",releases:[{label:"v1",url:"https://a.example/v1"}]}, true)');
-    const links = walk(releaseCard).filter(n => n.tag === 'a');
+    const links = walk(releaseCard).filter(n => n.tag === 'a' && n.className !== 'share');
     assert.equal(links.length, 3);
     assert.ok(links.every(a => a.getAttribute('aria-describedby') === 'new-tab-hint'));
     if (search) assert.ok(h.requests.every(r => r.url.startsWith('samples/')));

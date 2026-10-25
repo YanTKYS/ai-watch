@@ -277,3 +277,9 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 @media (prefers-reduced-motion: reduce) {
   .day-summary::before { transition: none; }
 }
+
+
+.share { color: var(--accent); font-size: .875rem; text-underline-offset: 3px; }
+.share-help { margin: 0 0 12px; font-size: .875rem; color: var(--muted); }
+.share-help p { margin: 8px 0; }
+.card:target { outline: 2px solid var(--accent); outline-offset: 4px; }

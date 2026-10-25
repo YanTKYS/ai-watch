@@ -297,17 +297,19 @@ const vm = require('node:vm');
 class Node {
   constructor(tag, text = '') { this.tag = tag; this.text = text; this.childNodes = []; }
   setAttribute(key, value) { this[key] = value; }
+  addEventListener() {}
   set textContent(value) { this.text = String(value); this.childNodes = []; }
   get textContent() { return this.text + this.childNodes.map(n => n.textContent).join(''); }
   appendChild(node) { this.childNodes.push(node); return node; }
 }
 const context = vm.createContext({
-  URL, URLSearchParams, location: { search: '' },
+  URL, URLSearchParams, location: { search: '', href: 'https://local.example/project/' },
   document: { getElementById: () => new Node('div'), createElement: tag => new Node(tag),
               createTextNode: text => new Node('#text', text) },
 });
 const source = fs.readFileSync(process.argv[1], 'utf8').replace(/\ninit\(\);\s*$/, '');
-vm.runInContext(fs.readFileSync(process.argv[2], 'utf8') + '\n' + source, context);
+vm.runInContext(fs.readFileSync(process.argv[2], 'utf8') + '\n' +
+  fs.readFileSync(process.argv[2].replace(/parser\.js$/, 'view-url.js'), 'utf8') + '\n' + source, context);
 context.log = process.argv[3];
 context.index = JSON.parse(process.argv[4]);
 const result = vm.runInContext(`
@@ -318,7 +320,7 @@ const result = vm.runInContext(`
     const nodes = walk(card);
     return { notes: nodes.filter(n => n.className === 'notes').map(n => n.textContent),
              highlights: nodes.filter(n => n.tag === 'li').map(n => n.textContent),
-             links: nodes.filter(n => n.tag === 'a').map(n => [n.textContent, n.href, n.target, n.rel]),
+             links: nodes.filter(n => n.tag === 'a' && n.className !== 'share').map(n => [n.textContent, n.href, n.target, n.rel]),
              tags: nodes.map(n => n.tag) };
   }
   [details(renderCard(daily, false)), details(renderCard(searched, true)),

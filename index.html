@@ -29,7 +29,7 @@
         </label>
         <div class="search-box" role="search">
           <label for="search-input" class="visually-hidden">日刊ログを全期間からキーワード検索</label>
-          <input type="search" id="search-input" placeholder="全期間を検索（例: Codex）" autocomplete="off" enterkeyhint="search">
+          <input type="search" id="search-input" maxlength="500" placeholder="全期間を検索（例: Codex）" autocomplete="off" enterkeyhint="search">
           <button type="button" id="search-clear" aria-label="検索語をクリア" disabled>クリア</button>
         </div>
       </div>
@@ -76,6 +76,12 @@
     </section>
     <p id="notice" class="notice" hidden>サンプルデータ（架空の記事）を表示しています。実際の収集結果は <a href="./">トップページ</a> で確認できます。</p>
     <p id="new-tab-hint" class="link-hint">記事・リリースのリンクは新しいタブで開きます。</p>
+    <details class="share-help">
+      <summary>表示条件・記事URLの共有について</summary>
+      <p>アドレス欄のURLで月・並び順・検索語・絞り込みを共有できます。記事の「このサイト内で共有」は同じ条件の記事へ移動するリンクです。リンクのコピーや新しいタブで開く操作も使えます。</p>
+      <p>検索語・絞り込み条件はURLに含まれ、ブラウザ履歴や共有先に残ります。個人情報を入力して共有しないようご注意ください。</p>
+    </details>
+    <p id="url-notice" class="notice" hidden></p>
     <p id="view-announcement" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></p>
     <div id="status" tabindex="-1">読み込み中...</div>
     <button type="button" id="load-retry" aria-describedby="status" aria-controls="content" hidden>再試行</button>
@@ -84,6 +90,7 @@
   <noscript><p class="wrap">このページの表示にはJavaScriptが必要です。ログは <a href="logs/">logs/</a> のMarkdownで直接読めます。</p></noscript>
   <script src="parser.js"></script>
   <script src="collection-status.js"></script>
+  <script src="view-url.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
