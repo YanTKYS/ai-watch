@@ -51,6 +51,9 @@
   "https://github.blog/changelog/2026-10-23-turn-notifications-into-code-with-github-copilot-in-teams": {
     "first_seen": "2026-10-24"
   },
+  "https://github.blog/changelog/2026-10-26-gpt-6-1-terra-in-github-copilot": {
+    "first_seen": "2026-10-27"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -120,6 +123,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.310": {
     "first_seen": "2026-10-24"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.311": {
+    "first_seen": "2026-10-27"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
   },
@@ -150,9 +156,17 @@
     "excluded": "customer_story",
     "first_seen": "2026-10-22"
   },
+  "https://openai.com/index/building-scientific-understanding-with-academic-communities": {
+    "excluded": "education_program",
+    "first_seen": "2026-10-27"
+  },
   "https://openai.com/index/chatgpt-ads-expands-26-new-countries": {
     "excluded": "policy_society",
     "first_seen": "2026-10-22"
+  },
+  "https://openai.com/index/chatgpt-expanding-world-of-work": {
+    "excluded": "policy_society",
+    "first_seen": "2026-10-27"
   },
   "https://openai.com/index/cloudflare-cyber": {
     "excluded": "customer_story",
@@ -168,13 +182,26 @@
     "excluded": "low_score",
     "first_seen": "2026-10-22"
   },
+  "https://openai.com/index/fanatics-streamline-fan-experience": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-27"
+  },
   "https://openai.com/index/forward-deployed-engineering-means": {
     "excluded": "low_score",
     "first_seen": "2026-10-24"
   },
+  "https://openai.com/index/gpt-6-1-sol-coderabbit-code-security": {
+    "first_seen": "2026-10-27"
+  },
+  "https://openai.com/index/greptile-code-review-codex-astra": {
+    "first_seen": "2026-10-27"
+  },
   "https://openai.com/index/higgsfield-longer-videos-voice": {
     "excluded": "low_score",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/introducing-gpt-6-1-terra": {
+    "first_seen": "2026-10-27"
   },
   "https://openai.com/index/introducing-the-rosalind-academic-plan": {
     "excluded": "education_program",
@@ -187,6 +214,10 @@
   "https://openai.com/index/low-resource-programming-languages": {
     "excluded": "low_score",
     "first_seen": "2026-10-20"
+  },
+  "https://openai.com/index/openai-cut-incident-investigation": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-27"
   },
   "https://openai.com/index/openai-models-google-cloud": {
     "excluded": "low_score",
