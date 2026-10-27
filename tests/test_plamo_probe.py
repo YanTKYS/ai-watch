@@ -342,12 +342,15 @@ class Workflow(unittest.TestCase):
         self.assertNotIn("git push", text)
         self.assertNotIn("collect.py", text)
 
-    def test_pre_pr_ci_is_secretless_and_does_not_execute_live_probe(self):
+    def test_ci_is_secretless_and_does_not_execute_live_probe(self):
         text = (ROOT / ".github/workflows/test.yml").read_text()
         wf = yaml.safe_load(text)
-        self.assertIn("feat/plamo-manual-probe", wf[True]["push"]["branches"])
+        triggers = wf.get("on", wf.get(True))
+        self.assertEqual(set(triggers), {"push", "pull_request"})
+        self.assertEqual(triggers["push"]["branches"], ["main"])
+        self.assertIsNone(triggers["pull_request"])
         self.assertNotIn("secrets.", text)
-        self.assertNotIn("plamo_probe.py --live", text)
+        self.assertNotIn("--live", text)
 
 
 if __name__ == "__main__":

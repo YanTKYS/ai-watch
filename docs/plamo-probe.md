@@ -48,4 +48,4 @@ python -m unittest discover -s tests
 
 `--live` は実API送信の明示指定であり、開発・CIでは使わない。出力先はリポジトリ内なら `work/` 以下だけを認め、`logs/`・`data/`・Pagesへ書かない。既存データは照合用の読み取りだけで、収集・再生成・commitは起動しない。
 
-既存の `test.yml` にこの作業ブランチ `feat/plamo-manual-probe` のpushを追加し、**PRを作成する前に**キー不要のunit/品質チェック/Chromium CIを通す。PLaMoの新規ワークフロー自体は `workflow_dispatch` だけで、pushやPRから実APIを呼ばない。PR作成後も既存のPR CIを実行し、マージとAPI検証はオーナーに委ねる。
+PR作成前のキー不要のunit/品質チェック/Chromium CIは、作業ブランチのpushを一時的に追加して[実施済み](https://github.com/YanTKYS/ai-watch/actions/runs/40528304244)。確認後にその一時指定を削除し、恒久設定は `main` のpushとPRを対象とする従来の構成に戻している。PLaMoの新規ワークフロー自体は `workflow_dispatch` だけで、pushやPRから実APIを呼ばない。PR更新時も既存のPR CIを実行し、マージとAPI検証はオーナーに委ねる。
