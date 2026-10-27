@@ -1,0 +1,58 @@
+name: PLaMo Web search probe (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_one_request:
+        description: "公式規約・残量・費用を確認済み。PLaMo APIを1リクエスト実行する（未選択は計画のみ）"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plamo-manual-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Plan or send exactly one request
+        env:
+          PLAMO_API_KEY: ${{ secrets.PLAMO_API_KEY }}
+          CONFIRM_ONE_REQUEST: ${{ inputs.confirm_one_request }}
+        shell: bash
+        run: |
+          args=()
+          if [ "$CONFIRM_ONE_REQUEST" = "true" ]; then args+=(--live); fi
+          python scripts/plamo_probe.py --output-dir "$RUNNER_TEMP/plamo-probe" "${args[@]}"
+      - name: Publish sanitized job summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/plamo-probe/report.md" ]; then
+            cat "$RUNNER_TEMP/plamo-probe/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'PLaMo probe: report unavailable. No raw response or exception is printed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload sanitized short-lived report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: plamo-probe-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/plamo-probe/report.md
+            ${{ runner.temp }}/plamo-probe/report.json
+          retention-days: 3
+          if-no-files-found: warn
