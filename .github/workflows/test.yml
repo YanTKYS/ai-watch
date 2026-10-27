@@ -4,7 +4,7 @@ name: Test
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, feat/plamo-manual-probe]
 
 permissions:
   contents: read

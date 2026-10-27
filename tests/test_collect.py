@@ -720,13 +720,17 @@ class RepoLayout(unittest.TestCase):
                     action, _, version = step["uses"].partition("@")
                     self.assertEqual(version, expected[action], (name, step["uses"]))
 
-    def test_no_weekly_monthly_or_external_ai_calls(self):
+    def test_no_weekly_monthly_and_manual_ai_probe_is_isolated(self):
         names = {p.name for p in (ROOT / "scripts").glob("*.py")}
         self.assertEqual(names, {"collect.py", "feeds.py", "brave.py", "common.py", "search_index.py", "selection.py",
-                                 "source_report.py", "selection_preview.py", "collection_status.py"})
+                                 "source_report.py", "selection_preview.py", "collection_status.py", "plamo_probe.py"})
         code = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "scripts").glob("*.py"))
         for needle in ("typesafe.ai", "generativelanguage", "JEV_API_KEY", "GEMINI_API_KEY"):
             self.assertNotIn(needle, code)
+        production = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "scripts").glob("*.py")
+                               if p.name != "plamo_probe.py")
+        for needle in ("plamo_probe", "PLAMO_API_KEY", "api.platform.preferredai.jp"):
+            self.assertNotIn(needle, production)
         self.assertFalse((ROOT / "reviews").exists())
 
     def test_initial_data_files(self):
