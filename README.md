@@ -1,165 +1,72 @@
 # ai-watch
 
-生成AI（モデル・AIコーディング・エージェント・MCP・API料金/制限）の新着情報を日刊で収集し、
-GitHub Pagesで閲覧・全期間横断検索するツールです（v0.1.0）。
-[news-watch](https://github.com/YanTKYS/news-watch) の日刊収集・ログ形式・横断検索・UIを流用しています（週刊・月刊は持ち込んでいません）。
+生成AI（モデル・AIコーディング・エージェント・MCP・API料金/制限）の公式情報を日刊で収集し、GitHub Pagesで閲覧・全期間横断検索するツールです。
 
-## 収集の仕組み
+**[公開サイトを開く](https://yantkys.github.io/ai-watch/)** · [架空データのサンプル](https://yantkys.github.io/ai-watch/?sample)
 
-| 情報源 | 用途 | 保存するもの |
+月・日付別の閲覧、キーワード検索、カテゴリ・情報源・取得期間の絞り込み、表示条件・記事の共有URL、ライト/ダークモードに対応しています。閲覧・検索にAPIキーは不要です。
+
+## 情報源と保存方針
+
+| 経路 | 役割 | 保存するもの |
 | --- | --- | --- |
-| 公式フィード（RSS / Atom・GitHub Releases） | 日刊ログ・検索インデックス | タイトル・URL・公開日・配信元名のみ（本文・要約は保存しない） |
-| Brave Search API（X検索2件・一般Web検索2件） | 取得品質の評価 | **件数の集計のみ**（検索結果のURL・タイトル・説明文は保存しない） |
+| 公式RSS / Atom・GitHub Releases | 選定した更新を日刊ログと検索に公開 | タイトル・URL・公開日・配信元等。リリースは項目数・原文の短い抜粋・個別リンクも保持 |
+| Brave Search API | X・一般Web検索の取得品質を観測 | **利用件数と品質の集計のみ。検索結果を本番記事として保存しない** |
 
-- Brave Search APIの[利用規約](https://api-dashboard.search.brave.com/documentation/resources/terms-of-service)は、
-  ストレージ権付きプラン以外での検索結果の保存・キャッシュ・データベース化を認めていません。
-  そのため検索結果は実行中のメモリ上で集計に使うだけで、`logs/`・`data/seen.json`・`data/search-index.json`・Actionsログには出しません。
-  X投稿もX側のデータを保存・再公開しません（X APIやページ本文の取得もしていません）。
-- 公式フィードは次の7件です（`config/sources.yml`）。
-  OpenAI News / Google DeepMind News / GitHub Changelog（AI関連の記事のみ）/ Claude Code Releases /
-  OpenAI Codex Releases（プレリリース除外）/ MCP Specification Releases / Anthropic SDK Releases。
-  Anthropicのニュースには公式RSSが無いため、Claude Code と公式SDK（Claude API の変更）の GitHub Releases を使っています。
-- **記事の選定**（v0.1.3）: 基準は「読むと AI・AIコーディングツールについて新しい技術的知見が得られるか」です。
-  - ニュース（OpenAI・DeepMind・GitHub Changelog）は、タイトル・説明文に `selection.rules` で点数を付け、
-    新モデル・提供開始・API・料金変更・技術的な検証などを採用し、導入事例・政策・教育などは原則として採用しません
-    （減点の規則があっても、技術的な信号が十分あれば採用されます）。1回の収集で1フィードから最大5件で、
-    上限を超えた記事は記録せず、次回の収集で（公開から7日以内なら）改めて評価します。
-    GitHub ChangelogはAI関連のタイトル必須語を通した後に採点します。組織の効果測定だけの記事は減点し、
-    API/SDK/CLIによる取得・制御や、ポリシーAPI・データ所在・API提供範囲の変更を巻き込まないよう区別します。
-  - リリース（Claude Code・Codex・MCP・SDK）は、リリースノートの項目を「新機能・変更・破壊的変更・修正・雑務」に機械的に分類し、
-    修正・雑務だけのリリースを除外します。判定できないリリースは見落とさないよう採用します。
-    同じ収集で採用したリリースは1件にまとめ、項目数（`Notes`）、公式リリースノートから機械的に選んだ最大3項目
-    （`Highlight`。破壊的変更 > 新機能 > 変更の順、原文のまま・バージョン付き）、各リリースへのリンク（`Release`）を添えます。
-    要約や翻訳は作らず、項目を判定できない場合は抜粋しません。
-    明示された内部・CI・ドキュメント・サンプル作業は雑務として扱い、定型的な修正文だけのリリースは除外します。
-    公開CLIフラグ/API引数の削除や具体的な新機能は残し、未知の記述を一律には除外しません。
-  - 不採用の記事は理由とともに `data/seen.json` に記録し（`excluded`）、次回以降に復活させません。
-    選定ルールを変えた後は、手動実行の `reconsider_excluded`（`--reconsider-excluded`）で、
-    フィードに残っている（7日以内の）不採用記事を現在の設定で再評価できます。
-    Actionsログに記事ごとの点数・判定・理由と、理由別の件数（`rejected by selection`）が出ます。
-- Jev・Gemini は v0.1.0 では呼び出しません（ワークフローにもキーを渡していません）。
+公式フィードはOpenAI News、Google DeepMind News、GitHub Changelog、Claude Code、OpenAI Codex、MCP仕様、Anthropic Python SDKの7件です。技術的な更新を選定し、同じ収集の採用リリースはフィードごとにまとめます。対象・対象外と選定方法は[情報源・記事選定](docs/source-quality.md)を参照してください。
 
-## セットアップ
+Braveの結果URL・タイトル・説明文はログ・検索データ・Actionsログに保存しません。ストレージ権のない検索結果の保存・再公開を前提にしない方針です。[利用条件の根拠・API制御・品質集計](docs/collection-operations.md#braveの利用制御と保存制約)を確認してください。
 
-1. **Settings → Secrets and variables → Actions** に Repository secret `BRAVE_API_KEY` を登録します（登録済み）。
-   未設定でも公式フィードの収集は動き、Brave検索だけを飛ばします。
-2. **Actions** タブでワークフローを有効化します。
-3. **Settings → Pages → Build and deployment → Deploy from a branch → `main` → `/ (root)`** で公開します。
+## セットアップと基本操作
 
-## 実行
+自分のリポジトリで運用する場合:
 
-- **自動実行**: 毎日 JST 6:41 頃（`.github/workflows/collect.yml`。news-watch の 7:17 と時刻をずらしています）。
-  `logs/`・`data/` の差分をcommitします。収集状態の時刻も記録するため、採用0件の日も状態更新が残ります。
-- **手動実行**: Actions → `Collect AI news` → Run workflow。`skip_brave` を選ぶと公式フィードだけを取得します。
-  `reconsider_excluded` を選ぶと、不採用として記録済みの記事を現在の選定ルールで再評価します。
-- **ローカル実行**（任意）: `pip install -r requirements.txt` のあと `python scripts/collect.py [--skip-brave]`
-  （Brave検索をする場合は環境変数 `BRAVE_API_KEY`）。検索インデックスは `python scripts/search_index.py` で再生成します。
-- **テスト**（APIキー不要・通信なし。Node.js があればブラウザ側の検索関数も確認）: `python -m unittest discover -s tests`
-  Chromium E2Eは別途 `npm ci` → `npx playwright install chromium` → `npm run test:e2e`。
-  [導入・CI・失敗時のトレース](docs/browser-tests.md) に手順と10ケースの範囲を記載しています（初回の依存取得には通信が必要）。
-  公式フィードの解析は、実際の配信形式（RSS 2.0・WordPress・GitHub Releases の Atom）を模した合成データ `tests/fixtures/` で確認しています。
-  実サイトから取得できるかは、GitHub Actions での実行ログで確認してください。フィードごとに
-  `feed ok: ... status=200 content_type=... entries=N` が出ます。失敗したフィードは `feed failed` の次の行の
-  `diagnostics:` に、HTTPステータス・Content-Type・先頭の形式（`start=xml-declaration` / `html` など）・
-  XMLの解析失敗位置と前後30文字が出ます（本文全体は出しません）。Brave枠を使わずに確認する場合は `skip_brave` で手動実行します。
-  `Content-Encoding: gzip` のフィード（Google DeepMind News など）は展開してから解析します
-  （受信データ10MB・展開後30MBまで。`bytes` は受信時、`decoded_bytes` は展開後のサイズ）。
+1. **Actions** タブでワークフローを有効化します。公式フィードの収集に外部APIのSecret・Variableは不要です。
+2. Braveの品質観測も行う場合のみ、**Settings → Secrets and variables → Actions** にRepository secret **`BRAVE_API_KEY`**を登録します。未設定ならBraveだけをスキップします。
+3. **Settings → Pages → Build and deployment → Deploy from a branch** で **`main` / `/ (root)`** を選びます。公開元へのcommitとPages配信の成功は別に確認します（[配信との境界](docs/collection-health.md#actionsでの記録と配信の境界)）。
 
-## API利用量の制御（Brave Search API）
+- **定期収集**: `Collect AI news`（[collect.yml](.github/workflows/collect.yml)）は毎日 **JST 06:41（UTC 21:41）予定**。Actionsの開始は遅れる場合があります。`logs/`・`data/`の差分をcommitし、採用0件でも収集状態を更新します。
+- **手動収集**: Actions → **Collect AI news → Run workflow**。`skip_brave`で公式フィードのみ実行できます。選定変更後の`reconsider_excluded`は[除外記事の再評価](docs/collection-operations.md#手動実行と除外記事の再評価)を参照してください。
+- **設定変更**: [config/sources.yml](config/sources.yml)が入口です。変更前に通信・書き込みなしの`python scripts/collect.py --dry-run`で確認できます（[設定項目](docs/source-quality.md#設定の入口)・[比較と品質チェック](docs/selection-dry-run.md)）。
 
-- 1日（JST）最大4リクエスト（`scripts/brave.py` の `MAX_DAILY_REQUESTS`。設定 `brave.daily_limit` で下げられますが上げられません）。
-  検索語が上限を超える設定はAPIを呼ばずにエラーで停止します。
-- **1日1回だけ**実行します。同じ日に再実行（手動実行を含む）してもAPIは呼びません。
-- 利用件数は `data/brave-usage.json` に日付ごとに記録し、各リクエストの直前に書き込みます。
-  このファイルが読めない場合はAPIを呼びません。収集ステップが失敗してもcommitします。
-- 1検索語につき1リクエスト（`count=20`）。ページング・自動リトライなし。
-- 月の上限は 4 × 31 = 124 リクエスト。news-watch（現在 5検索語/日 ≒ 155/月）と合わせても約280/月です。
+### ローカルで使う
 
-## 設定（`config/sources.yml`）
+リポジトリ直下で実行します。Python 3.12（CIと同じ）を推奨します。
 
-選定ルールを変える前に `python scripts/collect.py --dry-run` で、同梱の合成データを通信・書き込みなしで評価できます。
-`--compare-config` と `--reconsider-excluded` による比較例・結果は [選定ルールのdry-run](docs/selection-dry-run.md) を参照してください。
-`--evaluate` で確定した期待値との一致・不一致・要確認を集計し、`--check-quality` では固定した重要例の不一致を終了コード3で検出できます。
+```sh
+pip install -r requirements.txt
+# 実際に公式フィードへ接続し、logs/・data/を更新
+python scripts/collect.py --skip-brave
+# 保存済みログから検索インデックスを再生成（外部通信なし）
+python scripts/search_index.py
+# 静的サイトを確認
+python -m http.server
+```
 
-情報源の役割・収集範囲・記事の有用性・追加候補は [情報源の品質評価](docs/source-quality.md)、
-設定と保存実績の一覧は [情報源一覧](docs/source-inventory.md) を参照してください。
-一覧は `python scripts/source_report.py --since YYYY-MM-DD --until YYYY-MM-DD` で再集計できます
-（通信なし・収集データの変更なし、更新手順と数値の注意点は品質評価資料に記載）。
+`http://localhost:8000/`（サンプルは`http://localhost:8000/?sample`）を開きます。Braveも実行する場合は環境変数`BRAVE_API_KEY`を設定し、`--skip-brave`を外します。
 
-コードを変えずに次を調整できます。
+テストは`python -m unittest discover -s tests`（APIキー不要・実行中の外部通信なし）。Node.jsがあればブラウザ側の関数も検証します。Chromium E2Eの依存導入と実行は[ブラウザテスト](docs/browser-tests.md)を参照してください。初回の依存取得には通信が必要です。
 
-- `categories`: カテゴリ（ログの見出し・表示順）と、フィード記事の分類に使うキーワード。`classify_order` で優先順位を指定。
-- `feeds`: 公式フィード（上限10件）。`category`（既定の分類）、`classify`、`select`（`all` / `score` / `release_notes`）、
-  `require_keywords`（いずれかの語を含む記事だけを収集）、`title_prefix`、`exclude_title_patterns`（正規表現）。
-  `max_age_days` より古い記事は収集しません。
-- `selection`: 記事の点数付け（`min_score`・`max_new_per_feed`・`rules`）。規則は `label`・`weight`・`in`
-  （`title` / `summary` / `any` / `categories`）・`terms` / `patterns` で書きます。
-- `brave.queries`: 検索語（`id`・`kind: x|web`・`category`・`q`・`search_lang`・`country`・`freshness`）。
-  `kind: x` には `site:x.com` を含めます。
-- `quality`: 品質集計に使う語（根拠を示す語・誇張表現）。
+## 保存先と運用上の要点
 
-## X検索の取得精度の確認
-
-Actionsログの `Brave ...` 行と `data/brave-usage.json` に、検索語ごとの件数が残ります。
-
-| 項目 | 意味 |
+| 保存先 | 役割 |
 | --- | --- |
-| `results` | 結果件数 |
-| `x_posts` / `x_profiles` / `x_other` / `non_x` | 実際の投稿（`x.com/{user}/status/{id}`）／プロフィール／その他のx.comページ／x.com以外 |
-| `x_authors` | 投稿者の種類数 |
-| `dated` / `recent` | 公開日あり／7日以内 |
-| `on_topic` / `evidence` / `hype` | カテゴリのキーワード／根拠（リリースノート・ベンチマーク・検証・バージョン番号など）／誇張表現を含む件数 |
-| `candidates` | 保存できるなら採用候補になる件数（話題に一致・誇張なし・7日以内・Xは実際の投稿のみ） |
-| `duplicates` / `official_overlap` | 同じ実行の別の検索語で既出／公式フィードで収集済み |
+| `logs/YYYY/YYYY-MM.md` | 日刊記事の正本。本文全体や生成要約は保存しない |
+| `data/seen.json` | URLの採用・除外・リリース集約履歴。既知の除外は通常再実行では復活しない |
+| `data/months.json` / `data/search-index.json` | ログから作る月一覧と横断検索用データ |
+| `data/brave-usage.json` | Braveの利用件数・品質集計 |
+| `data/collection-status.json` | 公式フィード収集・検索生成の最後に公開された状態 |
 
-実行の最後に直近7日間の集計（`x_post_rate` など）も表示されます。投稿者の人気・フォロワー数は判定に使いません。
-精度が不十分な場合は `brave.queries` の検索語・`freshness` を調整してください。
+収集・検索生成・Pages配信は別段階です。新着0件と取得失敗を区別して、[収集状況と鮮度](docs/collection-health.md)・[実行ログの調べ方](docs/collection-operations.md)を確認してください。
 
-## 出力
+外部検索の検証は本番収集と分離しています。**PLaMoは2026年10月に検証済み・本番採用見送り**（[評価](docs/plamo-evaluation-2026-10.md)・[検証手順](docs/plamo-probe.md)）。Grokの`imports/x/`は検証用候補で、**本番への自動取り込みはありません**。X投稿の未確認事項と運用境界は[Grok評価](docs/grok-x-evaluation-2026-10.md)を参照してください。
 
-- `logs/YYYY/YYYY-MM.md`: 日付 → カテゴリ → 記事（`URL`・`Source`・`Feed`・`Notes`・`Highlight`・`Release`（リリースのみ）・`Published`・`Retrieved`）。
-- `data/seen.json`: 収集済みURL（重複排除）。不採用の記事は `excluded`（理由）、1件にまとめたリリースは `grouped_into` を持ちます。
-  `data/months.json`: 月の一覧。
-- `data/search-index.json`: 横断検索用インデックス（`logs/` の派生データ）。
-- `data/brave-usage.json`: Brave APIの利用件数と品質集計（直近90日）。
+## 詳細ドキュメント
 
-URLが異なる同一話題は、まず実際の収集状況を確認するため、タイトルが同じ記事の件数をActionsログに出すだけにしています。
-
-## GitHub Pagesで読む
-
-`index.html` / `parser.js` / `app.js` / `style.css` / `favicon.svg`。日付別・カテゴリ別のカード表示、月の切り替え、
-新しい順／古い順、全期間横断検索（タイトル・カテゴリ・情報源・配信元。部分一致・空白区切りのAND・50件ずつ追加表示）、
-ライト／ダークモードに対応しています。検索は `data/search-index.json` をブラウザで読むだけで、外部APIは使いません。
-検索結果にもリリースの項目数・主な変更・各バージョンへのリンクを表示し、抜粋にない個別バージョン名でも検索できます。
-「絞り込み」ではカテゴリ・情報源の複数選択と取得日の期間を指定できます。検索語がなくても全期間の結果を表示し、すべての条件を解除すると元の月・並び順へ戻ります。
-表示条件をURLで復元でき、記事の「このサイト内で共有」から直接リンクを利用できます。戻る／進むにも対応します。
-URL例・履歴・記事ID・共有時の注意は [表示条件と記事の共有URL](docs/view-urls.md) を参照してください。
-条件の組み合わせ・3種類の解除・候補取得と失敗時の動作は [全期間の絞り込み](docs/article-filters.md) を参照してください。
-月一覧・日刊ログ・検索データの読み込みに失敗した場合は、表示される「再試行」から月・並び順・検索語を保って読み直せます。
-先頭の「本文へ移動」と見出しで記事へ移動でき、検索完了件数を控えめに通知します。
-キーボード操作・再試行後のフォーカス・新しいタブの案内は [閲覧画面のアクセシビリティ](docs/accessibility.md) を参照してください。
-収集状況には最後に公開された公式フィードの結果と検索インデックス生成結果を別々に表示します。
-状態が36時間を超えて古いと「更新遅延」、状態ファイルがない旧環境等は「状態不明」とし、記事の閲覧は継続できます。
-記録項目・判定・配信との違いは [収集状況と鮮度](docs/collection-health.md) を参照してください。`?sample` では本番状態を表示しません。
-
-- 公開URL例: `https://yantkys.github.io/ai-watch/`
-- サンプルデータ（架空の記事、`samples/`）: `https://yantkys.github.io/ai-watch/?sample`
-- ローカル確認: リポジトリ直下で `python -m http.server` を起動し、`http://localhost:8000/`（サンプルは `/?sample`）を開きます。
-
-## 今後の拡張
-
-- X公式APIへ移行する場合は `scripts/brave.py` の `search()` を差し替えます（品質集計 `evaluate()` はそのまま使えます）。
-- 検索結果の保存は、ストレージ権の付いたプラン・各サービスの利用条件を確認してから検討します。
-- Jev（関連性判定）・Gemini（週刊・月刊）は、収集品質と利用条件を確認したうえで導入を判断します。
-
-## PLaMo Web検索の手動検証
-
-本番収集とは独立した、既定で通信しない評価用ワークフローです。新モデル・コーディング・エージェント/MCP・API価格/制限の固定4択から、1回につき1テーマを選びます。
-引用の一次情報性・日付・重要度は未検証として人手評価でき、未記録URL数を新規ニュース発見数とは扱いません。Artifact保持は1日です。
-実APIはレビュー・マージ後にオーナーが最大1リクエストを明示実行します。検索1回でも入力トークンが多くなり得るため、[手順・実測記録・保存条件・費用の注意](docs/plamo-probe.md) を確認してください。
-2026年10月の実API検証3回を踏まえ、**本番収集への採用は見送り**としました。結果と利用状況画面の照合は[検証総括（2026年10月）](docs/plamo-evaluation-2026-10.md)に記録しています。
-
-## GrokによるXニュース候補の試験保存
-
-`imports/x/` は検証用の候補情報で、日刊ログ・`data/seen.json`・Pagesには自動で取り込みません。GrokタスクからGitHub保存までの自動/手動の境界は未確認です。
-既存3日・13件の監査では期間外・既存話題との重複・訂正点があり、補完候補の人手検証は継続、本番への自動取り込みは当面見送りとしました。[評価・根拠・運用方針（2026年10月）](docs/grok-x-evaluation-2026-10.md)を参照してください。
+| 用途 | 参照先 |
+| --- | --- |
+| 設定・記事選定 | [情報源・選定方針](docs/source-quality.md) / [dry-run・設定比較](docs/selection-dry-run.md) / [生成された情報源一覧](docs/source-inventory.md) |
+| 運用・障害調査 | [実行・診断・Brave品質観測](docs/collection-operations.md) / [収集状況と鮮度](docs/collection-health.md) |
+| 閲覧UI | [絞り込み](docs/article-filters.md) / [共有URL・履歴](docs/view-urls.md) / [キーボード・通知・再試行](docs/accessibility.md) |
+| 検証・意思決定 | [ブラウザE2E](docs/browser-tests.md) / [PLaMo評価](docs/plamo-evaluation-2026-10.md) / [Grok評価](docs/grok-x-evaluation-2026-10.md) |
+| 改善案 | [将来の候補と過去の棚卸](docs/feature-ideas.md)（採用決定・現行仕様とは別） |
