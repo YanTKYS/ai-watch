@@ -14,6 +14,9 @@
   "https://deepmind.google/blog/gemini-4-argon-for-robotics": {
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation": {
+    "first_seen": "2026-10-28"
+  },
   "https://deepmind.google/blog/introducing-gemini-4-argon": {
     "first_seen": "2026-10-18"
   },
@@ -51,8 +54,14 @@
   "https://github.blog/changelog/2026-10-23-turn-notifications-into-code-with-github-copilot-in-teams": {
     "first_seen": "2026-10-24"
   },
+  "https://github.blog/changelog/2026-10-26-github-copilot-assisted-permissions-generally-available": {
+    "first_seen": "2026-10-28"
+  },
   "https://github.blog/changelog/2026-10-26-gpt-6-1-terra-in-github-copilot": {
     "first_seen": "2026-10-27"
+  },
+  "https://github.blog/changelog/2026-10-27-github-copilot-supports-server-to-server-authentication": {
+    "first_seen": "2026-10-28"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
@@ -126,15 +135,24 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.311": {
     "first_seen": "2026-10-27"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.312": {
+    "first_seen": "2026-10-28"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.164.0": {
     "first_seen": "2026-10-24"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.165.0": {
+    "first_seen": "2026-10-28"
+  },
   "https://openai.com/index/amp-beyond-coding": {
     "excluded": "customer_story",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/anima": {
+    "first_seen": "2026-10-28"
   },
   "https://openai.com/index/att-legal": {
     "excluded": "customer_story",
@@ -167,6 +185,10 @@
   "https://openai.com/index/chatgpt-expanding-world-of-work": {
     "excluded": "policy_society",
     "first_seen": "2026-10-27"
+  },
+  "https://openai.com/index/check-point-daybreak": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-28"
   },
   "https://openai.com/index/cloudflare-cyber": {
     "excluded": "customer_story",
@@ -230,6 +252,13 @@
   "https://openai.com/index/openai-to-acquire-orchestra-bio": {
     "excluded": "low_score",
     "first_seen": "2026-10-21"
+  },
+  "https://openai.com/index/oracle-apps-in-chatgpt": {
+    "excluded": "partnership",
+    "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/retell-ai": {
+    "first_seen": "2026-10-28"
   },
   "https://openai.com/index/scaling-ai-research-for-complex-biological-data": {
     "first_seen": "2026-10-22"

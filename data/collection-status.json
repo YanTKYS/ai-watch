@@ -1,29 +1,29 @@
 {
   "schema_version": 1,
   "collection": {
-    "attempted_at": "2026-10-27T09:45:37+09:00",
-    "completed_at": "2026-10-27T09:45:40+09:00",
-    "last_all_success_at": "2026-10-27T09:45:40+09:00",
+    "attempted_at": "2026-10-28T09:42:23+09:00",
+    "completed_at": "2026-10-28T09:42:26+09:00",
+    "last_all_success_at": "2026-10-28T09:42:26+09:00",
     "result": "success",
-    "new_articles": 5,
+    "new_articles": 7,
     "feeds": [
       {
         "name": "OpenAI News",
         "status": "success",
-        "candidates": 7,
-        "adopted": 3
+        "candidates": 4,
+        "adopted": 2
       },
       {
         "name": "Google DeepMind News",
         "status": "success",
-        "candidates": 0,
-        "adopted": 0
+        "candidates": 1,
+        "adopted": 1
       },
       {
         "name": "GitHub Changelog",
         "status": "success",
-        "candidates": 1,
-        "adopted": 1
+        "candidates": 2,
+        "adopted": 2
       },
       {
         "name": "Claude Code Releases",
@@ -34,8 +34,8 @@
       {
         "name": "OpenAI Codex Releases",
         "status": "success",
-        "candidates": 0,
-        "adopted": 0
+        "candidates": 1,
+        "adopted": 1
       },
       {
         "name": "MCP Specification Releases",
@@ -50,12 +50,12 @@
         "adopted": 0
       }
     ],
-    "run_key": "40428415875:1"
+    "run_key": "40610437412:1"
   },
   "index": {
-    "checked_at": "2026-10-27T09:45:46+09:00",
+    "checked_at": "2026-10-28T09:42:31+09:00",
     "result": "success",
-    "last_success_at": "2026-10-27T09:45:46+09:00",
-    "for_collection": "2026-10-27T09:45:37+09:00"
+    "last_success_at": "2026-10-28T09:42:31+09:00",
+    "for_collection": "2026-10-28T09:42:23+09:00"
   }
 }
