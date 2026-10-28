@@ -66,7 +66,7 @@ class ProbeTest(unittest.TestCase):
         self.network.start()
         self.addCleanup(self.network.stop)
 
-    def run_live(self, value=None, error=None, status=200):
+    def run_live(self, value=None, error=None, status=200, topic=probe.DEFAULT_TOPIC):
         transport = mock.Mock()
         transport.open.side_effect = error
         response = Response(payload() if value is None else value, status=status)
@@ -74,7 +74,7 @@ class ProbeTest(unittest.TestCase):
         before = self.seen.read_bytes()
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):
-            result = probe.run_probe(live=True, api_key=KEY, seen_path=self.seen, now=NOW, opener=transport)
+            result = probe.run_probe(live=True, api_key=KEY, seen_path=self.seen, now=NOW, opener=transport, topic=topic)
         self.assertEqual(self.seen.read_bytes(), before)
         self.assertEqual(out.getvalue() + err.getvalue(), "")
         self.assertEqual(transport.open.call_count, 1)
@@ -93,6 +93,115 @@ class ProbeTest(unittest.TestCase):
         self.assertEqual(result["seen_snapshot"]["urls"], 3)
         self.assertEqual(len(result["seen_snapshot"]["sha256"]), 64)
         self.assertEqual(result["started_at"], NOW.isoformat())
+
+    def test_japanese_ascii_are_readable_and_truncate_at_160_real_characters(self):
+        mixed = "新モデルAPI v2.1 を発表しました。日本語とASCIIの混在（価格・制限）。"
+        self.assertEqual(probe.safe_text(mixed, KEY, 160), mixed)
+        self.assertEqual(probe.safe_text("日" * 160 + "切り捨て", KEY, 160), "日" * 160)
+        self.assertEqual(probe.safe_text("A" * 160 + "後半", KEY, 160), "A" * 160)
+        result, _, _ = self.run_live()
+        self.assertEqual(result["answer_points"][0], "2026-10-27 発表元A: 新モデルの公開（未検証）。")
+        self.assertEqual(result["citations"][0]["title"], "発表元A")
+
+    def test_control_characters_and_masking_do_not_insert_character_spacing(self):
+        self.assertEqual(probe.safe_text("日本語\nAPI\t更新\x00確認\u200b済み", KEY, 160), "日本語 API 更新 確認 済み")
+        value = "日本語API " + KEY + " https://public.example/x?key=private Authorization: Bearer private-token 完了"
+        expected = "日本語API [REDACTED] [出典URLは引用欄を参照] [REDACTED] 完了"
+        self.assertEqual(probe.safe_text(value, KEY, 160), expected)
+        special = "公式 <b>告知</b> & API_1 [説明](javascript:bad)"
+        self.assertEqual(probe.safe_text(special, KEY, 160), special)
+        data = payload()
+        data["choices"][0]["message"]["content"] = special
+        result, _, _ = self.run_live(data)
+        rendered = probe.render_markdown(result)
+        self.assertIn("公式 &lt;b&gt;告知&lt;/b&gt; &amp; API_1", rendered)
+        self.assertNotIn("<b>告知</b>", rendered)
+
+    def test_summary_keeps_six_readable_lines_and_skips_control_only_lines(self):
+        data = payload()
+        points = ["新モデルAPI v2.1", "日本語" * 60, "価格$10 / 1M tokens", "正式発表を確認", "公開日は未確認", "最後の要点"]
+        data["choices"][0]["message"]["content"] = "\u200b\n\n" + "\r\n".join(points + ["7行目は保存しない"])
+        result, _, _ = self.run_live(data)
+        self.assertEqual(result["answer_points"], [p[:160] for p in points])
+        self.assertEqual(len(result["answer_points"][1]), 160)
+        self.assertNotIn("7行目は保存しない", probe.render_markdown(result))
+
+    def test_each_fixed_topic_is_recorded_and_sends_only_one_request(self):
+        self.assertEqual(set(probe.TOPICS), {"models", "coding", "agents-mcp", "api-pricing-limits"})
+        for topic, config in probe.TOPICS.items():
+            with self.subTest(topic=topic):
+                transport = mock.Mock()
+                plan = probe.run_probe(topic=topic, api_key=KEY, seen_path=self.seen, now=NOW, opener=transport)
+                transport.open.assert_not_called()
+                self.assertEqual(plan["api_requests"], 0)
+                self.assertEqual(plan["topic"], {"id": topic, **config})
+                result, live, _ = self.run_live(topic=topic)
+                prompt = json.loads(live.open.call_args.args[0].data)["messages"]
+                user_prompt = prompt[1]["content"]
+                self.assertIn(config["focus"], user_prompt)
+                for other, metadata in probe.TOPICS.items():
+                    if other != topic:
+                        self.assertNotIn(metadata["focus"], user_prompt)
+                for term in ["2026-10-22", "2026-10-28", "公式発表日", "更新日", "記事の公開日", "検索エンジンの日付", "推測しない"]:
+                    self.assertIn(term, user_prompt)
+                self.assertEqual(result["messages"], prompt)
+                self.assertEqual(result["api_requests"], 1)
+                self.assertEqual(result["prompt_version"], "ai-watch-plamo-topic-news-v2")
+                self.assertIn(config["label"], probe.render_markdown(result))
+                self.assertEqual(result["schema_version"], 2)
+
+    def test_unknown_or_multiple_topics_are_rejected_before_network_without_echoing_input(self):
+        for topic in ["all", "models,coding", "free-form " + KEY]:
+            with self.subTest(topic=topic):
+                opener = mock.Mock()
+                with self.assertRaisesRegex(ValueError, "invalid topic"):
+                    probe.run_probe(live=True, topic=topic, api_key=KEY, seen_path=self.seen, now=NOW, opener=opener)
+                opener.open.assert_not_called()
+                out, err = io.StringIO(), io.StringIO()
+                with mock.patch.object(probe, "run_probe") as run, redirect_stdout(out), redirect_stderr(err):
+                    with self.assertRaises(SystemExit) as exited:
+                        probe.main(["--live", "--topic", topic])
+                    self.assertEqual(exited.exception.code, 2)
+                    run.assert_not_called()
+                self.assertNotIn(KEY, out.getvalue() + err.getvalue())
+
+    def test_model_claims_do_not_verify_dates_or_primary_sources_and_manual_fields_stay_blank(self):
+        data = payload()
+        data["quality_verification"] = dict.fromkeys(probe.QUALITY_FIELDS, "verified")
+        data["choices"][0]["message"]["content"] = "2026-10-27 公式発表・重要な新着・検証済みとモデルが主張した候補。"
+        citation = data["choices"][0]["message"]["annotations"][0]["url_citation"]
+        citation.update(primary_source=True, official_announcement_date="2026-10-27", within_period=True)
+        result, _, _ = self.run_live(data)
+        self.assertEqual(result["quality_verification"], dict.fromkeys(probe.QUALITY_FIELDS, "unverified"))
+        self.assertNotIn("new_candidates", result["citation_counts"])
+        self.assertEqual(result["citation_counts"]["new_url_candidates"], 1)
+        for citation in result["citations"]:
+            for field in probe.QUALITY_FIELDS + ("date_basis", "evidence_url"):
+                self.assertIsNone(citation["human_review"][field])
+            self.assertEqual(citation["human_review"]["notes"], "")
+        rendered = probe.render_markdown(result)
+        for text in ["一次情報性・公式発表日・期間適合性・重要度・新着性はすべて未検証", "new_url_candidates", "新規ニュースの発見数ではありません", "人手評価欄", "日付の種類・根拠URL・メモ", "| 1 | 未検証 | 未記入 |", "| 2 | 未検証 | 未記入 |"]:
+            self.assertIn(text, rendered)
+
+    def test_plan_empty_and_failed_reports_keep_unverified_cost_and_retention_notices(self):
+        plan = probe.run_probe(seen_path=self.seen, now=NOW)
+        no_cites = payload()
+        no_cites["choices"][0]["message"]["annotations"] = []
+        empty, _, _ = self.run_live(no_cites)
+        failed, _, _ = self.run_live(error=urllib.error.URLError(KEY))
+        for result in [plan, empty, failed]:
+            rendered = probe.render_markdown(result)
+            self.assertIn("すべて未検証", rendered)
+            self.assertIn("人手評価欄", rendered)
+            self.assertIn("引用なしのため評価対象はありません", rendered)
+            self.assertIn("初回実測18,334", rendered)
+            self.assertIn("APIの無償保証ではありません", rendered)
+            self.assertIn("Artifact保持要求: 1日", rendered)
+            self.assertIn("Job Summary・ログ・ダウンロード済みコピー", rendered)
+            self.assertIn("出典元の利用条件", rendered)
+        self.assertIsNone(plan["web_search_calls"])
+        self.assertIsNone(failed["web_search_calls"])
+        self.assertEqual(empty["web_search_calls"], 2)
 
     def test_one_post_uses_official_supported_parameters_and_header_only_key(self):
         result, transport, response = self.run_live()
@@ -171,7 +280,7 @@ class ProbeTest(unittest.TestCase):
             cite("https://public.example/news?utm_source=plamo"), cite("https://public.example/news#section")]
         result, _, _ = self.run_live(data)
         self.assertEqual(result["citation_counts"], {"unique": 6, "repeated": 1, "discarded": 0, "seen_exact": 3,
-                                                    "collected_exact": 2, "excluded_exact": 1, "new_candidates": 3})
+                                                    "collected_exact": 2, "excluded_exact": 1, "new_url_candidates": 3})
         self.assertIn("記事内容の重複", probe.render_markdown(result))
 
     def test_nonpublic_unsafe_or_secret_urls_are_dropped_without_following(self):
@@ -293,15 +402,19 @@ class ProbeTest(unittest.TestCase):
         with mock.patch.dict("os.environ", {"PLAMO_API_KEY": KEY}), mock.patch.object(probe, "run_probe", wraps=probe.run_probe) as run:
             out = io.StringIO()
             with redirect_stdout(out):
-                self.assertEqual(probe.main(["--output-dir", str(output)]), 0)
+                self.assertEqual(probe.main(["--topic", "coding", "--output-dir", str(output)]), 0)
             self.assertFalse(run.call_args.kwargs["live"])
+            self.assertEqual(run.call_args.kwargs["topic"], "coding")
+            self.assertEqual(json.loads((output / "report.json").read_text())["topic"]["id"], "coding")
             self.assertEqual(json.loads((output / "report.json").read_text())["api_requests"], 0)
             self.assertNotIn(KEY, out.getvalue())
         transport = mock.Mock()
         transport.open.return_value = Response(payload())
         with mock.patch.dict("os.environ", {"PLAMO_API_KEY": KEY}), mock.patch.object(probe.urllib.request, "build_opener", return_value=transport), redirect_stdout(io.StringIO()):
-            self.assertEqual(probe.main(["--live", "--output-dir", str(output)]), 0)
+            self.assertEqual(probe.main(["--live", "--topic", "agents-mcp", "--output-dir", str(output)]), 0)
             self.assertEqual(transport.open.call_count, 1)
+            self.assertEqual(json.loads((output / "report.json").read_text())["topic"]["id"], "agents-mcp")
+            self.assertIn(probe.TOPICS["agents-mcp"]["focus"], json.loads(transport.open.call_args.args[0].data)["messages"][1]["content"])
             saved = (output / "report.json").read_text() + (output / "report.md").read_text()
             self.assertNotIn(KEY, saved)
             self.assertNotIn("RAW RESPONSE", saved)
@@ -324,6 +437,11 @@ class Workflow(unittest.TestCase):
         triggers = wf.get("on", wf.get(True))
         self.assertEqual(set(triggers), {"workflow_dispatch"})
         self.assertIs(triggers["workflow_dispatch"]["inputs"]["confirm_one_request"]["default"], False)
+        topic_input = triggers["workflow_dispatch"]["inputs"]["topic"]
+        self.assertEqual(topic_input["type"], "choice")
+        self.assertTrue(topic_input["required"])
+        self.assertEqual(topic_input["default"], probe.DEFAULT_TOPIC)
+        self.assertEqual(topic_input["options"], list(probe.TOPICS))
         self.assertEqual(wf["permissions"], {"contents": "read"})
         self.assertEqual(wf["concurrency"]["cancel-in-progress"], False)
         self.assertEqual(set(wf["jobs"]), {"probe"})
@@ -332,10 +450,14 @@ class Workflow(unittest.TestCase):
         steps = job["steps"]
         secret_steps = [s for s in steps if "PLAMO_API_KEY" in s.get("env", {})]
         self.assertEqual(len(secret_steps), 1)
+        self.assertEqual(secret_steps[0]["env"]["PROBE_TOPIC"], "${{ inputs.topic }}")
+        self.assertIn('--topic "$PROBE_TOPIC"', secret_steps[0]["run"])
+        self.assertEqual(secret_steps[0]["run"].count("python scripts/plamo_probe.py"), 1)
         self.assertNotIn("env", job)
         self.assertFalse(steps[0]["with"]["persist-credentials"])
         artifact = next(s for s in steps if s.get("uses", "").startswith("actions/upload-artifact@"))
-        self.assertEqual(artifact["with"]["retention-days"], 3)
+        self.assertEqual(artifact["with"]["retention-days"], probe.ARTIFACT_RETENTION_DAYS)
+        self.assertEqual(probe.ARTIFACT_RETENTION_DAYS, 1)
         self.assertIn("always()", artifact["if"])
         summary = next(s for s in steps if "GITHUB_STEP_SUMMARY" in s.get("run", ""))
         self.assertIn("always()", summary["if"])
