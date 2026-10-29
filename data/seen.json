@@ -14,6 +14,9 @@
   "https://deepmind.google/blog/gemini-4-argon-for-robotics": {
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model": {
+    "first_seen": "2026-10-29"
+  },
   "https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation": {
     "first_seen": "2026-10-28"
   },
@@ -62,6 +65,21 @@
   },
   "https://github.blog/changelog/2026-10-27-github-copilot-supports-server-to-server-authentication": {
     "first_seen": "2026-10-28"
+  },
+  "https://github.blog/changelog/2026-10-28-github-agentic-workflows-generally-available": {
+    "first_seen": "2026-10-29"
+  },
+  "https://github.blog/changelog/2026-10-28-github-copilot-app-universe-releases": {
+    "first_seen": "2026-10-29"
+  },
+  "https://github.blog/changelog/2026-10-28-github-copilot-in-vs-code-universe-releases": {
+    "first_seen": "2026-10-29"
+  },
+  "https://github.blog/changelog/2026-10-28-github-enterprise-now-includes-access-to-github-copilot": {
+    "first_seen": "2026-10-29"
+  },
+  "https://github.blog/changelog/2026-10-28-route-and-orchestrate-models-with-github-copilot-fusion": {
+    "first_seen": "2026-10-29"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
@@ -233,6 +251,9 @@
     "excluded": "customer_story",
     "first_seen": "2026-10-18"
   },
+  "https://openai.com/index/legora": {
+    "first_seen": "2026-10-29"
+  },
   "https://openai.com/index/low-resource-programming-languages": {
     "excluded": "low_score",
     "first_seen": "2026-10-20"
@@ -248,6 +269,10 @@
   "https://openai.com/index/openai-nask-ai-safety-security-partnership": {
     "excluded": "partnership",
     "first_seen": "2026-10-24"
+  },
+  "https://openai.com/index/openai-servicenow-partnership-expansion": {
+    "excluded": "partnership",
+    "first_seen": "2026-10-29"
   },
   "https://openai.com/index/openai-to-acquire-orchestra-bio": {
     "excluded": "low_score",
@@ -297,6 +322,10 @@
   "https://openai.com/index/the-eus-next-chapter-in-ai-is-agentic": {
     "excluded": "policy_society",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/the-future-of-the-firm": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-29"
   },
   "https://openai.com/index/third-moment-research": {
     "excluded": "customer_story",
