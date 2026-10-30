@@ -66,6 +66,12 @@
   "https://github.blog/changelog/2026-10-27-github-copilot-supports-server-to-server-authentication": {
     "first_seen": "2026-10-28"
   },
+  "https://github.blog/changelog/2026-10-28-build-shared-workflows-for-your-team-with-copilot-automations": {
+    "first_seen": "2026-10-30"
+  },
+  "https://github.blog/changelog/2026-10-28-generate-and-edit-images-directly-in-copilot": {
+    "first_seen": "2026-10-30"
+  },
   "https://github.blog/changelog/2026-10-28-github-agentic-workflows-generally-available": {
     "first_seen": "2026-10-29"
   },
@@ -80,6 +86,9 @@
   },
   "https://github.blog/changelog/2026-10-28-route-and-orchestrate-models-with-github-copilot-fusion": {
     "first_seen": "2026-10-29"
+  },
+  "https://github.blog/changelog/2026-10-28-security-extension-for-the-github-copilot-app": {
+    "first_seen": "2026-10-30"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
@@ -156,6 +165,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.312": {
     "first_seen": "2026-10-28"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.314": {
+    "first_seen": "2026-10-30"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
   },
@@ -164,6 +176,9 @@
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.165.0": {
     "first_seen": "2026-10-28"
+  },
+  "https://github.com/openai/codex/releases/tag/rust-v0.166.0": {
+    "first_seen": "2026-10-30"
   },
   "https://openai.com/index/amp-beyond-coding": {
     "excluded": "customer_story",
@@ -240,6 +255,10 @@
     "excluded": "low_score",
     "first_seen": "2026-10-18"
   },
+  "https://openai.com/index/how-we-detect-frontier-model-misalignment": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-30"
+  },
   "https://openai.com/index/introducing-gpt-6-1-terra": {
     "first_seen": "2026-10-27"
   },
@@ -284,6 +303,10 @@
   },
   "https://openai.com/index/retell-ai": {
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/ropes-gray-ai-diligence": {
+    "excluded": "customer_story",
+    "first_seen": "2026-10-30"
   },
   "https://openai.com/index/scaling-ai-research-for-complex-biological-data": {
     "first_seen": "2026-10-22"
@@ -334,5 +357,9 @@
   "https://openai.com/index/uber-chatgpt-work-rollout": {
     "excluded": "customer_story",
     "first_seen": "2026-10-23"
+  },
+  "https://openai.com/index/updated-model-spec": {
+    "excluded": "low_score",
+    "first_seen": "2026-10-30"
   }
 }
