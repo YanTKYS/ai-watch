@@ -15,6 +15,12 @@
     <div class="wrap">
       <h1>ai-watch</h1>
       <p class="lead">生成AIの最新動向（公式発表・リリースノート）を日刊で収集</p>
+      <nav id="source-navigation" class="source-navigation" hidden aria-label="ニュースの表示切替">
+        <a href="./" data-news-source="official" aria-current="page">公式ニュース</a>
+        <a href="?source=x" data-news-source="x">Grok（X）</a>
+        <a href="?source=p" data-news-source="p">Perplexity（週次）</a>
+      </nav>
+      <div id="official-controls">
       <div class="controls">
         <label>
           <span class="visually-hidden">表示する月</span>
@@ -58,9 +64,11 @@
       <p id="mode-hint" class="meta" hidden>保存済み検索データの全期間を表示中。月・並び順は日刊用です。クリアは検索語だけを解除します。</p>
       <p id="active-conditions" class="active-conditions" hidden></p>
       <button type="button" id="conditions-clear" class="filter-button" hidden>すべての条件を解除</button>
+      </div>
     </div>
   </header>
   <main id="main-content" class="wrap" tabindex="-1">
+    <div id="official-view">
     <section id="collection-health" class="collection-health" aria-labelledby="collection-health-title">
       <h2 id="collection-health-title" class="visually-hidden">収集状況とデータ鮮度</h2>
       <div role="status" aria-live="polite">
@@ -86,11 +94,29 @@
     <div id="status" tabindex="-1">読み込み中...</div>
     <button type="button" id="load-retry" aria-describedby="status" aria-controls="content" hidden>再試行</button>
     <div id="content"></div>
+    </div>
+    <section id="import-view" hidden aria-labelledby="import-heading">
+      <h2 id="import-heading" tabindex="-1">外部AIの原記録</h2>
+      <p id="import-disclaimer" class="notice"></p>
+      <p class="meta">公式ニュースの採用記事・検索対象とは別です。重要な判断や脆弱性情報は元出典を確認してください。原記録・本文中のリンクは新しいタブで開きます。</p>
+      <div class="import-controls">
+        <label><span id="import-label">表示する日付</span><select id="import-select" disabled></select></label>
+        <button id="import-refresh" type="button">一覧を更新</button>
+      </div>
+      <p id="import-metadata" class="meta"></p>
+      <p id="import-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      <button id="import-retry" type="button" hidden>原記録を再試行</button>
+      <p><a id="import-original" href="https://github.com/YanTKYS/ai-watch/tree/main/imports" target="_blank" rel="noopener noreferrer">GitHubで原記録を開く（新しいタブ）</a></p>
+      <div id="import-content"></div>
+    </section>
   </main>
   <noscript><p class="wrap">このページの表示にはJavaScriptが必要です。ログは <a href="logs/">logs/</a> のMarkdownで直接読めます。</p></noscript>
   <script src="parser.js"></script>
   <script src="collection-status.js"></script>
   <script src="view-url.js"></script>
+  <script src="import-markdown.js"></script>
+  <script src="import-catalog.js"></script>
+  <script src="import-reader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

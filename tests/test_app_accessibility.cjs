@@ -34,7 +34,9 @@ test('skip link is first, target focusable; app has one atomic completion region
   assert.match(html, /id="new-tab-hint"[^>]*>.*新しいタブ/);
   assert.match(html, /id="view-announcement"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
   assert.doesNotMatch(html, /id="status"[^>]*(role="status"|aria-live)/);
-  assert.equal((html.match(/role="status"/g) || []).length, 2); // F04と記事操作が各1つ
+  assert.equal((html.match(/role="status"/g) || []).length, 3); // F04・公式記事操作・別ソース操作。非表示の経路は通知しない
+  assert.match(html, /id="import-status"[^>]*role="status"/);
+  assert.match(html, /id="import-view"[^>]*hidden/);
 });
 
 test('search announces final total including zero and uses h2 -> h3 without stealing typing focus', async () => {

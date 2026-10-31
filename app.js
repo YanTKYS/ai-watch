@@ -568,6 +568,7 @@ function invalidateInput() {
 }
 
 function init() {
+  const importsAvailable = typeof ImportReader !== "undefined" && typeof ImportCatalog !== "undefined" && typeof ImportMarkdown !== "undefined";
   if (BASE) notice.hidden = false;
   filterPanel.addEventListener("toggle", () => { if (filterPanel.open) loadFilterOptions(); });
   optionsRetry.addEventListener("click", loadFilterOptions);
@@ -633,8 +634,17 @@ function init() {
   orderSelect.addEventListener("change", () => {
     updateViewState({ order: orderSelect.value === "asc" ? "asc" : "desc" });
   });
-  window.addEventListener("popstate", () => restoreURL());
-  restoreURL(true);
+  window.addEventListener("popstate", () => {
+    if (!importsAvailable || !ImportReader.restore()) restoreURL(!select.options.length);
+  });
+  const importsStarted = importsAvailable && ImportReader.start({
+    showOfficial: () => restoreURL(!select.options.length),
+    leaveOfficial: () => {
+      clearTimeout(searchTimer); composing = inputPending = false; editSession = "";
+      beginView(); // Ignore pending official responses after switching source.
+    },
+  });
+  if (!importsStarted) restoreURL(true);
 }
 
 function urlNotice(message, append = true) {
