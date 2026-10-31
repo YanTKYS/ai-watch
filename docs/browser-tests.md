@@ -1,6 +1,6 @@
 # Chromium E2E（F13 第1段階）
 
-Python/Nodeの高速な回帰と品質チェックに加え、実際のHTML・JavaScriptをChromiumで操作する10ケースをPR CIで実行する。F13第1段階の4ケースに、F01の代表操作2ケース、F02のURL・共有操作4ケースを追加した。テストはローカルHTTP配信だけを利用し、公開Pages・公式フィード・外部APIには接続しない。
+Python/Nodeの高速な回帰と品質チェックに加え、実際のHTML・JavaScriptをChromiumで操作する公式閲覧10ケースをPR CIで実行する。F13第1段階の4ケースに、F01の代表操作2ケース、F02のURL・共有操作4ケースを追加した。テストはローカルHTTP配信だけを利用し、公開Pages・公式フィード・外部APIには接続しない。
 
 ## セットアップと実行
 
@@ -56,6 +56,12 @@ npx playwright show-trace test-results/<ケースのディレクトリ>/trace.zi
 ```
 
 ローカルの失敗ログにも実際のファイルパスが出る。`node_modules/`・`test-results/`・`playwright-report/` はGit管理対象外。トレースにはテスト用のローカル通信と合成/sampleデータを用い、本番APIの結果は入れない。
+
+## Grok・Perplexity閲覧の回帰
+
+`tests/e2e/imports.spec.cjs`の9ケースを追加し、合計19ケースを実行する。新機能の公開Contents APIはブラウザのrouteでfixture応答へ差し替え、実APIへ接続しない。他の外部通信は失敗にする。PC/スマートフォン×ライト/ダークの4ケースと、新年・新週の発見、API失敗/空一覧/配信前404の再試行、遅い応答と不正指定、sample分離、既存原記録の全文形式を扱う。公式検索・履歴・元の条件への復帰も含む。
+
+候補表示を公式記事の採用や検索統合とは扱わない。方式・命名・再現テストは[原記録の閲覧](import-reader.md)を参照。
 
 ## 今後の追加と境界
 

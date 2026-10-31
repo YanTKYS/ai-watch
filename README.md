@@ -4,7 +4,7 @@
 
 **[公開サイトを開く](https://yantkys.github.io/ai-watch/)** · [架空データのサンプル](https://yantkys.github.io/ai-watch/?sample)
 
-月・日付別の閲覧、キーワード検索、カテゴリ・情報源・取得期間の絞り込み、表示条件・記事の共有URL、ライト/ダークモードに対応しています。閲覧・検索にAPIキーは不要です。
+月・日付別の閲覧、キーワード検索、カテゴリ・情報源・取得期間の絞り込み、表示条件・記事の共有URL、ライト/ダークモードに対応しています。閲覧・検索にAPIキーは不要です。Grokの日次候補とPerplexityの週次調査も、上部の表示切替から別枠で読めます（[表示方式・公開APIの制約](docs/import-reader.md)）。
 
 ## 情報源と保存方針
 
@@ -59,7 +59,7 @@ python -m http.server
 
 収集・検索生成・Pages配信は別段階です。新着0件と取得失敗を区別して、[収集状況と鮮度](docs/collection-health.md)・[実行ログの調べ方](docs/collection-operations.md)を確認してください。
 
-外部検索の検証は本番収集と分離しています。**PLaMoは2026年10月に検証済み・本番採用見送り**（[評価](docs/plamo-evaluation-2026-10.md)・[検証手順](docs/plamo-probe.md)）。Grokの`imports/x/`は検証用候補で、**本番への自動取り込みはありません**。X投稿の未確認事項と運用境界は[Grok評価](docs/grok-x-evaluation-2026-10.md)を参照してください。
+外部検索の検証は本番収集と分離しています。**PLaMoは2026年10月に検証済み・本番採用見送り**（[評価](docs/plamo-evaluation-2026-10.md)・[検証手順](docs/plamo-probe.md)）。Grokの`imports/x/`とPerplexityの`imports/p/`は原記録を別枠で閲覧でき、**公式ログ・検索への自動取り込みはありません**。X投稿の未確認事項と運用境界は[Grok評価](docs/grok-x-evaluation-2026-10.md)を参照してください。
 
 ## 詳細ドキュメント
 
@@ -67,6 +67,6 @@ python -m http.server
 | --- | --- |
 | 設定・記事選定 | [情報源・選定方針](docs/source-quality.md) / [dry-run・設定比較](docs/selection-dry-run.md) / [生成された情報源一覧](docs/source-inventory.md) |
 | 運用・障害調査 | [実行・診断・Brave品質観測](docs/collection-operations.md) / [収集状況と鮮度](docs/collection-health.md) |
-| 閲覧UI | [絞り込み](docs/article-filters.md) / [共有URL・履歴](docs/view-urls.md) / [キーボード・通知・再試行](docs/accessibility.md) |
+| 閲覧UI | [Grok・Perplexityの原記録](docs/import-reader.md) / [絞り込み](docs/article-filters.md) / [共有URL・履歴](docs/view-urls.md) / [キーボード・通知・再試行](docs/accessibility.md) |
 | 検証・意思決定 | [ブラウザE2E](docs/browser-tests.md) / [PLaMo評価](docs/plamo-evaluation-2026-10.md) / [Grok評価](docs/grok-x-evaluation-2026-10.md) |
 | 改善案 | [将来の候補と過去の棚卸](docs/feature-ideas.md)（採用決定・現行仕様とは別） |
