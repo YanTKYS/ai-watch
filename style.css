@@ -286,24 +286,22 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 
 /* Source navigation and untrusted import documents share the existing palette. */
 [hidden] { display: none !important; }
-.source-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
-.source-navigation a { padding: 10px 14px; min-height: 44px; color: var(--accent); border: 1px solid var(--border); border-radius: 2px; text-underline-offset: 3px; }
-.source-navigation a[aria-current] { background: var(--band); border-bottom: 3px solid var(--accent); font-weight: 700; }
-.import-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.source-navigation { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--subtle-border); }
+.source-navigation a { padding: 10px 14px; min-height: 44px; color: var(--muted); border-bottom: 3px solid transparent; text-decoration: none; }
+.source-navigation a[aria-current] { color: var(--accent); background: var(--band); border-bottom-color: var(--accent); font-weight: 700; }
+.source-navigation a:hover { background: var(--band); color: var(--accent); }
+.import-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 16px; margin: 12px 0; }
+#import-original { align-self: center; font-size: .875rem; }
 .import-controls label { display: grid; gap: 4px; max-width: 100%; }
 .import-controls select, .import-controls button, #import-retry { min-height: 44px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 2px; max-width: 100%; }
 #import-view { min-width: 0; }
 #import-view a { color: var(--accent); text-underline-offset: 3px; }
 #import-metadata { white-space: pre-line; }
-.import-document { max-width: 80ch; margin: 24px auto; }
+.import-document { max-width: 96ch; margin: 24px auto; }
 .import-document h3 { font-size: 1.3rem; line-height: 1.5; }
 .import-document h4 { font-size: 1.15rem; line-height: 1.5; }
 .import-document h4, .import-document h5, .import-document h6 { margin-top: 28px; }
 .import-document p, .import-document li { line-height: 1.85; }
-.import-card { padding: 8px 0 20px; border-bottom: 1px solid var(--subtle-border); }
-.import-fields { margin: 16px 0; }
-.import-fields dt { margin-top: 12px; color: var(--muted); font-size: .875rem; }
-.import-fields dd { margin: 2px 0 0; white-space: pre-line; }
 .import-table { overflow-x: auto; margin: 20px 0; max-width: 100%; }
 .import-table table { border-collapse: collapse; width: 100%; font-size: .925rem; }
 .import-table th, .import-table td { border: 1px solid var(--subtle-border); padding: 10px 12px; text-align: left; vertical-align: top; min-width: 7em; }
@@ -313,3 +311,24 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 .import-table:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 #import-heading:focus { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+/* Grok is a scan-friendly news list; the weekly report keeps its reading width. */
+#import-heading { margin: 0 0 8px; font-size: 1.45rem; line-height: 1.5; }
+.import-disclaimer { margin: 0 0 12px; font-size: .875rem; color: var(--muted); }
+.import-error { color: var(--error); }
+.grok-summary, .grok-card-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; margin: 0; }
+.grok-summary { margin: 8px 0 20px; }
+.grok-summary li { white-space: pre-wrap; }
+.grok-meta-label { color: var(--muted); }
+.grok-news-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.grok-card { min-width: 0; padding: 20px; border: 1px solid var(--subtle-border); background: var(--surface); }
+.grok-card-title { margin: 0 0 12px; font-size: 1.15rem; line-height: 1.55; }
+.grok-overview, .grok-point { margin: 0 0 12px; line-height: 1.8; white-space: pre-line; }
+.grok-point-label { font-weight: 650; }
+.grok-card-footer { border-top: 1px solid var(--subtle-border); padding-top: 12px; font-size: .875rem; }
+.grok-confidence, .grok-source { margin: 6px 0 0; }
+.grok-extra { margin: 12px 0 0; border-top: 1px solid var(--subtle-border); padding-top: 8px; font-size: .925rem; }
+.grok-extra dt { color: var(--muted); margin-top: 4px; }
+.grok-extra dd { margin: 0 0 6px; white-space: pre-line; }
+@media (min-width: 1000px) { .grok-news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .grok-card { padding: 16px; } }

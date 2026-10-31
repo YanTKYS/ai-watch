@@ -6,7 +6,7 @@ const fixture = name => fs.readFileSync(path.join(root, 'tests/fixtures/imports'
 const row = (p, type = 'file') => ({ name: p.split('/').pop(), path: p, type, download_url: 'https://evil.example/ignored' });
 const test = base.extend({
   mock: async ({ page, context, baseURL }, use) => {
-    const state = { fail: false, empty: false, added: false, missing: false, real: false, slow: null, slowP: null, calls: [], unexpected: [], errors: [] };
+    const state = { fail: false, empty: false, added: false, missing: false, real: false, grokText: null, slow: null, slowP: null, calls: [], unexpected: [], errors: [] };
     page.on('pageerror', e => state.errors.push(e.message));
     await context.route('**/*', async route => {
       const u = new URL(route.request().url());
@@ -30,7 +30,7 @@ const test = base.extend({
         if (state.slow && pathname.includes('/x/')) await state.slow;
         if (state.slowP && pathname.includes('/p/')) await state.slowP;
         if (state.missing) return route.fulfill({ status: 404, body: 'not deployed' });
-        const text = state.real ? fs.readFileSync(path.join(root, pathname), 'utf8') : pathname.includes('/x/') ? fixture('grok').replaceAll('2027-01-02', pathname.includes('2027') ? '2027-01-02' : '2026-10-30') : fixture('perplexity');
+        const text = state.real ? fs.readFileSync(path.join(root, pathname), 'utf8') : pathname.includes('/x/') ? (state.grokText || fixture('grok')).replaceAll('2027-01-02', pathname.includes('2027') ? '2027-01-02' : '2026-10-30') : fixture('perplexity');
         return route.fulfill({ contentType: 'text/markdown', body: text });
       }
       if (u.pathname.startsWith('/ai-watch/')) {
@@ -58,10 +58,37 @@ for (const width of [1280, 375]) for (const colorScheme of ['light', 'dark']) {
     await expect(page.locator('#official-controls')).toBeHidden(); await expect(page.locator('#collection-health')).toBeHidden();
     await expect(page.locator('#import-disclaimer')).toContainText('未検証');
     await expect(page.locator('#import-content')).toContainText('原記録の確度（未検証）');
-    await expect(page.locator('#import-content')).toContainText('収集日時');
-    await expect(page.locator('#import-content')).toContainText('対象期間');
+    await expect(page.locator('#import-metadata')).toContainText('収集日時');
+    await expect(page.locator('#import-metadata')).toContainText('対象期間');
     await expect(page.locator('#import-content img, #import-content script')).toHaveCount(0);
     await expect(page.locator('#import-content a[href^="javascript:"]')).toHaveCount(0);
+    const cards = page.locator('.grok-card');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.first().locator('h3')).toHaveText('1. （合成）モデルの更新');
+    await expect(cards.first().locator('.grok-overview')).toHaveText('日本語・絵文字🧪・強調を含む未検証の候補。');
+    await expect(cards.first().locator('.grok-point')).toContainText('元出典を確認。');
+    await expect(cards.first().locator('.grok-card-meta')).toContainText('AIモデル');
+    await expect(cards.first().locator('.grok-card-meta')).toContainText('@example');
+    await expect(cards.first().locator('.grok-card-meta')).toContainText('2027-01-01 23:21 JST');
+    await expect(cards.first().locator('.grok-confidence')).toContainText('公式発表');
+    await expect(cards.first().getByRole('link', {name:'元投稿を開く'})).toHaveAttribute('href', 'https://x.com/example/status/123456');
+    const [first, second] = await Promise.all([cards.nth(0).boundingBox(), cards.nth(1).boundingBox()]);
+    if (width >= 1000) {
+      expect(Math.abs(first.y - second.y)).toBeLessThan(2);
+      expect(second.x).toBeGreaterThan(first.x + first.width);
+      expect(first.width).toBeGreaterThan(500);
+      expect(first.y).toBeLessThan(550);
+    } else {
+      expect(first.x).toBe(second.x); expect(second.y).toBeGreaterThan(first.y + first.height);
+      expect(first.y).toBeLessThan(800);
+    }
+    // Success stays available to assistive technology without taking layout space.
+    await expect(page.locator('#import-status')).toHaveClass('visually-hidden');
+    await expect(page.locator('#import-status')).toHaveAttribute('aria-live', 'polite');
+    await expect(page.locator('#import-heading')).toHaveText('X生成AIニュース — 2026-10-30');
+    await expect(page.locator('#import-content h2')).toHaveCount(0);
+    await expect(grok).toHaveAttribute('aria-current', 'page');
+    await expect(grok).toHaveCSS('text-decoration-line', 'none');
     expect(await page.evaluate(() => window.injected)).toBeUndefined();
     await noOverflow(page);
     if (process.env.IMPORT_READER_PREVIEW_DIR) await page.screenshot({ path: `${process.env.IMPORT_READER_PREVIEW_DIR}/grok-${width}-${colorScheme}.png`, fullPage: true });
@@ -158,13 +185,46 @@ test('existing Grok daily and full Perplexity report render without rewriting th
   mock.real = true;
   await page.goto('/?source=x&entry=2026-10-30');
   await expect(page.locator('#import-status')).toContainText('2026-10-30の原記録');
-  await expect(page.locator('.import-card')).toHaveCount(4);
-  await expect(page.locator('#import-content')).toContainText('2026-10-29 00:17');
+  await expect(page.locator('.grok-card')).toHaveCount(4);
+  await expect(page.locator('#import-metadata')).toContainText('2026-10-29 00:17');
   await page.getByRole('link', { name: 'Perplexity（週次）', exact: true }).click();
   await expect(page.locator('#import-status')).toContainText('2026-W44の原記録');
   await expect(page.locator('#import-metadata')).toContainText('2026-10-31');
   await expect(page.locator('#import-content')).toContainText('ollama/ollama');
   await expect(page.locator('#import-content a[href="https://github.com/ollama/ollama"]').first()).toBeVisible();
   expect(await page.locator('#import-content table').count()).toBeGreaterThan(5);
+  await noOverflow(page);
+});
+
+
+test('Grok preserves unknown fields, missing values, long text and safe malformed fallback', async ({ page, mock }) => {
+  mock.grokText = fixture('grok-incomplete').replace('## （空見出し用の合成マーカー）', '## ');
+  await page.setViewportSize({width:375,height:900});
+  await page.goto('/?source=x&entry=2026-10-30');
+  await expect(page.locator('#import-status')).toContainText('表示しました');
+  const cards = page.locator('.grok-card');
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first().locator('h3')).toHaveText('（タイトルなし）');
+  await expect(cards.first().locator('.grok-overview')).toContainText('長い概要の先頭');
+  await expect(cards.first().locator('.grok-overview')).toContainText('長い概要の末尾');
+  await expect(cards.first().locator('.grok-point')).toContainText('注目点の末尾');
+  await expect(cards.first().locator('.grok-overview')).toHaveCSS('overflow', 'visible');
+  await expect(cards.first().locator('.grok-extra')).toContainText('新しい欄');
+  await expect(cards.first().locator('.grok-extra')).toContainText('<img src=x');
+  await expect(cards.first().locator('.grok-source')).toHaveText('元投稿（リンク無効）: javascript:alert(1)');
+  await expect(cards.nth(1).locator('.grok-overview')).toHaveText('（概要の記載なし）');
+  await expect(cards.nth(1).locator('.grok-source')).toHaveText('元投稿URLの記載なし');
+  await expect(cards.nth(1).locator('.grok-extra a')).toHaveAttribute('href', 'https://example.com/reference');
+  await expect(page.locator('#import-metadata')).toContainText('新しい共通フィールド');
+  await expect(page.locator('#import-metadata')).toContainText('表示件数 2件');
+  await expect(page.locator('#import-content img, #import-content script')).toHaveCount(0);
+  expect(await page.evaluate(()=>window.injected)).toBeUndefined(); await noOverflow(page);
+  await page.setViewportSize({width:900,height:900});
+  const [a, b] = await Promise.all([cards.nth(0).boundingBox(), cards.nth(1).boundingBox()]);
+  expect(a.x).toBe(b.x); expect(b.y).toBeGreaterThan(a.y + a.height); await noOverflow(page);
+  mock.grokText = '# 形式が異なる原記録\n\n本文は残します。<script>window.injected=true</script>';
+  await page.getByRole('button', {name:'一覧を更新',exact:true}).click();
+  await expect(page.locator('.grok-fallback')).toContainText('本文は残します。');
+  await expect(page.locator('.grok-fallback script')).toHaveCount(0);
   await noOverflow(page);
 });
