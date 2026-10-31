@@ -198,7 +198,7 @@ test('existing Grok daily and full Perplexity report render without rewriting th
 
 
 test('Grok preserves unknown fields, missing values, long text and safe malformed fallback', async ({ page, mock }) => {
-  mock.grokText = fixture('grok-incomplete');
+  mock.grokText = fixture('grok-incomplete').replace('## （空見出し用の合成マーカー）', '## ');
   await page.setViewportSize({width:375,height:900});
   await page.goto('/?source=x&entry=2026-10-30');
   await expect(page.locator('#import-status')).toContainText('表示しました');
