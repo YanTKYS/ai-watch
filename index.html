@@ -97,16 +97,16 @@
     </div>
     <section id="import-view" hidden aria-labelledby="import-heading">
       <h2 id="import-heading" tabindex="-1">外部AIの原記録</h2>
-      <p id="import-disclaimer" class="notice"></p>
-      <p class="meta">公式ニュースの採用記事・検索対象とは別です。重要な判断や脆弱性情報は元出典を確認してください。原記録・本文中のリンクは新しいタブで開きます。</p>
+      <p id="import-disclaimer" class="import-disclaimer"></p>
+      <p id="import-link-hint" class="visually-hidden">原記録・本文中のリンクは新しいタブで開きます。</p>
       <div class="import-controls">
         <label><span id="import-label">表示する日付</span><select id="import-select" disabled></select></label>
         <button id="import-refresh" type="button">一覧を更新</button>
+        <a id="import-original" href="https://github.com/YanTKYS/ai-watch/tree/main/imports" target="_blank" rel="noopener noreferrer" aria-describedby="import-link-hint">GitHubの原記録</a>
       </div>
-      <p id="import-metadata" class="meta"></p>
+      <div id="import-metadata" class="meta"></div>
       <p id="import-status" role="status" aria-live="polite" aria-atomic="true"></p>
       <button id="import-retry" type="button" hidden>原記録を再試行</button>
-      <p><a id="import-original" href="https://github.com/YanTKYS/ai-watch/tree/main/imports" target="_blank" rel="noopener noreferrer">GitHubで原記録を開く（新しいタブ）</a></p>
       <div id="import-content"></div>
     </section>
   </main>
