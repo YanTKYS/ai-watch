@@ -168,6 +168,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.314": {
     "first_seen": "2026-10-30"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.316": {
+    "first_seen": "2026-11-01"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
   },
