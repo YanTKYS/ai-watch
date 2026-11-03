@@ -61,6 +61,8 @@ python -m http.server
 
 外部検索の検証は本番収集と分離しています。**PLaMoは2026年10月に検証済み・本番採用見送り**（[評価](docs/plamo-evaluation-2026-10.md)・[検証手順](docs/plamo-probe.md)）。Grokの`imports/x/`・Perplexityの`imports/p/`・Museの`imports/m/`は原記録を別枠で閲覧でき、**公式ログ・検索への自動取り込みはありません**。X投稿の未確認事項と運用境界は[Grok評価](docs/grok-x-evaluation-2026-10.md)を参照してください。
 
+既存ニュースの要約・横断整理は、[BeatAPI DeepSeekの手動PoC](docs/beatapi-deepseek-summary-poc.md)で別途評価します。既定は入力確認のみで、生成文は短期レポートに限定し、本番サイト・収集データへ取り込みません。
+
 ## 詳細ドキュメント
 
 | 用途 | 参照先 |

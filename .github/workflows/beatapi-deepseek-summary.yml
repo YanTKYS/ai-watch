@@ -1,0 +1,59 @@
+name: BeatAPI DeepSeek news summary PoC
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_one_request:
+        description: "入力と規約・制限を確認済み。DeepSeek無料IDへ1回送信（未選択は事前確認のみ）"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: beatapi-deepseek-summary-poc
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'YanTKYS/ai-watch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Offline mock tests (no Secret)
+        run: node --test tests/test_beatapi_summary.cjs
+      - name: Preview selected public articles (no Secret)
+        run: node scripts/beatapi_deepseek_summary.cjs --output-dir "$RUNNER_TEMP/beatapi-summary"
+      - name: Send one confirmed request on reviewed main
+        if: inputs.confirm_one_request && github.run_attempt == 1
+        env:
+          BEAT_API_KEY: ${{ secrets.BEAT_API_KEY }}
+          CONFIRM_ONE_REQUEST: ${{ inputs.confirm_one_request }}
+        run: node scripts/beatapi_deepseek_summary.cjs --live --output-dir "$RUNNER_TEMP/beatapi-summary"
+      - name: Publish safe text summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/beatapi-summary/report.md" ]; then
+            cat "$RUNNER_TEMP/beatapi-summary/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'BeatAPI summary: report unavailable. No raw response or exception is printed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload one-day evaluation report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: beatapi-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/beatapi-summary/report.json
+            ${{ runner.temp }}/beatapi-summary/report.md
+          retention-days: 1
+          if-no-files-found: warn
