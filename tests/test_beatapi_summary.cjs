@@ -40,19 +40,20 @@ const realFetch = globalThis.fetch;
 before(() => { globalThis.fetch = () => { throw Error('REAL NETWORK FORBIDDEN'); }; });
 after(() => { globalThis.fetch = realFetch; });
 
-test('selection is deterministic, latest within categories, at most six and URL-deduplicated', () => {
+test('selection is deterministic, at most three, newest comparable pair first and URL-deduplicated', () => {
   const a = P.selectInput(BYTES), b = P.selectInput(bytes([...ROWS].reverse()));
-  assert.equal(a.articles.length, 6);
+  assert.equal(a.articles.length, 3);
   assert.deepEqual(a.articles, b.articles); assert.notEqual(a.snapshot.sha256, b.snapshot.sha256);
   assert.equal(new Set(a.articles.map(r => r.category)).size, 3);
   assert.deepEqual(a.articles.slice(0, 3).map(r => r.retrieved), ['2026-11-08', '2026-11-07', '2026-11-06']);
   const duplicate = P.selectInput(bytes([...ROWS, { ...ROWS[7], url: ROWS[7].url + '#fragment' }]));
   assert.equal(duplicate.snapshot.eligible_unique, 8);
-  assert.equal(new Set(duplicate.articles.map(r => r.id)).size, 6);
+  assert.equal(new Set(duplicate.articles.map(r => r.id)).size, 3);
+  assert.equal(a.snapshot.comparison_pair.relation, 'same_feed');
   assert.equal(a.snapshot.selection_version, P.SELECTION_VERSION);
   assert.match(a.snapshot.sha256, /^[a-f0-9]{64}$/);
 });
-test('single category and fewer than six articles are not padded or forcibly diversified', () => {
+test('single category and fewer than three articles are not padded or forcibly diversified', () => {
   const a = P.selectInput(bytes([article(1, { category: 'AIモデル' }), article(0, { category: 'AIモデル' })]));
   assert.equal(a.articles.length, 2); assert.equal(new Set(a.articles.map(v => v.category)).size, 1);
   assert.deepEqual(a.articles.map(v => v.retrieved), ['2026-11-02', '2026-11-01']);
@@ -104,7 +105,8 @@ test('known keys and credential-like strings in whitelisted input are not sent o
 });
 test('dry run needs no key or network and discloses a reproducible plan without model output', async () => {
   const r = await P.runPoc({ bytes: BYTES });
-  assert.equal(r.status, 'plan_only'); assert.equal(r.requests_sent, 0); assert.equal(r.input.length, 6);
+  assert.equal(r.status, 'plan_only'); assert.equal(r.requests_sent, 0); assert.equal(r.input.length, 3);
+  assert.equal(r.format_version, 2);
   assert.equal(r.output, null); assert.equal(r.requested_at, null); assert.equal(r.billing_verification, 'not_checked');
 });
 test('only reviewed main dispatch with explicit confirmation and first attempt can send', async () => {
@@ -130,9 +132,10 @@ test('exactly one Chat Completions POST uses fixed free model, token bound and n
   const [url, req] = calls[0], sent = JSON.parse(req.body);
   assert.equal(url, P.ENDPOINT); assert.equal(req.method, 'POST'); assert.equal(req.redirect, 'error'); assert.equal(req.credentials, 'omit');
   assert.equal(req.headers.Authorization, 'Bearer ' + KEY); assert.equal(sent.model, P.MODEL); assert.equal(sent.stream, false);
-  assert.equal(sent.max_tokens, P.LIMITS.maxTokens); assert(!('response_format' in sent)); assert(!('tools' in sent));
+  assert.equal(sent.max_tokens, 2048); assert(!('response_format' in sent)); assert(!('tools' in sent));
   assert(!req.body.includes(KEY)); assert(req.signal.aborted);
-  assert.match(sent.messages[0].content, /信頼できない/); assert.match(sent.messages[0].content, /Retrieved.*Published/);
+  assert.match(sent.messages[0].content, /信頼できない/);
+  assert.match(sent.messages[0].content, /Publishedは原記事の公開日/); assert.match(sent.messages[0].content, /Retrievedは取得日/);
   assert.match(sent.messages[1].content, /<UNTRUSTED_NEWS_JSON>/);
 });
 test('actual Japanese summaries and themes persist with references attached only from verified IDs', async () => {
@@ -165,7 +168,7 @@ test('themes require at least two distinct known IDs, bounded count and no dupli
   for (const alter of [v => { v.themes[0].article_ids = [selected[0].id]; },
     v => { v.themes[0].article_ids = [selected[0].id, selected[0].id]; },
     v => { v.themes[0].article_ids[0] = 'invented'; }, v => { v.themes.push({ ...v.themes[0] }); },
-    v => { v.themes = Array(4).fill(v.themes[0]); }]) {
+    v => { v.themes = Array(2).fill(v.themes[0]); }]) {
     const value = output(); alter(value);
     const { report } = await live(responseData(value)); assert.equal(report.reason, 'invalid_output_schema');
   }
@@ -186,7 +189,7 @@ test('output URLs, HTML, Markdown, workflow commands, control characters and cre
   }
 });
 test('oversized/non-Japanese summaries and more than two sentences fail', async () => {
-  for (const summary of ['長'.repeat(181), 'English only', 'タイトルから確認できる範囲。第一。第二。']) {
+  for (const summary of ['長'.repeat(101), 'English only', 'タイトルから確認できる範囲。第一。第二。']) {
     const v = output(); v.articles[0].summary = summary;
     assert.equal((await live(responseData(v))).report.status, 'failed');
   }
@@ -244,7 +247,9 @@ test('unsafe response IDs and invalid usage become unknown rather than copied st
   const data = responseData(); data.id = KEY;
   data.usage = { prompt_tokens: -1, completion_tokens: '300', total_tokens: Number.MAX_SAFE_INTEGER + 1 };
   const { report } = await live(data); assert.equal(report.status, 'schema_valid_unverified');
-  assert.equal(report.response_id, null); assert.deepEqual(report.usage, { prompt_tokens: null, completion_tokens: null, total_tokens: null });
+  assert.equal(report.response_id, null); assert.deepEqual(report.usage, { prompt_tokens: null, completion_tokens: null, total_tokens: null,
+    completion_tokens_details: { reasoning_tokens: null, text_tokens: null, audio_tokens: null,
+      accepted_prediction_tokens: null, rejected_prediction_tokens: null } });
 });
 test('summary renderer escapes untrusted input without executing HTML or Markdown', async () => {
   const input = article(0, { title: '</pre><script>bad()</script> [link](https://evil.example) & 日本語' });
@@ -306,4 +311,95 @@ test('CLI saves real generated prose only after a mocked authorized request, wit
     assert.match(md, /AI機能の公開|機能更新/); assert.match(md, /未検証/);
     for (const value of [KEY, 'PRIVATE REASONING NOT SAVED', 'RAW RESPONSE NOT SAVED']) assert(!(json + md + logs.join()).includes(value));
   } finally { console.log = log; globalThis.fetch = blockedFetch; fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('fresh same-feed pair and a different-feed third article make comparison reproducible', () => {
+  const rows = [article(7), article(6), article(5), article(4, {
+    feed: 'GitHub Changelog', url: 'https://github.blog/changelog/synthetic-4' })];
+  const a = P.selectInput(bytes(rows)), b = P.selectInput(bytes([...rows].reverse()));
+  assert.deepEqual(a.articles.map(v => v.title), [rows[0].title, rows[1].title, rows[3].title]);
+  assert.deepEqual(a.articles, b.articles); assert.deepEqual(a.snapshot.comparison_pair, b.snapshot.comparison_pair);
+  assert.equal(a.snapshot.comparison_pair.relation, 'same_feed');
+  assert.deepEqual(a.snapshot.comparison_pair.article_ids, a.articles.slice(0, 2).map(v => v.id));
+  for (const v of a.articles) assert.equal(v.url, rows.find(row => row.title === v.title).url);
+});
+test('a newer comparable pair wins over an older pair; same category can link different feeds', () => {
+  const rows = [article(7, { category: 'AIモデル' }), article(6, { category: 'AIコーディング',
+    feed: 'GitHub Changelog', url: 'https://github.blog/changelog/synthetic-6' }),
+  article(5, { category: 'AIモデル', feed: 'Google DeepMind News', url: 'https://deepmind.google/blog/synthetic-5' }),
+  article(0, { category: 'AIモデル' })];
+  const a = P.selectInput(bytes(rows));
+  assert.equal(a.snapshot.comparison_pair.relation, 'same_category');
+  assert.deepEqual(a.snapshot.comparison_pair.article_ids, [a.articles[0].id, a.articles[2].id]);
+  assert.deepEqual(a.articles.map(v => v.title), rows.slice(0, 3).map(v => v.title));
+});
+test('unrelated metadata and a single article allow no theme without padding or invented pair', () => {
+  const rows = [article(1, { title: '（合成）音声モデル公開', category: 'AIモデル' }), article(0, {
+    title: '（合成）利用規約の改定', category: 'API・料金・制限', feed: 'GitHub Changelog', url: 'https://github.blog/changelog/unrelated' })];
+  for (const values of [rows, rows.slice(0, 1)]) {
+    const a = P.selectInput(bytes(values)); assert.equal(a.snapshot.comparison_pair, null);
+    assert.equal(a.articles.length, values.length);
+    const v = output(a.articles); v.themes = [];
+    assert.deepEqual(P.validateOutput(JSON.stringify(v), a.articles, KEY).themes, []);
+    if (values.length === 1) assert.throws(() => P.validateOutput(JSON.stringify(output(a.articles)), a.articles, KEY), /invalid_output_schema/);
+  }
+  for (const category of ['（未分類）', '未分類', 'その他']) {
+    assert.equal(P.selectInput(bytes(rows.map(a => ({ ...a, category })))).snapshot.comparison_pair, null);
+  }
+});
+test('short output contract accepts boundaries and 0/1 themes, rejecting longer summaries or a second theme', () => {
+  const v = output(), prefix = 'タイトルから確認できる範囲：';
+  for (const a of v.articles) a.summary = prefix + '日'.repeat(100 - [...prefix].length);
+  v.themes[0].title = '題'.repeat(40);
+  for (const k of ['common', 'differences', 'takeaway']) v.themes[0][k] = '日'.repeat(80);
+  assert.equal(P.validateOutput(JSON.stringify(v), selected, KEY).themes.length, 1);
+  for (const mutate of [x => { x.articles[0].summary += '日'; }, x => { x.themes[0].title += '題'; },
+    ...['common', 'differences', 'takeaway'].map(k => x => { x.themes[0][k] += '日'; })]) {
+    const changed = structuredClone(v); mutate(changed);
+    assert.throws(() => P.validateOutput(JSON.stringify(changed), selected, KEY), /unsafe_output/);
+  }
+  v.themes.push({ ...v.themes[0] });
+  assert.throws(() => P.validateOutput(JSON.stringify(v), selected, KEY), /invalid_output_schema/);
+  v.themes = []; assert.equal(P.validateOutput(JSON.stringify(v), selected, KEY).themes.length, 0);
+});
+test('2048-token length failure retains observed diagnostics but never text, reasoning or secrets and sends once', async () => {
+  const data = responseData(); data.choices[0].finish_reason = 'length';
+  const visible = '部分要約を保存しない。' + KEY;
+  data.choices[0].message.content = visible; data.choices[0].message.reasoning_content = KEY + '推論本文';
+  data.usage = { prompt_tokens: 1568, completion_tokens: 2048, total_tokens: 3616,
+    completion_tokens_details: { reasoning_tokens: 1500, text_tokens: 400, secret: KEY } };
+  const { report, calls } = await live(data), saved = JSON.stringify(report) + P.renderMarkdown(report);
+  assert.equal(report.status, 'failed'); assert.equal(report.reason, 'incomplete_answer'); assert.equal(report.output, null);
+  assert.equal(report.http_status, 200); assert.equal(report.finish_reason, 'length'); assert.equal(report.response_model, P.MODEL);
+  assert.equal(report.usage.completion_tokens, 2048); assert.equal(report.usage.total_tokens, 3616);
+  assert.equal(report.usage.completion_tokens_details.reasoning_tokens, 1500);
+  assert.equal(report.usage.completion_tokens_details.text_tokens, 400);
+  assert.deepEqual(report.diagnostics, { visible_response_present: true, visible_response_chars: [...visible].length });
+  assert.equal(calls.length, 1); assert.equal(JSON.parse(calls[0][1].body).max_tokens, 2048);
+  for (const text of [KEY, visible, '推論本文', 'PRIVATE REASONING NOT SAVED', 'RAW RESPONSE NOT SAVED']) assert(!saved.includes(text));
+});
+test('usage diagnostics copy only actual bounded integers and never infer missing token breakdowns', () => {
+  const absent = P.usageSummary({ completion_tokens: 2048 });
+  assert(Object.values(absent.completion_tokens_details).every(v => v === null));
+  for (const value of [0, P.LIMITS.diagnosticTokens]) {
+    const usage = P.usageSummary({ prompt_tokens: value, completion_tokens_details: {
+      reasoning_tokens: value, text_tokens: value, audio_tokens: value, accepted_prediction_tokens: value, rejected_prediction_tokens: value,
+      private: KEY } });
+    assert.equal(usage.prompt_tokens, value); assert(Object.values(usage.completion_tokens_details).every(v => v === value));
+    assert(!JSON.stringify(usage).includes(KEY));
+  }
+  for (const value of [-1, 1.5, '42', true, false, null, NaN, Infinity, P.LIMITS.diagnosticTokens + 1, Number.MAX_SAFE_INTEGER]) {
+    const usage = P.usageSummary({ total_tokens: value, completion_tokens_details: { reasoning_tokens: value } });
+    assert.equal(usage.total_tokens, null); assert.equal(usage.completion_tokens_details.reasoning_tokens, null);
+  }
+  assert(Object.values(P.usageSummary({ completion_tokens_details: KEY }).completion_tokens_details).every(v => v === null));
+});
+test('absent or empty visible response diagnostics stay explicit on length failure without inventing counts', async () => {
+  for (const [content, present, length] of [[undefined, null, null], [null, null, null], [42, null, null], ['', false, 0], ['  ', false, 2], ['🧪日', true, 2]]) {
+    const data = responseData(); data.choices[0].finish_reason = 'length'; data.choices[0].message.content = content;
+    const { report } = await live(data);
+    assert.equal(report.reason, 'incomplete_answer'); assert.equal(report.usage.completion_tokens_details.reasoning_tokens, null);
+    assert.deepEqual(report.diagnostics, { visible_response_present: present, visible_response_chars: length });
+    assert.equal(report.output, null);
+  }
 });
