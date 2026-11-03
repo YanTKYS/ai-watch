@@ -1,7 +1,7 @@
 "use strict";
 // Independent reader and request lifetime; official search/parser/data remain separate.
 const ImportReader = (() => {
-  const names = { official: "公式ニュース", x: "Grok（X）", p: "Perplexity（週次）" };
+  const names = { official: "公式ニュース", x: "Grok（X）", p: "Perplexity（週次）", m: "Muse（業務活用）" };
   let hooks, api, serial = 0, active = "official", sample = false, retrying = false, retryNeeded = false;
   const byId = id => document.getElementById(id);
   const make = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
@@ -75,6 +75,58 @@ const ImportReader = (() => {
   function metadata(text) {
     return text.split(/\r?\n/).filter(line => /^- (調査日|対象週):/.test(line)).join("\n");
   }
+  function renderMuse(text, id) {
+    const parsed = ImportMarkdown.muse(text), content = make("div", undefined, "muse-ideas");
+    byId("import-heading").textContent = parsed.title || `Muse（業務活用） · ${id}`;
+    const summary = make("ul", undefined, "import-summary");
+    for (const key of [...new Set(["収集日", "件数", "収集元", ...Object.keys(parsed.meta)])]) {
+      const li = make("li"); li.appendChild(make("span", key + " ", "import-meta-label"));
+      li.appendChild(document.createTextNode(parsed.meta[key] || (key === "件数" ? `${parsed.items.length}件（表示件数）` : "（記載なし）")));
+      summary.appendChild(li);
+    }
+    byId("import-metadata").replaceChildren(summary);
+    if (!parsed.items.length) {
+      const fallback = make("article", undefined, "import-document muse-fallback");
+      fallback.appendChild(make("p", "項目形式を読み取れないため、原記録をMarkdownとして表示します。"));
+      fallback.appendChild(ImportMarkdown.render(document, text, 3)); content.appendChild(fallback);
+    } else {
+      if (parsed.preamble.trim()) content.appendChild(ImportMarkdown.render(document, parsed.preamble, 3));
+      const known = new Set(["分野", "何を楽にするのか", "再現の仕組み", "何が新しくなったか", "出典リンク"]);
+      parsed.items.forEach((item, index) => {
+        const card = make("article", undefined, "muse-card"), fields = item.fields;
+        const title = make("h3", undefined, "muse-card-title");
+        ImportMarkdown.inline(document, title, item.title || "（タイトルなし）");
+        title.id = `muse-card-${index + 1}`; card.setAttribute("aria-labelledby", title.id); card.appendChild(title);
+        const category = make("p", undefined, "muse-category");
+        category.appendChild(make("span", "分野: ", "import-meta-label"));
+        ImportMarkdown.inline(document, category, fields["分野"] || "（記載なし）"); card.appendChild(category);
+        if (item.body.trim()) card.appendChild(ImportMarkdown.render(document, item.body, 4));
+        const addField = (parent, key, value) => {
+          const section = make("section", undefined, "muse-field");
+          section.appendChild(make("h4", key));
+          section.appendChild(ImportMarkdown.render(document, value || "（記載なし）", 5)); parent.appendChild(section);
+        };
+        addField(card, "何を楽にするのか", fields["何を楽にするのか"]);
+        const details = make("details", undefined, "muse-details");
+        details.appendChild(make("summary", "再現の仕組み・詳細を読む"));
+        addField(details, "再現の仕組み", fields["再現の仕組み"]);
+        if (Object.hasOwn(fields, "何が新しくなったか")) addField(details, "何が新しくなったか", fields["何が新しくなったか"]);
+        const source = make("section", undefined, "muse-source"); source.appendChild(make("h4", "出典リンク"));
+        const value = fields["出典リンク"], p = make("p");
+        if (ImportMarkdown.safeLink(value)) p.appendChild(ImportMarkdown.link(document, value, value));
+        else p.textContent = value ? value : "（記載なし）";
+        source.appendChild(p); details.appendChild(source);
+        for (const [key, value] of Object.entries(fields)) if (!known.has(key)) addField(details, key, value);
+        card.appendChild(details); content.appendChild(card);
+      });
+    }
+    // Always make the exact input available, including unsupported Markdown and
+    // duplicate/unknown fields; textContent cannot execute the original markup.
+    const original = make("details", undefined, "muse-original");
+    original.appendChild(make("summary", "原記録の全文を確認（Markdown）"));
+    original.appendChild(make("pre", text)); content.appendChild(original);
+    return content;
+  }
   async function load(refresh = false, retryBody = false) {
     const token = ++serial, state = ImportCatalog.route(location.href);
     if (state.source === "official") return;
@@ -105,6 +157,7 @@ const ImportReader = (() => {
       if (token !== serial) return;
       if (!text.trim()) throw new Error("原記録の本文が空です。GitHubの原ファイルも確認してください。");
       if (source === "x") byId("import-content").appendChild(renderGrok(text, selected.id));
+      else if (source === "m") byId("import-content").appendChild(renderMuse(text, selected.id));
       else {
         byId("import-metadata").textContent = metadata(text) || "対象週・調査日は原記録を確認してください。";
         const report = make("article", undefined, "import-document");
@@ -127,6 +180,7 @@ const ImportReader = (() => {
     byId("official-controls").hidden = active !== "official";
     byId("official-view").hidden = active !== "official";
     byId("import-view").hidden = active === "official";
+    byId("import-view").dataset.source = active;
     for (const a of document.querySelectorAll("[data-news-source]")) {
       const source = a.dataset.newsSource;
       a.href = ImportCatalog.routeURL(location.href, source);
@@ -135,8 +189,10 @@ const ImportReader = (() => {
     if (active === "official") return false;
     hooks.leaveOfficial();
     byId("import-heading").textContent = names[active];
-    byId("import-label").textContent = active === "x" ? "表示する日付（新しい順）" : "表示する対象週（新しい順）";
-    byId("import-disclaimer").textContent = active === "x"
+    byId("import-label").textContent = active === "p" ? "表示する対象週（新しい順）" : "表示する日付（新しい順）";
+    byId("import-disclaimer").textContent = active === "m"
+      ? "Museによる未検証の収集・業務活用候補です。重要な判断は出典を確認してください。"
+      : active === "x"
       ? "Grok生成の未検証候補です（確度は原記録の申告で、公式ニュースの採用・検索対象外のため、重要な判断は元出典を確認してください）。"
       : "Perplexityによる週途中を含む調査で、一部未検証のため重要な判断は元出典を確認してください。";
     load(); return true;

@@ -10,4 +10,4 @@ class ImportReader(unittest.TestCase):
         result = subprocess.run(['node', '--test', '--test-reporter=tap', str(Path(__file__).with_suffix('.cjs'))],
                                 capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('# pass 10', result.stdout)
+        self.assertIn('# pass 16', result.stdout)
