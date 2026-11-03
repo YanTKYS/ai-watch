@@ -318,6 +318,9 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 .import-error { color: var(--error); }
 .grok-summary, .grok-card-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; margin: 0; }
 .grok-summary { margin: 8px 0 20px; }
+.import-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; list-style: none; padding: 0; margin: 8px 0 20px; }
+.import-summary li { white-space: pre-wrap; }
+.import-meta-label { color: var(--muted); }
 .grok-summary li { white-space: pre-wrap; }
 .grok-meta-label { color: var(--muted); }
 .grok-news-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
@@ -332,3 +335,19 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 .grok-extra dd { margin: 0 0 6px; white-space: pre-line; }
 @media (min-width: 1000px) { .grok-news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .grok-card { padding: 16px; } }
+
+/* Muse's longer workflow ideas keep one reading column on every screen. */
+#import-view[data-source="m"] { max-width: 54rem; margin-inline: auto; }
+.muse-card { min-width: 0; padding: 24px 0; border-top: 1px solid var(--subtle-border); }
+.muse-card-title { margin: 0 0 8px; font-size: 1.2rem; line-height: 1.65; }
+.muse-category { margin: 0 0 16px; font-size: .925rem; white-space: pre-wrap; }
+.muse-field h4, .muse-source h4 { margin: 16px 0 8px; font-size: 1rem; }
+.muse-field p, .muse-field li, .muse-source p { margin-block: 8px; line-height: 1.9; }
+.muse-field p { white-space: pre-line; }
+.muse-details { margin-top: 16px; padding: 0 16px 12px; background: var(--band); }
+.muse-details summary, .muse-original summary { min-height: 44px; padding-block: 10px; cursor: pointer; color: var(--accent); }
+.muse-details summary:focus-visible, .muse-original summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.muse-source p { white-space: pre-wrap; }
+.muse-original { margin-top: 24px; border-top: 1px solid var(--subtle-border); }
+.muse-ideas pre { max-width: 100%; overflow-x: auto; padding: 12px; background: var(--band); }
+.muse-original pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .875rem; }

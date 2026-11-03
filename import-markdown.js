@@ -119,19 +119,44 @@ const ImportMarkdown = (() => {
     }
     return fragment;
   }
-  function grok(markdown) {
+  function fieldRecords(markdown, multiline = false) {
     const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
-    let title = "", current = null, last = "";
+    let title = "", current = null, last = "", fence = "", preamble = "";
     const meta = Object.create(null), items = [];
+    const append = line => {
+      if (last) (current ? current.fields : meta)[last] += "\n" + line;
+      else if (current) current.body += line + "\n";
+      else preamble += line + "\n";
+    };
     for (const line of lines) {
+      // Muse's field values may contain paragraphs, lists and fenced code. Keep
+      // their whitespace and do not interpret headings/field labels inside code.
+      if (multiline) {
+        if (fence) {
+          append(line);
+          if (new RegExp(`^${fence[0]}{${fence.length},}\\s*$`).test(line)) fence = "";
+          continue;
+        }
+        const start = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+        if (start) { fence = start[1]; append(line); continue; }
+      }
       if (line.startsWith("# ")) { title = line.slice(2).trim(); continue; }
-      if (line.startsWith("## ")) { current = { title: line.slice(3).trim(), fields: Object.create(null) }; items.push(current); last = ""; continue; }
+      if (line.startsWith("## ") || (multiline && line === "##")) { current = { title: line.slice(3).trim(), fields: Object.create(null), body: "" }; items.push(current); last = ""; continue; }
       const m = line.match(/^[-*]\s+([^:：]+)[:：]\s*(.*)$/);
-      if (m) { last = m[1].trim(); (current ? current.fields : meta)[last] = m[2]; }
+      if (m) {
+        last = m[1].trim(); const fields = current ? current.fields : meta;
+        fields[last] = multiline && Object.hasOwn(fields, last) ? fields[last] + "\n\n" + m[2] : m[2];
+      }
+      else if (multiline) append(line);
       else if (line.trim() && last) { const fields = current ? current.fields : meta; fields[last] += "\n" + line.trim(); }
     }
-    return { title, meta, items };
+    if (multiline) for (const fields of [meta, ...items.map(item => item.fields)]) {
+      for (const key of Object.keys(fields)) fields[key] = fields[key].trimEnd();
+    }
+    return { title, meta, items, preamble };
   }
-  return { safeLink, link, inline, cells, blocks, render, grok };
+  const grok = markdown => fieldRecords(markdown);
+  const muse = markdown => fieldRecords(markdown, true);
+  return { safeLink, link, inline, cells, blocks, render, grok, muse };
 })();
 if (typeof module !== "undefined" && module.exports) module.exports = ImportMarkdown;

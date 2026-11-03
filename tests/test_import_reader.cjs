@@ -99,3 +99,98 @@ test('malformed Markdown remains readable and headings cannot skip levels', () =
   assert.equal(rendered.children[0].tag, 'h3'); assert.match(rendered.textContent, /broken/);
   assert.match(rendered.textContent, /<script>x<\/script>/);
 });
+
+test('Muse catalogue accepts only exact filenames, dates, paths and regular files', () => {
+  const files = ['20261102', '20261103', '20280229', '20270229', '20261131', '00001103']
+    .map(date => row(`imports/m/muse-${date}.md`));
+  files.push(row('imports/m/muse-20261104.md', 'symlink'), row('imports/m/muse-20261105.md', 'dir'),
+    row('imports/m/Muse-20261106.md'), row('imports/m/muse-2026-11-07.md'),
+    { name: 'muse-20261108.md', path: 'imports/m/../m/muse-20261108.md', type: 'file' },
+    { name: 'muse-20261109.md', path: 'imports/m/muse-20261110.md', type: 'file' }, null);
+  const actual = C.entries('m', files);
+  assert.deepEqual(actual.map(e => e.id), ['2028-02-29', '2026-11-03', '2026-11-02']);
+  assert.equal(actual[1].original, C.REPO + 'blob/main/imports/m/muse-20261103.md');
+  assert.equal(C.entry('m', '2026-11-03/evil'), null);
+  assert.throws(() => C.entries('m', { entries: files }), /形式/);
+  assert.throws(() => C.entries('m', Array(1000).fill(null)), /上限/);
+});
+
+test('Muse discovers newly committed days across years on refresh with no manual index', async () => {
+  let added = false; const calls = [];
+  const client = C.create(async (url, options) => {
+    calls.push([url, options]);
+    if (url.endsWith('/m?ref=main')) return response([
+      row('imports/m/muse-20261231.md'), ...(added ? [row('imports/m/muse-20270101.md')] : [])]);
+    assert.equal(url, 'imports/m/muse-20270101.md'); return response(fixture('muse'));
+  });
+  assert.equal((await client.discover('m'))[0].id, '2026-12-31');
+  added = true;
+  assert.equal((await client.discover('m'))[0].id, '2026-12-31'); assert.equal(calls.length, 1);
+  const files = await client.discover('m', true);
+  assert.deepEqual(files.map(f => f.id), ['2027-01-01', '2026-12-31']);
+  assert.match(await client.body(files[0]), /再現方法の末尾/);
+  await client.body(files[0]); assert.equal(calls.length, 3);
+  await client.body(files[0], true); assert.equal(calls.length, 4);
+  assert(calls.every(([, o]) => o.credentials === 'omit' && o.redirect === 'error' && !o.headers?.Authorization));
+});
+
+test('Muse route shares a date, retains official conditions and isolates sample', () => {
+  const url = 'https://site.example/ai-watch/?q=Codex&category=AI&from=2026-11-01#article-a';
+  const next = C.routeURL(url, 'm', '2026-11-03');
+  assert.deepEqual(C.route(next), { source: 'm', id: '2026-11-03', sample: false });
+  assert.equal(C.routeURL(next, 'official'), new URL(url).pathname + new URL(url).search + new URL(url).hash);
+  assert(!C.routeURL(url, 'm', '2026-02-30').includes('entry='));
+  assert.equal(C.route('/?sample&source=m&entry=2026-11-03').source, 'official');
+  assert.equal(C.routeURL('/?sample&source=m&entry=2026-11-03', 'm', '2026-11-03'), '/?sample=');
+});
+
+test('Muse malformed/API responses and Pages failures recover without fetching altered paths', async () => {
+  let mode = 'bad'; const calls = [];
+  const client = C.create(async url => {
+    calls.push(url);
+    if (url.endsWith('/m?ref=main')) return mode === 'bad' ? response({ message: 'bad' })
+      : mode === 'limited' ? response('', 403) : response([row('imports/m/muse-20261103.md')]);
+    return mode === 'missing' ? response('', 404) : response('delivered');
+  });
+  await assert.rejects(client.discover('m'), /形式/);
+  mode = 'limited'; await assert.rejects(client.discover('m'), /制限/);
+  mode = 'missing'; const [file] = await client.discover('m');
+  await assert.rejects(client.body(file), /まだPages/);
+  mode = 'ok'; assert.equal(await client.body(file), 'delivered');
+  const before = calls.length;
+  for (const e of [{}, { id: '2026-11-03' }, { ...file, path: 'https://evil.example/' },
+    { ...file, path: 'imports/m/../p/2026-W44.md' }, { ...file, id: '2026-02-30' }]) {
+    await assert.rejects(client.body(e));
+  }
+  assert.equal(calls.length, before);
+});
+
+test('Muse reuses safe field parsing while preserving long labels, multiline Markdown and duplicate fields', () => {
+  const parsed = M.muse(fixture('muse'));
+  assert.equal(parsed.items.length, 2); assert.equal(parsed.meta['収集元'], 'Muse');
+  const fields = parsed.items[0].fields;
+  assert.match(fields['何を楽にするのか'], /続きの段落/);
+  assert.match(fields['再現の仕組み'], /\n\n  1\. 最初の手順/);
+  assert.match(fields['再現の仕組み'], /## コード内の見出し\n- コード内の欄: 値/);
+  assert.match(fields['再現の仕組み'], /再現方法の末尾/);
+  assert.equal(fields['何が新しくなったか'], '**任意の変更点**を残す。');
+  assert.match(fields['未知の長いフィールド名も欠落させずに表示する'], /<script>/);
+  assert.equal(fields['重複欄'], '最初の値\n\n二番目の値');
+  assert.equal(parsed.items[1].title, ''); assert(!Object.hasOwn(parsed.items[1].fields, '何が新しくなったか'));
+  const rendered = M.render(doc, fields['再現の仕組み'], 5), nodes = walk(rendered);
+  assert(nodes.some(n => n.tag === 'ol')); assert(nodes.some(n => n.tag === 'code'));
+  assert(!nodes.some(n => n.tag === 'h5')); // fenced headings stay code
+  assert.match(rendered.textContent, /再現方法の末尾/);
+});
+
+test('both existing Muse records preserve all ten ideas and their optional fields', () => {
+  for (const date of ['20261102', '20261103']) {
+    const text = fs.readFileSync(`${__dirname}/../imports/m/muse-${date}.md`, 'utf8');
+    const parsed = M.muse(text);
+    assert.equal(parsed.items.length, 10); assert.equal(parsed.meta['件数'], '10件');
+    for (const item of parsed.items) for (const key of ['分野', '何を楽にするのか', '再現の仕組み', '出典リンク']) {
+      assert(item.fields[key]); assert(text.includes(item.fields[key]));
+    }
+    assert.equal(parsed.items.filter(i => i.fields['何が新しくなったか']).length, date === '20261103' ? 2 : 0);
+  }
+});

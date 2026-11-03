@@ -15,10 +15,11 @@ const ImportCatalog = (() => {
     const leap = new Date(`${m[1]}-02-29T00:00:00Z`).getUTCMonth() === 1;
     return +m[2] <= (jan1 === 4 || (jan1 === 3 && leap) ? 53 : 52);
   }
-  function validEntry(source, value) { return source === "x" ? validDate(value) : source === "p" && validWeek(value); }
+  function validEntry(source, value) { return ["x", "m"].includes(source) ? validDate(value) : source === "p" && validWeek(value); }
   function entry(source, id) {
     if (!validEntry(source, id)) return null;
-    const path = source === "x" ? `imports/x/${id.slice(0, 4)}/x-${id.replaceAll("-", "")}.md` : `imports/p/${id}.md`;
+    const path = source === "x" ? `imports/x/${id.slice(0, 4)}/x-${id.replaceAll("-", "")}.md`
+      : source === "m" ? `imports/m/muse-${id.replaceAll("-", "")}.md` : `imports/p/${id}.md`;
     return { id, path, original: REPO + "blob/main/" + path };
   }
   function entries(source, rows, year = "") {
@@ -27,8 +28,10 @@ const ImportCatalog = (() => {
     const found = new Map();
     for (const row of rows) {
       if (!row || row.type !== "file" || typeof row.name !== "string") continue;
-      const m = source === "x" ? /^x-(\d{4})(\d{2})(\d{2})\.md$/.exec(row.name) : /^([1-9]\d{3}-W\d{2})\.md$/.exec(row.name);
-      const id = !m ? "" : source === "x" ? `${m[1]}-${m[2]}-${m[3]}` : m[1];
+      const pattern = source === "x" ? /^x-(\d{4})(\d{2})(\d{2})\.md$/
+        : source === "m" ? /^muse-(\d{4})(\d{2})(\d{2})\.md$/ : /^([1-9]\d{3}-W\d{2})\.md$/;
+      const m = pattern.exec(row.name);
+      const id = !m ? "" : source === "p" ? m[1] : `${m[1]}-${m[2]}-${m[3]}`;
       const e = entry(source, id);
       if (e && (source !== "x" || id.startsWith(year + "-")) && row.path === e.path) found.set(id, e);
     }
@@ -38,13 +41,13 @@ const ImportCatalog = (() => {
     const url = new URL(value, "https://local.invalid/");
     const source = url.searchParams.get("source");
     const sample = url.searchParams.has("sample");
-    return { source: !sample && ["x", "p"].includes(source) ? source : "official",
+    return { source: !sample && ["x", "p", "m"].includes(source) ? source : "official",
       id: url.searchParams.get("entry") || "", sample };
   }
   function routeURL(value, source, id = "") {
     const u = new URL(value, "https://local.invalid/");
     u.searchParams.delete("source"); u.searchParams.delete("entry");
-    if (!u.searchParams.has("sample") && ["x", "p"].includes(source)) {
+    if (!u.searchParams.has("sample") && ["x", "p", "m"].includes(source)) {
       u.searchParams.set("source", source);
       if (validEntry(source, id)) u.searchParams.set("entry", id);
     }
@@ -80,14 +83,14 @@ const ImportCatalog = (() => {
       } finally { clearTimeout(timer); }
     }
     async function discover(source, refresh = false) {
-      if (!["x", "p"].includes(source)) throw new Error("表示元が不正です。");
+      if (!["x", "p", "m"].includes(source)) throw new Error("表示元が不正です。");
       if (refresh) lists.delete(source);
       if (!lists.has(source)) {
         const request = (async () => {
           const root = JSON.parse(await get(API + `imports/${source}?ref=main`, true));
           if (!Array.isArray(root)) throw new Error("ファイル一覧の形式を確認できません。");
           if (root.length >= 1000) throw new Error("GitHub APIの一覧上限に達しています。原記録をGitHubで確認してください。");
-          if (source === "p") return entries(source, root);
+          if (source !== "x") return entries(source, root);
           const years = [...new Set(root.filter(r => r && r.type === "dir" && /^[1-9]\d{3}$/.test(r.name)
             && r.path === `imports/x/${r.name}`).map(r => r.name))].sort().reverse();
           const result = [];
@@ -101,8 +104,9 @@ const ImportCatalog = (() => {
     }
     async function body(e, refresh = false) {
       // Reconstruct, never trust API download_url / html_url or caller-provided paths.
-      const source = e.path?.startsWith("imports/x/") ? "x" : "p";
-      if (entry(source, e.id)?.path !== e.path) throw new Error("ファイルの指定が不正です。");
+      const source = ["x", "p", "m"].find(s => e.path?.startsWith(`imports/${s}/`));
+      const normalized = source && entry(source, e.id);
+      if (!normalized || normalized.path !== e.path) throw new Error("ファイルの指定が不正です。");
       if (refresh) documents.delete(e.path);
       if (!documents.has(e.path)) {
         const request = get(e.path);
