@@ -27,6 +27,10 @@
     "excluded": "policy_society",
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/speeding-up-planning-decisions-with-ai": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-03"
+  },
   "https://github.blog/changelog/2026-10-15-agentic-autofix-for-code-scanning-alerts-general-availability": {
     "first_seen": "2026-10-18"
   },
@@ -118,6 +122,9 @@
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0": {
     "first_seen": "2026-10-24"
   },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.4.0": {
+    "first_seen": "2026-11-03"
+  },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/claude-code/releases/tag/v2.1.302"
@@ -170,6 +177,9 @@
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.316": {
     "first_seen": "2026-11-01"
+  },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.317": {
+    "first_seen": "2026-11-03"
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
@@ -240,6 +250,10 @@
     "excluded": "adoption_reporting",
     "first_seen": "2026-10-31"
   },
+  "https://openai.com/index/dan-driscoll-joins-openai": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-03"
+  },
   "https://openai.com/index/decisions-api": {
     "first_seen": "2026-10-23"
   },
@@ -264,6 +278,9 @@
   },
   "https://openai.com/index/greptile-code-review-codex-astra": {
     "first_seen": "2026-10-27"
+  },
+  "https://openai.com/index/grid-protectors-program": {
+    "first_seen": "2026-11-03"
   },
   "https://openai.com/index/helping-websites-express-ai-training-preferences": {
     "excluded": "low_score",
@@ -290,6 +307,10 @@
   },
   "https://openai.com/index/legora": {
     "first_seen": "2026-10-29"
+  },
+  "https://openai.com/index/lifeval": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-03"
   },
   "https://openai.com/index/low-resource-programming-languages": {
     "excluded": "low_score",
@@ -319,8 +340,20 @@
     "excluded": "partnership",
     "first_seen": "2026-10-28"
   },
+  "https://openai.com/index/preparing-our-next-security-sprint-to-harden-openai": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-03"
+  },
+  "https://openai.com/index/qodo-codex-plugin": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-03"
+  },
   "https://openai.com/index/retell-ai": {
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/rewarding-defenders-with-bigger-bug-bounties": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-03"
   },
   "https://openai.com/index/ropes-gray-ai-diligence": {
     "excluded": "customer_story",
@@ -328,6 +361,10 @@
   },
   "https://openai.com/index/scaling-ai-research-for-complex-biological-data": {
     "first_seen": "2026-10-22"
+  },
+  "https://openai.com/index/scaling-git-at-openai": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-03"
   },
   "https://openai.com/index/scaling-storage-one-billion-users-part-two": {
     "excluded": "low_score",
