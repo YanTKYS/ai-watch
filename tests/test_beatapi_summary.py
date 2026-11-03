@@ -15,7 +15,7 @@ class BeatAPISummary(unittest.TestCase):
         result = subprocess.run(['node', '--test', '--test-reporter=tap', str(Path(__file__).with_suffix('.cjs'))],
                                 capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('# pass 30', result.stdout)
+        self.assertIn('# pass 37', result.stdout)
         self.assertIn('# fail 0', result.stdout)
 
     def test_manual_main_only_minimal_permissions_and_secret_scope(self):
