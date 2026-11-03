@@ -260,10 +260,19 @@ async function runPoc({ bytes, live = false, apiKey = '', model = MODEL, env = {
 
 const escapeHTML = text => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 function renderMarkdown(report) {
+  const pre = value => '<pre>' + escapeHTML(typeof value === 'string' ? value : JSON.stringify(value, null, 2)) + '</pre>\n\n';
+  const { input, output, ...execution } = report;
+  let evaluation = '## 実行条件・入力スナップショット\n\n' + pre(execution);
+  input.forEach((article, i) => {
+    evaluation += `## 記事 ${i + 1}\n\n### 原記録（取得済みメタデータ・抜粋）\n\n` + pre(article)
+      + '### モデル生成の要約（未検証）\n\n'
+      + pre(output?.articles.find(a => a.id === article.id) || '未生成（事前確認または失敗）');
+  });
+  evaluation += '## モデル生成の横断テーマ（未検証）\n\n' + pre(output?.themes || '未生成（事前確認または失敗）');
   return '# BeatAPI DeepSeek news summary PoC\n\n'
     + '**未検証のモデル生成要約・解釈です。スキーマ合格は事実整合性や文章品質の合格ではありません。**\n\n'
     + '原記事の公開日（Published）と取得日（Retrieved）は別です。本文未取得・抜粋の制約も入力を参照してください。\n\n'
-    + '<pre>' + escapeHTML(JSON.stringify(report, null, 2)) + '</pre>\n\n'
+    + evaluation
     + '## 人手評価（artifactのコピーへ記入）\n\n'
     + '- 記事別: 原記事との事実整合性、提供情報による裏付け、日本語の自然さ、重要情報の欠落。\n'
     + '- 横断テーマ: 無理な関連づけ、重複、読者への示唆の有用性。\n'
