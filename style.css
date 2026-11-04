@@ -11,6 +11,9 @@
   --accent: #004b8d;
   --band: #f4f6f8;
   --error: #b42318;
+  /* キーボードフォーカス: DADSの「黒い輪郭＋黄色」を参考にした二重表示。色だけに頼らず太さと間隔でも示す。 */
+  --focus: #000000;
+  --focus-halo: #ffd43d;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,6 +27,8 @@
     --accent: #a2d1ff;
     --band: #242b32;
     --error: #ff9e95;
+    --focus: #ffd43d;
+    --focus-halo: #000000;
   }
 }
 * { box-sizing: border-box; }
@@ -77,7 +82,7 @@ body {
   border-radius: 2px;
 }
 .search-box input::placeholder { color: var(--muted); opacity: 1; }
-.search-box button, .more, #load-retry, .filter-button {
+.search-box button, .more, #load-retry, .filter-button, .import-controls button, #import-retry {
   font: inherit;
   min-height: 44px;
   padding: 0 16px;
@@ -87,8 +92,7 @@ body {
   border-radius: 2px;
   cursor: pointer;
 }
-.search-box button:disabled { color: var(--muted); cursor: default; }
-.filter-button:disabled, .filter-button[aria-disabled="true"] { color: var(--muted); cursor: default; }
+.search-box button:disabled, .filter-button:disabled, .filter-button[aria-disabled="true"], .import-controls button:disabled, #import-retry[aria-disabled="true"] { color: var(--muted); cursor: default; }
 .filter-button[hidden] { display: none; }
 .filter-panel { margin-top: 16px; }
 .filter-panel > summary { padding: 8px 0; min-height: 44px; cursor: pointer; }
@@ -104,7 +108,8 @@ body {
 .filter-dates input[aria-invalid="true"] { border-color: var(--error); }
 #mode-hint { margin: 16px 0 8px; }
 .active-conditions { margin: 8px 0 12px; font-size: .94rem; }
-.search-box button:not(:disabled):hover, .more:hover, #load-retry:hover { background: var(--band); }
+.search-box button:not(:disabled):hover, .more:hover, #load-retry:hover, .filter-button:not(:disabled):hover, .import-controls button:not(:disabled):hover, #import-retry:hover { background: var(--band); }
+select:not(:disabled):hover, .search-box input:hover, .filter-dates input:hover { border-color: var(--text); }
 #load-retry { margin-bottom: 20px; }
 #load-retry[hidden] { display: none; }
 #load-retry[aria-disabled="true"] { color: var(--muted); cursor: wait; }
@@ -137,7 +142,6 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
 .collection-health p { margin: 0 0 8px; }
 .collection-health p:last-child { margin-bottom: 0; }
 .collection-health summary { min-height: 44px; padding: 8px 0; cursor: pointer; }
-.collection-health summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 #status { color: var(--muted); padding: 16px 0; }
 #status.error { color: var(--error); }
 .month-head {
@@ -255,15 +259,14 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
-a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible, .day-summary:focus-visible, #filter-toggle:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
+/* フォーカス表示（全画面共通）。ライトは黒輪郭＋黄色の余白、ダークは黄色輪郭＋黒の余白。 */
+a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible, .import-table:focus-visible,
+#main-content:focus, #view-heading:focus, #import-heading:focus, .card-title:focus, #status:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--focus-halo);
 }
-#main-content:focus, #view-heading:focus, .card-title:focus, #status:focus {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
-}
-#main-content:focus { outline-offset: -3px; }
+#main-content:focus { outline-offset: -3px; box-shadow: none; }
 @media (max-width: 480px) {
   .wrap { padding: 0 16px; }
   main.wrap { padding-top: 24px; }
@@ -287,11 +290,18 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 /* Source navigation and untrusted import documents share the existing palette. */
 [hidden] { display: none !important; }
 .source-navigation { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid var(--subtle-border); }
-.source-navigation a { padding: 10px 14px; min-height: 44px; color: var(--muted); border-bottom: 3px solid transparent; text-decoration: none; }
+.source-navigation a { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; min-height: 44px; color: var(--muted); border-bottom: 3px solid transparent; text-decoration: none; }
 .source-navigation a[aria-current] { color: var(--accent); background: var(--band); border-bottom-color: var(--accent); font-weight: 700; }
-.source-navigation a:hover { background: var(--band); color: var(--accent); }
+.source-navigation a:hover { background: var(--band); color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.source-navigation:has(+ #official-controls[hidden]) { margin-bottom: 0; } /* 検索欄のない外部AI表示では余白を詰める */
+/* 狭い幅では折り返しで行が不揃いにならないよう2列×2行に固定し、各項目を枠で区切る */
+@media (max-width: 559px) {
+  .source-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; border-bottom: 0; }
+  .source-navigation a { padding: 8px 10px; border: 1px solid var(--border); text-align: center; }
+  .source-navigation a[aria-current] { border-color: var(--accent); border-bottom-width: 4px; }
+}
 .import-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 16px; margin: 12px 0; }
-#import-original { align-self: center; font-size: .875rem; }
+#import-original { display: inline-flex; align-items: center; min-height: 44px; font-size: .875rem; }
 .import-controls label { display: grid; gap: 4px; max-width: 100%; }
 .import-controls select, .import-controls button, #import-retry { min-height: 44px; padding: 8px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 2px; max-width: 100%; }
 #import-view { min-width: 0; }
@@ -308,9 +318,7 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 .import-table th { background: var(--band); }
 .import-document pre { overflow-x: auto; background: var(--band); padding: 12px; }
 .import-document code { overflow-wrap: anywhere; }
-.import-table:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-#import-heading:focus { outline: 3px solid var(--accent); outline-offset: 3px; }
 
 /* Grok is a scan-friendly news list; the weekly report keeps its reading width. */
 #import-heading { margin: 0 0 8px; font-size: 1.45rem; line-height: 1.5; }
@@ -346,7 +354,6 @@ a:focus-visible, select:focus-visible, button:focus-visible, input:focus-visible
 .muse-field p { white-space: pre-line; }
 .muse-details { margin-top: 16px; padding: 0 16px 12px; background: var(--band); }
 .muse-details summary, .muse-original summary { min-height: 44px; padding-block: 10px; cursor: pointer; color: var(--accent); }
-.muse-details summary:focus-visible, .muse-original summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .muse-source p { white-space: pre-wrap; }
 .muse-original { margin-top: 24px; border-top: 1px solid var(--subtle-border); }
 .muse-ideas pre { max-width: 100%; overflow-x: auto; padding: 12px; background: var(--band); }
