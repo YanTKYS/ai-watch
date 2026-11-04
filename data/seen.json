@@ -3,6 +3,9 @@
     "excluded": "low_score",
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/agentic-cheminformatics-with-google-antigravity": {
+    "first_seen": "2026-11-04"
+  },
   "https://deepmind.google/blog/beyond-tree-cover-mapping-the-worlds-forest-types": {
     "excluded": "low_score",
     "first_seen": "2026-10-23"
@@ -94,6 +97,15 @@
   "https://github.blog/changelog/2026-10-28-security-extension-for-the-github-copilot-app": {
     "first_seen": "2026-10-30"
   },
+  "https://github.blog/changelog/2026-11-03-byok-and-enterprise-custom-models-in-the-copilot-usage-api": {
+    "first_seen": "2026-11-04"
+  },
+  "https://github.blog/changelog/2026-11-03-dependabot-version-updates-support-agent-package-manager": {
+    "first_seen": "2026-11-04"
+  },
+  "https://github.blog/changelog/2026-11-03-github-copilot-is-now-available-in-jetbrains-air": {
+    "first_seen": "2026-11-04"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -181,6 +193,12 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.317": {
     "first_seen": "2026-11-03"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.318": {
+    "first_seen": "2026-11-04"
+  },
+  "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
+    "first_seen": "2026-11-04"
+  },
   "https://github.com/openai/codex/releases/tag/rust-v0.163.0": {
     "first_seen": "2026-10-18"
   },
@@ -192,6 +210,14 @@
   },
   "https://github.com/openai/codex/releases/tag/rust-v0.166.0": {
     "first_seen": "2026-10-30"
+  },
+  "https://openai.com/ads/customers/evernote": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-04"
+  },
+  "https://openai.com/index/accelerating-engineering-for-the-physical-world": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-04"
   },
   "https://openai.com/index/amp-beyond-coding": {
     "excluded": "customer_story",
@@ -235,6 +261,10 @@
   "https://openai.com/index/check-point-daybreak": {
     "excluded": "customer_story",
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/cisco-cyber": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-04"
   },
   "https://openai.com/index/cloudflare-cyber": {
     "excluded": "customer_story",
@@ -282,6 +312,10 @@
   "https://openai.com/index/grid-protectors-program": {
     "first_seen": "2026-11-03"
   },
+  "https://openai.com/index/heimstaden": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-04"
+  },
   "https://openai.com/index/helping-websites-express-ai-training-preferences": {
     "excluded": "low_score",
     "first_seen": "2026-10-31"
@@ -304,6 +338,10 @@
   "https://openai.com/index/itau-generative-ai": {
     "excluded": "customer_story",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/jill-hazelbaker-chief-corporate-affairs-officer": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-04"
   },
   "https://openai.com/index/legora": {
     "first_seen": "2026-10-29"
