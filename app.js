@@ -41,6 +41,11 @@ let retryAction = null;
 let activeRetry = null;
 let composing = false;
 let inputPending = false;
+// 同じページ内で同じ条件へ戻ったときに読みかけを再現する一時メモ（永続化しない）。
+// キーは表示条件、値は開いていた日付・検索の表示件数・スクロール位置。
+const readingMemory = new Map();
+let restoreScroll = false; // 履歴・情報源の往復で戻ったときだけ、記録した位置へ戻す
+let restoringScroll = false;
 
 class DataError extends Error {}
 
@@ -167,8 +172,12 @@ function renderCard(item, withCategory, id = articleId(item.url)) {
   if (item.retrieved) parts.push(`取得日: ${item.retrieved}`);
   if (withCategory && item.category) parts.push(`カテゴリ: ${item.category}`); // 検索結果のみ（日刊表示では見出し）
   if (parts.length) {
-    const foot = el("p", "foot", parts.join(" / "));
-    foot.title = parts.join(" / "); // 1行表示で省略された場合に全文を確認できる
+    // 狭幅でも省略せず、項目の区切りで折り返して全文を読めるようにする。
+    const foot = el("p", "foot");
+    parts.forEach((part, i) => {
+      if (i) foot.appendChild(document.createTextNode(" / "));
+      foot.appendChild(el("span", "meta-part", part));
+    });
     bottom.appendChild(foot);
   }
   if (bottom.childNodes.length) card.appendChild(bottom);
@@ -187,8 +196,10 @@ function countItems(categories) {
 
 function renderMonth(ym, days, order) {
   const total = days.reduce((n, d) => n + countItems(d.categories), 0);
-  // 初期展開するのは、並び順に関係なくその月の最新日のみ
+  // 初期展開するのは、並び順に関係なくその月の最新日のみ（同じページ内で開閉済みならその状態）
   const latest = days.reduce((max, d) => (d.date > max ? d.date : max), "");
+  const opened = readingMemory.get(readingKey())?.opened;
+  const sections = [];
   const frag = document.createDocumentFragment();
 
   const head = el("div", "month-head");
@@ -206,7 +217,12 @@ function renderMonth(ym, days, order) {
   }
   for (const day of sortDays(days, order)) {
     const section = el("details", "day");
-    section.open = day.date === latest;
+    section.open = opened ? opened.includes(day.date) : day.date === latest;
+    sections.push({ section, date: day.date });
+    section.addEventListener("toggle", () => {
+      if (!content.contains(section)) return;
+      rememberReading({ opened: sections.filter(s => s.section.open).map(s => s.date) });
+    });
     const summary = el("summary", "day-summary");
     const dayHeading = el("h3", "day-title", dateLabel(day.date));
     dayHeading.appendChild(el("span", "count", `${countItems(day.categories)}件`));
@@ -227,7 +243,7 @@ function renderMonth(ym, days, order) {
   }
   content.replaceChildren(frag);
   announce(`日刊: ${monthLabel(ym)}、${total}件。${order === "asc" ? "古い順" : "新しい順"}。`);
-  moveToArticle();
+  finishRender();
 }
 
 async function showMonth(ym, retry = null) {
@@ -255,7 +271,7 @@ async function showMonth(ym, retry = null) {
   }
   if (days.length === 0) {
     setStatus(`${monthLabel(ym)}に表示できる記事がありません。`);
-    moveToArticle();
+    finishRender();
     return;
   }
   setStatus("");
@@ -306,6 +322,30 @@ function resultsMode() {
   return Boolean(viewState.query || hasArticleFilters(viewState));
 }
 
+function readingKey(state = viewState) {
+  if (!state.query && !hasArticleFilters(state)) return "month:" + state.month;
+  const { query, categories, feeds, from, to } = state;
+  return "search:" + JSON.stringify({ query, categories, feeds, from, to });
+}
+
+function rememberReading(patch) {
+  const key = readingKey();
+  readingMemory.set(key, { ...readingMemory.get(key), ...patch });
+}
+
+// 描画後に、記録した閲覧位置へ戻す。共有記事（articleTarget）への移動を優先する。
+function finishRender() {
+  const scroll = restoreScroll && !articleTarget ? readingMemory.get(readingKey())?.scroll : undefined;
+  restoreScroll = false;
+  if (scroll !== undefined) {
+    window.scrollTo(0, scroll);
+    // 戻る操作ではブラウザ標準の位置復元（切替先の位置）が後から働くため、次の描画前に合わせ直す。
+    restoringScroll = true;
+    requestAnimationFrame(() => { window.scrollTo(0, scroll); restoringScroll = false; });
+  }
+  moveToArticle();
+}
+
 function conditionsSummary() {
   const parts = [];
   if (viewState.query) parts.push(`検索語「${viewState.query}」`);
@@ -323,6 +363,7 @@ function updateViewState(patch, historyMode = "push") {
   viewState = next;
   urlNotice("");
   articleTarget = "";
+  restoreScroll = false;
   sortOrder = next.order;
   if (next.month) select.value = next.month;
   orderSelect.value = next.order;
@@ -507,7 +548,7 @@ function renderSearch(state, results) {
         : "該当する記事はありません。キーワードを減らすか、別の表記（略称・正式名称など）でお試しください。"));
     content.replaceChildren(frag);
     announce(`${resultLabel}: 0件。`);
-    moveToArticle();
+    finishRender();
     return;
   }
   const cards = el("div", "cards search-results");
@@ -525,6 +566,7 @@ function renderSearch(state, results) {
       cards.appendChild(card);
     }
     shown += next.length;
+    if (activated) rememberReading({ shown });
     // 最後の追加で消えるボタンから、新しく追加した記事へ移る。通常の検索では移動しない。
     if (activated && shown >= results.length && document.activeElement === more) firstAdded.focus();
     more.hidden = shown >= results.length;
@@ -534,11 +576,12 @@ function renderSearch(state, results) {
   more.addEventListener("click", () => showMore(true));
   showMore();
   const targetIndex = articleTarget ? results.findIndex(item => articleId(item.url) === articleTarget) : -1;
-  while (targetIndex >= shown) showMore();
+  const remembered = readingMemory.get(readingKey(state))?.shown || 0;
+  while (shown < results.length && (targetIndex >= shown || remembered > shown)) showMore();
   frag.appendChild(more);
   content.replaceChildren(frag);
   announce(`${resultLabel}: ${results.length}件。${shown}件を表示しています。`);
-  moveToArticle();
+  finishRender();
 }
 
 function normalizedQuery(value) {
@@ -571,6 +614,17 @@ function init() {
   const importsAvailable = typeof ImportReader !== "undefined" && typeof ImportCatalog !== "undefined" && typeof ImportMarkdown !== "undefined";
   if (BASE) notice.hidden = false;
   filterPanel.addEventListener("toggle", () => { if (filterPanel.open) loadFilterOptions(); });
+  let scrollFrame = 0;
+  window.addEventListener("scroll", () => {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = 0;
+      // 公式の一覧を表示している間だけ記録する（情報源の切替や読込中の空表示では記録しない）。
+      if (!document.getElementById("official-view").hidden && content.childNodes.length && !restoreScroll && !restoringScroll) {
+        rememberReading({ scroll: window.scrollY });
+      }
+    });
+  }, { passive: true });
   optionsRetry.addEventListener("click", loadFilterOptions);
   const changeDates = () => applyFilterChange({ from: filterFrom.value, to: filterTo.value,
     invalidDateInput: Boolean(filterFrom.validity?.badInput || filterTo.validity?.badInput) }, "dates");
@@ -662,6 +716,7 @@ function syncURL(mode) {
   const replace = mode === "replace" || (editing && editSession === mode);
   if (url !== previous) history[replace ? "replaceState" : "pushState"](null, "", url);
   editSession = editing ? mode : "";
+  if (typeof ImportReader !== "undefined") ImportReader.syncLinks(); // 情報源切替リンクにも現在の条件を渡す
 }
 
 function restoreURL(initial = false) {
@@ -680,6 +735,7 @@ function restoreURL(initial = false) {
   orderSelect.value = sortOrder;
   if (viewState.month) select.value = viewState.month;
   urlNotice(parsed.warnings.length ? "URLの不正・長すぎる条件を補正しました（" + parsed.warnings.join("、") + "）。" : "", false);
+  restoreScroll = !initial;
   syncControls();
   syncURL("replace");
   if (initial) loadMonths();
