@@ -3,6 +3,8 @@
 const ImportReader = (() => {
   const names = { official: "公式ニュース", x: "Grok（X）", p: "Perplexity（週次）", m: "Muse（業務活用）" };
   let hooks, api, serial = 0, active = "official", sample = false, retrying = false, retryNeeded = false;
+  // 同じページ内で同じMuse原記録へ戻ったとき、開いていた詳細を再現する（永続化しない）。
+  const openedDetails = new Map();
   const byId = id => document.getElementById(id);
   const make = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
   function status(text, retry = false, complete = false) {
@@ -125,6 +127,11 @@ const ImportReader = (() => {
     const original = make("details", undefined, "muse-original");
     original.appendChild(make("summary", "原記録の全文を確認（Markdown）"));
     original.appendChild(make("pre", text)); content.appendChild(original);
+    const all = [...content.querySelectorAll("details")], key = `m:${id}`, opened = openedDetails.get(key) || [];
+    all.forEach((details, index) => {
+      details.open = opened.includes(index);
+      details.addEventListener("toggle", () => openedDetails.set(key, all.flatMap((d, i) => d.open ? [i] : [])));
+    });
     return content;
   }
   async function load(refresh = false, retryBody = false) {
@@ -171,6 +178,14 @@ const ImportReader = (() => {
       if (token === serial) byId("import-refresh").disabled = false;
     }
   }
+  // 通常クリック・新しいタブ・リンクのコピーで同じ表示条件を渡すため、hrefを現在URLから作り直す。
+  function syncLinks() {
+    for (const a of document.querySelectorAll("[data-news-source]")) {
+      const source = a.dataset.newsSource;
+      a.href = ImportCatalog.routeURL(location.href, source);
+      if (source === active) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    }
+  }
   function restore() {
     const state = ImportCatalog.route(location.href);
     if (state.sample !== sample) { location.reload(); return true; }
@@ -181,11 +196,7 @@ const ImportReader = (() => {
     byId("official-view").hidden = active !== "official";
     byId("import-view").hidden = active === "official";
     byId("import-view").dataset.source = active;
-    for (const a of document.querySelectorAll("[data-news-source]")) {
-      const source = a.dataset.newsSource;
-      a.href = ImportCatalog.routeURL(location.href, source);
-      if (source === active) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
-    }
+    syncLinks();
     if (active === "official") return false;
     hooks.leaveOfficial();
     byId("import-heading").textContent = names[active];
@@ -222,5 +233,5 @@ const ImportReader = (() => {
     if (sample && new URLSearchParams(location.search).has("source")) history.replaceState(null, "", ImportCatalog.routeURL(location.href, "official"));
     return restore();
   }
-  return { start, restore };
+  return { start, restore, syncLinks };
 })();

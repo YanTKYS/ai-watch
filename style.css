@@ -241,9 +241,7 @@ main.wrap { padding-top: 32px; padding-bottom: 72px; }
   color: var(--muted);
   font-size: .875rem;
   line-height: 1.45;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere; /* 狭幅では区切りで折り返し、取得日・カテゴリを省略しない */
 }
 .latest {
   flex: none;

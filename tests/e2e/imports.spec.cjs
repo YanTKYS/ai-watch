@@ -394,3 +394,35 @@ test('Grok preserves unknown fields, missing values, long text and safe malforme
   await expect(page.locator('.grok-fallback script')).toHaveCount(0);
   await noOverflow(page);
 });
+
+test('#54: source links carry current filters, reading state survives a source round trip, 320px card meta is not truncated', async ({ page, context, mock }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/ai-watch/?month=2026-10');
+  const grok = page.getByRole('link', { name: 'Grok（X）', exact: true });
+  // 過去日を開いて往復すると、最新日だけでなく開いた日も復元される。
+  const days = page.locator('details.day');
+  await expect(days.first()).toHaveAttribute('open', '');
+  const older = days.nth(1); await older.locator('summary').click(); await expect(older).toHaveAttribute('open', '');
+  const openedBefore = await days.evaluateAll(ds => ds.filter(d => d.open).length);
+  await grok.click(); await expect(page.locator('.grok-card')).toHaveCount(2);
+  await page.goBack(); await expect(page.locator('#view-heading')).toBeVisible();
+  expect(await days.evaluateAll(ds => ds.filter(d => d.open).length)).toBe(openedBefore);
+  await expect(older).toHaveAttribute('open', '');
+  // 検索後のhrefは現在条件を持ち、新しいタブで開いて公式へ戻っても検索語が残る。
+  const input = page.getByRole('searchbox'); await input.fill('Codex'); await input.press('Enter');
+  await expect(page.locator('#view-heading')).toHaveText('検索結果');
+  await expect(grok).toHaveAttribute('href', /q=Codex.*source=x|source=x.*q=Codex/);
+  const tab = await context.newPage();
+  await tab.goto(new URL(await grok.getAttribute('href'), page.url()).href);
+  await expect(tab.locator('.grok-card')).toHaveCount(2);
+  await tab.getByRole('link', { name: '公式ニュース', exact: true }).click({ modifiers: [] });
+  await expect(tab.getByRole('searchbox')).toHaveValue('Codex'); await tab.close();
+  // 320pxでも取得日・カテゴリを省略しない。
+  const foot = page.locator('.search-results .card .foot').first();
+  await expect(foot).toContainText('カテゴリ:');
+  expect(await foot.evaluate(n => n.scrollWidth <= n.clientWidth && getComputedStyle(n).textOverflow !== 'ellipsis')).toBe(true);
+  // 条件を解除したら古い検索語はhrefに残らない。
+  await page.getByRole('button', { name: '検索語をクリア' }).click();
+  await expect(grok).not.toHaveAttribute('href', /q=/);
+  await noOverflow(page);
+});
