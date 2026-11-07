@@ -1618,5 +1618,86 @@
       }
     },
     "requests": 4
+  },
+  "2026-11-07": {
+    "queries": {
+      "web-api-pricing": {
+        "candidates": 15,
+        "category": "api",
+        "dated": 16,
+        "duplicates": 0,
+        "evidence": 10,
+        "hype": 0,
+        "kind": "web",
+        "non_x": 16,
+        "official_overlap": 0,
+        "on_topic": 15,
+        "recent": 16,
+        "results": 16,
+        "status": "ok",
+        "x_authors": 0,
+        "x_other": 0,
+        "x_posts": 0,
+        "x_profiles": 0
+      },
+      "web-models": {
+        "candidates": 20,
+        "category": "models",
+        "dated": 20,
+        "duplicates": 0,
+        "evidence": 13,
+        "hype": 0,
+        "kind": "web",
+        "non_x": 20,
+        "official_overlap": 0,
+        "on_topic": 20,
+        "recent": 20,
+        "results": 20,
+        "status": "ok",
+        "x_authors": 0,
+        "x_other": 0,
+        "x_posts": 0,
+        "x_profiles": 0
+      },
+      "x-agents-mcp": {
+        "candidates": 1,
+        "category": "agents",
+        "dated": 1,
+        "duplicates": 0,
+        "evidence": 0,
+        "hype": 0,
+        "kind": "x",
+        "non_x": 0,
+        "official_overlap": 0,
+        "on_topic": 1,
+        "recent": 1,
+        "results": 1,
+        "status": "ok",
+        "x_authors": 1,
+        "x_other": 0,
+        "x_posts": 1,
+        "x_profiles": 0
+      },
+      "x-coding": {
+        "candidates": 4,
+        "category": "coding",
+        "dated": 7,
+        "duplicates": 0,
+        "evidence": 4,
+        "hype": 1,
+        "kind": "x",
+        "non_x": 0,
+        "official_overlap": 0,
+        "on_topic": 6,
+        "recent": 7,
+        "results": 7,
+        "status": "ok",
+        "x_authors": 6,
+        "x_other": 1,
+        "x_posts": 6,
+        "x_profiles": 0
+      }
+    },
+    "requests": 4
   }
 }

@@ -112,6 +112,17 @@
   "https://github.blog/changelog/2026-11-04-github-copilot-is-now-available-in-xcodes-coding-assistant": {
     "first_seen": "2026-11-05"
   },
+  "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-07"
+  },
+  "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage": {
+    "excluded": "adoption_reporting",
+    "first_seen": "2026-11-07"
+  },
+  "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2": {
+    "first_seen": "2026-11-07"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -208,6 +219,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.318": {
     "first_seen": "2026-11-04"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.319": {
+    "first_seen": "2026-11-07"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -252,6 +266,10 @@
   "https://openai.com/index/att-legal": {
     "excluded": "customer_story",
     "first_seen": "2026-10-22"
+  },
+  "https://openai.com/index/australian-universities-ai-native-graduates": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-07"
   },
   "https://openai.com/index/benefit-street-partners": {
     "excluded": "customer_story",
@@ -397,6 +415,9 @@
     "excluded": "low_score",
     "first_seen": "2026-10-20"
   },
+  "https://openai.com/index/measuring-how-ai-agents-handle-wet-lab-science": {
+    "first_seen": "2026-11-07"
+  },
   "https://openai.com/index/merge-builds-with-openai": {
     "excluded": "customer_story",
     "first_seen": "2026-11-06"
@@ -428,6 +449,10 @@
   "https://openai.com/index/oracle-apps-in-chatgpt": {
     "excluded": "partnership",
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/partnering-with-hacktron": {
+    "excluded": "partnership",
+    "first_seen": "2026-11-07"
   },
   "https://openai.com/index/preparing-our-next-security-sprint-to-harden-openai": {
     "excluded": "low_score",
