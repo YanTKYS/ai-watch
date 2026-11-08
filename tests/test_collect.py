@@ -711,19 +711,22 @@ class RepoLayout(unittest.TestCase):
             self.assertNotIn("pull_request_target", wf.get(True, wf.get("on")), p.name)
         self.assertNotIn("secrets.", (ROOT / ".github" / "workflows" / "test.yml").read_text(encoding="utf-8"))
 
-    def test_actions_use_node24_versions(self):
-        # Node.js 20 で動く旧版（checkout@v4・setup-python@v5・setup-node@v4）を使わない。v7 はいずれも node24
-        expected = {"actions/checkout": "v7", "actions/setup-python": "v7", "actions/setup-node": "v7"}
+    def test_actions_do_not_use_legacy_node_runtime_versions(self):
+        # 目的: Node.js 20 で動く旧版（checkout@v4・setup-python@v5・setup-node@v4 以前）の混入防止。
+        # 最新の特定版（v7等）への固定はしない。版の更新や他のactionの追加でCIが落ちないよう、旧版との比較だけを行う。
+        legacy_max = {"actions/checkout": 4, "actions/setup-python": 5, "actions/setup-node": 4}
         for name in ("collect.yml", "test.yml"):
-            for step in self.workflow(name)["jobs"][next(iter(self.workflow(name)["jobs"]))]["steps"]:
-                if "uses" in step:
-                    action, _, version = step["uses"].partition("@")
-                    self.assertEqual(version, expected[action], (name, step["uses"]))
+            for job in self.workflow(name)["jobs"].values():
+                for step in job["steps"]:
+                    action, _, version = step.get("uses", "").partition("@")
+                    if action in legacy_max:
+                        major = version.lstrip("v").split(".")[0]
+                        self.assertTrue(major.isdigit() and int(major) > legacy_max[action], (name, step["uses"]))
 
     def test_no_weekly_monthly_and_manual_ai_probe_is_isolated(self):
+        # スクリプトの追加・名前変更は許容し、週刊/月刊の収集スクリプトを持ち込まないことだけを確認する
         names = {p.name for p in (ROOT / "scripts").glob("*.py")}
-        self.assertEqual(names, {"collect.py", "feeds.py", "brave.py", "common.py", "search_index.py", "selection.py",
-                                 "source_report.py", "selection_preview.py", "collection_status.py", "plamo_probe.py"})
+        self.assertFalse({n for n in names if "weekly" in n or "monthly" in n}, names)
         code = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "scripts").glob("*.py"))
         for needle in ("typesafe.ai", "generativelanguage", "JEV_API_KEY", "GEMINI_API_KEY"):
             self.assertNotIn(needle, code)
