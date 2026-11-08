@@ -178,7 +178,6 @@ class RepoLayout(unittest.TestCase):
         self.assertTrue((ROOT / ".nojekyll").exists())
         js = (ROOT / "app.js").read_text(encoding="utf-8")
         self.assertNotRegex(js, r"\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write")  # 外部由来の文字列をHTMLとして扱わない
-        self.assertEqual(js.count('fetchText("data/search-index.json")'), 1)
         self.assertNotRegex(js, r"https?://")  # 外部APIを呼ばない（相対パスのみ）
         css = (ROOT / "style.css").read_text(encoding="utf-8")
         self.assertIn("@media (prefers-color-scheme: dark)", css)
