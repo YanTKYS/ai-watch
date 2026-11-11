@@ -17,14 +17,23 @@
   "https://deepmind.google/blog/gemini-4-argon-for-robotics": {
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/gemini-4-carbon-is-now-available": {
+    "first_seen": "2026-11-11"
+  },
   "https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model": {
     "first_seen": "2026-10-29"
   },
   "https://deepmind.google/blog/gemini-omni-12-flash-fast-and-cost-effective-with-longer-clips": {
     "first_seen": "2026-11-06"
   },
+  "https://deepmind.google/blog/gemini-robotics-2-5-accelerates-real-world-physical-intelligence": {
+    "first_seen": "2026-11-11"
+  },
   "https://deepmind.google/blog/genie-4-a-new-generation-of-world-simulation": {
     "first_seen": "2026-10-28"
+  },
+  "https://deepmind.google/blog/introducing-alphaproof-code": {
+    "first_seen": "2026-11-11"
   },
   "https://deepmind.google/blog/introducing-gemini-4-argon": {
     "first_seen": "2026-10-18"
@@ -126,6 +135,12 @@
   "https://github.blog/changelog/2026-11-09-claude-fable-5-2-in-github-copilot": {
     "first_seen": "2026-11-10"
   },
+  "https://github.blog/changelog/2026-11-10-gemini-4-carbon-in-github-copilot": {
+    "first_seen": "2026-11-11"
+  },
+  "https://github.blog/changelog/2026-11-10-github-app-support-for-enterprise-copilot-seat-management": {
+    "first_seen": "2026-11-11"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -165,6 +180,9 @@
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.7.0": {
     "first_seen": "2026-11-10"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.8.0": {
+    "first_seen": "2026-11-11"
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
     "first_seen": "2026-10-18",
@@ -253,6 +271,9 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.167.0": {
     "first_seen": "2026-11-06"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.167.1": {
+    "first_seen": "2026-11-11"
+  },
   "https://openai.com/ads/customers/evernote": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
@@ -268,6 +289,10 @@
   "https://openai.com/index/accelerating-engineering-for-the-physical-world": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
+  },
+  "https://openai.com/index/ai-effect-on-freelance-work": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-11"
   },
   "https://openai.com/index/amp-beyond-coding": {
     "excluded": "customer_story",
@@ -322,6 +347,10 @@
   "https://openai.com/index/cisco-cyber": {
     "excluded": "customer_story",
     "first_seen": "2026-11-04"
+  },
+  "https://openai.com/index/closing-ai-guidance-gap-education": {
+    "excluded": "education_program",
+    "first_seen": "2026-11-11"
   },
   "https://openai.com/index/cloudflare-cyber": {
     "excluded": "customer_story",
@@ -394,6 +423,10 @@
     "excluded": "policy_society",
     "first_seen": "2026-11-04"
   },
+  "https://openai.com/index/helping-caregivers-use-ai-in-everyday-life": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-11"
+  },
   "https://openai.com/index/helping-websites-express-ai-training-preferences": {
     "excluded": "low_score",
     "first_seen": "2026-10-31"
@@ -405,6 +438,9 @@
   "https://openai.com/index/how-we-detect-frontier-model-misalignment": {
     "excluded": "customer_story",
     "first_seen": "2026-10-30"
+  },
+  "https://openai.com/index/introducing-businesses-chatgpt": {
+    "first_seen": "2026-11-11"
   },
   "https://openai.com/index/introducing-gpt-6-1-terra": {
     "first_seen": "2026-10-27"
