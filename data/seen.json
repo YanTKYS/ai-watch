@@ -6,6 +6,10 @@
   "https://deepmind.google/blog/agentic-cheminformatics-with-google-antigravity": {
     "first_seen": "2026-11-04"
   },
+  "https://deepmind.google/blog/alphagenome-2-deciphering-how-cells-read-dna-to-better-understand-disease": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-12"
+  },
   "https://deepmind.google/blog/beyond-tree-cover-mapping-the-worlds-forest-types": {
     "excluded": "low_score",
     "first_seen": "2026-10-23"
@@ -274,6 +278,9 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.167.1": {
     "first_seen": "2026-11-11"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.167.2": {
+    "first_seen": "2026-11-12"
+  },
   "https://openai.com/ads/customers/evernote": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
@@ -340,6 +347,10 @@
     "excluded": "policy_society",
     "first_seen": "2026-10-27"
   },
+  "https://openai.com/index/chatgpt-plus-for-veterans": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-12"
+  },
   "https://openai.com/index/check-point-daybreak": {
     "excluded": "customer_story",
     "first_seen": "2026-10-28"
@@ -358,6 +369,10 @@
   },
   "https://openai.com/index/coderabbit-codex-daybreak": {
     "first_seen": "2026-11-10"
+  },
+  "https://openai.com/index/cogent-security": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-12"
   },
   "https://openai.com/index/community-safety-report-and-new-protections-for-teens": {
     "first_seen": "2026-10-31"
@@ -409,6 +424,10 @@
   "https://openai.com/index/franklin-templeton": {
     "excluded": "low_score",
     "first_seen": "2026-11-06"
+  },
+  "https://openai.com/index/gilbert-tobin-sam-nickless": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-12"
   },
   "https://openai.com/index/gpt-6-1-sol-coderabbit-code-security": {
     "first_seen": "2026-10-27"
@@ -462,6 +481,9 @@
   "https://openai.com/index/jill-hazelbaker-chief-corporate-affairs-officer": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
+  },
+  "https://openai.com/index/jiostar-vijay-seshadri": {
+    "first_seen": "2026-11-12"
   },
   "https://openai.com/index/kuken": {
     "excluded": "low_score",
@@ -558,6 +580,10 @@
   "https://openai.com/index/setting-new-standard-responsible-ai-infrastructure": {
     "excluded": "policy_society",
     "first_seen": "2026-11-06"
+  },
+  "https://openai.com/index/singapore-airlines-travel-work": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-12"
   },
   "https://openai.com/index/stack-overflow-chatgpt-plugin": {
     "excluded": "customer_story",
