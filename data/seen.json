@@ -42,6 +42,9 @@
   "https://deepmind.google/blog/introducing-gemini-4-argon": {
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/introducing-gemini-4-hydrogen": {
+    "first_seen": "2026-11-13"
+  },
   "https://deepmind.google/blog/on-device-ai-scam-detection-mddi": {
     "excluded": "policy_society",
     "first_seen": "2026-10-18"
@@ -257,6 +260,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.322": {
     "first_seen": "2026-11-10"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.323": {
+    "first_seen": "2026-11-13"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -281,6 +287,9 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.167.2": {
     "first_seen": "2026-11-12"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.168.0": {
+    "first_seen": "2026-11-13"
+  },
   "https://openai.com/ads/customers/evernote": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
@@ -288,6 +297,18 @@
   "https://openai.com/ads/customers/flipsnack": {
     "excluded": "low_score",
     "first_seen": "2026-11-06"
+  },
+  "https://openai.com/business/customer-stories/amplitude": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-13"
+  },
+  "https://openai.com/business/customer-stories/gondola": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-13"
+  },
+  "https://openai.com/business/customer-stories/holidays-extras-codex": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-13"
   },
   "https://openai.com/index/a-thousand-fewer-paths-to-root": {
     "excluded": "low_score",
@@ -354,6 +375,10 @@
   "https://openai.com/index/check-point-daybreak": {
     "excluded": "customer_story",
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/children-first-declaration": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-13"
   },
   "https://openai.com/index/cisco-cyber": {
     "excluded": "customer_story",
