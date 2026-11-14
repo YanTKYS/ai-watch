@@ -49,6 +49,10 @@
     "excluded": "policy_society",
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/opening-the-datasets-behind-our-ai-weather-models": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-14"
+  },
   "https://deepmind.google/blog/speeding-up-planning-decisions-with-ai": {
     "excluded": "policy_society",
     "first_seen": "2026-11-03"
@@ -147,6 +151,18 @@
   },
   "https://github.blog/changelog/2026-11-10-github-app-support-for-enterprise-copilot-seat-management": {
     "first_seen": "2026-11-11"
+  },
+  "https://github.blog/changelog/2026-11-13-gemini-4-hydrogen-in-github-copilot": {
+    "first_seen": "2026-11-14"
+  },
+  "https://github.blog/changelog/2026-11-13-github-enterprise-server-support-in-the-github-copilot-app": {
+    "first_seen": "2026-11-14"
+  },
+  "https://github.blog/changelog/2026-11-13-manage-ai-scan-for-repositories-using-the-rest-api": {
+    "first_seen": "2026-11-14"
+  },
+  "https://github.blog/changelog/2026-11-13-upcoming-deprecation-of-selected-github-copilot-models-in-december": {
+    "first_seen": "2026-11-14"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
@@ -263,6 +279,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.323": {
     "first_seen": "2026-11-13"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.325": {
+    "first_seen": "2026-11-14"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -290,6 +309,9 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.168.0": {
     "first_seen": "2026-11-13"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.169.0": {
+    "first_seen": "2026-11-14"
+  },
   "https://openai.com/ads/customers/evernote": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
@@ -309,6 +331,10 @@
   "https://openai.com/business/customer-stories/holidays-extras-codex": {
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
+  },
+  "https://openai.com/business/customer-stories/shield": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-14"
   },
   "https://openai.com/index/a-thousand-fewer-paths-to-root": {
     "excluded": "low_score",
@@ -485,6 +511,9 @@
   },
   "https://openai.com/index/introducing-businesses-chatgpt": {
     "first_seen": "2026-11-11"
+  },
+  "https://openai.com/index/introducing-chatgpt-wallet": {
+    "first_seen": "2026-11-14"
   },
   "https://openai.com/index/introducing-gpt-6-1-terra": {
     "first_seen": "2026-10-27"
