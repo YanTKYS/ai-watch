@@ -237,9 +237,7 @@ async function readResponse(response) {
 }
 function reviewedMain(env) {
   return env.GITHUB_EVENT_NAME === 'workflow_dispatch' && env.GITHUB_REF === 'refs/heads/main'
-    && env.GITHUB_REPOSITORY === 'YanTKYS/ai-watch' && env.GITHUB_RUN_ATTEMPT === '1'
-    && env.GITHUB_WORKFLOW_REF === 'YanTKYS/ai-watch/.github/workflows/gemini-hydrogen-weekly-poc.yml@refs/heads/main'
-    && env.EXECUTE === 'true' && env.SPEC_CONFIRMED === 'true';
+    && env.GITHUB_REPOSITORY === 'YanTKYS/ai-watch' && env.EXECUTE === 'true';
 }
 
 async function runPoc({ files, live = false, apiKey = '', env = {}, fetchImpl = globalThis.fetch, timeoutMs = LIMITS.timeoutMs } = {}) {
@@ -263,7 +261,6 @@ async function runPoc({ files, live = false, apiKey = '', env = {}, fetchImpl = 
     if (!live) return report;
     if (!reviewedMain(env)) stop('live_not_authorized');
     if (typeof apiKey !== 'string' || !/^[\x21-\x7e]{1,512}$/.test(apiKey)) stop('missing_or_invalid_key');
-    report.free_tier_verification = 'owner_confirmed_by_workflow_input';
     controller = new AbortController(); phase = 'request';
     const deadline = new Promise((_, reject) => {
       timer = setTimeout(() => { timedOut = true; controller.abort(); reject(new Stop('timeout')); }, timeoutMs);

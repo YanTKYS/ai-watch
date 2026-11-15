@@ -24,10 +24,9 @@ class GeminiHydrogenWeekly(unittest.TestCase):
         triggers = wf.get('on', wf.get(True))
         self.assertEqual(set(triggers), {'workflow_dispatch'})  # no push / schedule / pull_request
         inputs = triggers['workflow_dispatch']['inputs']
-        self.assertEqual(set(inputs), {'execute', 'spec_confirmed'})
-        for name in inputs:  # dry run is the default
-            self.assertIs(inputs[name]['default'], False)
-            self.assertEqual(inputs[name]['type'], 'boolean')
+        self.assertEqual(set(inputs), {'execute'})  # one input; false (default) is the dry run
+        self.assertIs(inputs['execute']['default'], False)
+        self.assertEqual(inputs['execute']['type'], 'boolean')
         self.assertEqual(wf['permissions'], {'contents': 'read'})
         self.assertIs(wf['concurrency']['cancel-in-progress'], False)
         job = wf['jobs']['poc']
@@ -39,8 +38,7 @@ class GeminiHydrogenWeekly(unittest.TestCase):
         live = [s for s in steps if 'GEMINI_API_KEY' in s.get('env', {})]
         self.assertEqual(len(live), 1)  # the Secret reaches the live step only
         self.assertEqual(live[0]['env']['GEMINI_API_KEY'], '${{ secrets.GEMINI_API_KEY }}')
-        for condition in ('inputs.execute', 'inputs.spec_confirmed', 'github.run_attempt == 1'):
-            self.assertIn(condition, live[0]['if'])
+        self.assertIn('inputs.execute', live[0]['if'])
         self.assertEqual(text.count('secrets.'), 1)
         self.assertEqual(sum('--live' in s.get('run', '') for s in steps), 1)
         index = steps.index(live[0])

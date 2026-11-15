@@ -27,9 +27,11 @@ Actions → **Gemini 4 Hydrogen weekly report PoC** → Run workflow（`main` �
 | 入力 | 動作 |
 | --- | --- |
 | `execute=false`（既定） | ドライラン。オフラインのテスト、固定入力の検証、リクエスト内容（プロンプト・設定）の確認。Secretも通信も使いません |
-| `execute=true` と `spec_confirmed=true` | Geminiへ**最大1回**送信。初回の run attempt のみ。再実行・再試行・別モデルへのフォールバックなし |
+| `execute=true` | `main` 上で、Geminiへ**1実行につき最大1回**送信。自動の再試行・別モデルへのフォールバックなし |
 
-`spec_confirmed` は、オーナーが次を確認したことを表します。**確認前に実行しないでください。**
+入力は `execute` だけです。Actionsの「Re-run」で手動で再実行した場合も、`execute=true` なら送信されます（再実行は別の利用枠を消費するので、失敗直後の再実行は避けてください）。
+
+実行前のメモ（確認用で、Workflowの条件ではありません）:
 
 1. Hydrogenの最新の公式仕様（下の「未検証の前提」）と、対象キー/プロジェクトの無料利用・課金状態・レート制限
 2. 送信するのは公開済みニュース記事情報のみ（無料Tierの入力はGoogleの製品改善に使われる場合があります）
