@@ -1,0 +1,67 @@
+name: Gemini 4 Hydrogen weekly report PoC
+
+# 手動専用のPoC。push / schedule / pull_request ではライブ通信しない。
+# execute=false（既定）はドライラン（Secretなし・通信なし）。ライブ送信は main・execute=true・spec_confirmed=true・初回run attemptの最大1回。
+on:
+  workflow_dispatch:
+    inputs:
+      execute:
+        description: "Geminiへ最大1回送信する（未選択はドライラン: 入力検証とリクエスト内容の確認のみ）"
+        type: boolean
+        required: true
+        default: false
+      spec_confirmed:
+        description: "公式仕様・対象キー/プロジェクトの無料利用・課金状態を確認済み（公開済みニュース記事情報のみ送信）"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gemini-hydrogen-weekly-poc
+  cancel-in-progress: false
+
+jobs:
+  poc:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'YanTKYS/ai-watch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Offline mock tests (no Secret)
+        run: node --test tests/test_gemini_hydrogen_weekly.cjs
+      - name: Dry run - verify fixed input and preview request (no Secret, no network)
+        run: node scripts/gemini_hydrogen_weekly.cjs --output-dir "$RUNNER_TEMP/gemini-weekly"
+      - name: Send one confirmed request on reviewed main
+        if: inputs.execute && inputs.spec_confirmed && github.run_attempt == 1
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          EXECUTE: ${{ inputs.execute }}
+          SPEC_CONFIRMED: ${{ inputs.spec_confirmed }}
+        run: node scripts/gemini_hydrogen_weekly.cjs --live --output-dir "$RUNNER_TEMP/gemini-weekly"
+      - name: Publish safe text summary
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          if [ -f "$RUNNER_TEMP/gemini-weekly/report.md" ]; then
+            cat "$RUNNER_TEMP/gemini-weekly/report.md" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Gemini weekly PoC: report unavailable. No raw response or exception is printed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload short-lived evaluation report
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: gemini-weekly-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/gemini-weekly/report.json
+            ${{ runner.temp }}/gemini-weekly/report.md
+          retention-days: 3
+          if-no-files-found: warn
