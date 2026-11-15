@@ -1,17 +1,12 @@
 name: Gemini 4 Hydrogen weekly report PoC
 
 # 手動専用のPoC。push / schedule / pull_request ではライブ通信しない。
-# execute=false（既定）はドライラン（Secretなし・通信なし）。ライブ送信は main・execute=true・spec_confirmed=true・初回run attemptの最大1回。
+# execute=false（既定）はドライラン（Secretなし・通信なし）。execute=true で main 上から1実行につきGeminiへ最大1回送信する。
 on:
   workflow_dispatch:
     inputs:
       execute:
-        description: "Geminiへ最大1回送信する（未選択はドライラン: 入力検証とリクエスト内容の確認のみ）"
-        type: boolean
-        required: true
-        default: false
-      spec_confirmed:
-        description: "公式仕様・対象キー/プロジェクトの無料利用・課金状態を確認済み（公開済みニュース記事情報のみ送信）"
+        description: "Geminiへ最大1回送信する（未選択はドライラン: 入力検証とリクエスト内容の確認のみ・通信なし）"
         type: boolean
         required: true
         default: false
@@ -39,12 +34,11 @@ jobs:
         run: node --test tests/test_gemini_hydrogen_weekly.cjs
       - name: Dry run - verify fixed input and preview request (no Secret, no network)
         run: node scripts/gemini_hydrogen_weekly.cjs --output-dir "$RUNNER_TEMP/gemini-weekly"
-      - name: Send one confirmed request on reviewed main
-        if: inputs.execute && inputs.spec_confirmed && github.run_attempt == 1
+      - name: Send one request to Gemini (execute=true, main only)
+        if: inputs.execute
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           EXECUTE: ${{ inputs.execute }}
-          SPEC_CONFIRMED: ${{ inputs.spec_confirmed }}
         run: node scripts/gemini_hydrogen_weekly.cjs --live --output-dir "$RUNNER_TEMP/gemini-weekly"
       - name: Publish safe text summary
         if: ${{ always() }}

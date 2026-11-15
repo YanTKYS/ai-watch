@@ -8,8 +8,7 @@ const os = require('node:os');
 const P = require('../scripts/gemini_hydrogen_weekly.cjs');
 const KEY = 'AIzaSyTEST-gemini-secret-NEVER-SAVE-0123';
 const ENV = { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/main', GITHUB_REPOSITORY: 'YanTKYS/ai-watch',
-  GITHUB_RUN_ATTEMPT: '1', EXECUTE: 'true', SPEC_CONFIRMED: 'true',
-  GITHUB_WORKFLOW_REF: 'YanTKYS/ai-watch/.github/workflows/gemini-hydrogen-weekly-poc.yml@refs/heads/main' };
+  EXECUTE: 'true' };
 
 // Synthetic daily log + derived index for the fixed week (+ one out-of-week article that must be ignored).
 const ARTICLES = Array.from({ length: 6 }, (_, i) => ({ title: `（合成）機能${i}の公開`, url: `https://openai.com/index/synthetic-${i}`,
@@ -91,13 +90,14 @@ test('dry run needs no key or network, shows the exact request and sends nothing
   assert.equal(report.status, 'plan_only'); assert.equal(report.requests_sent, 0); assert.equal(report.output, null);
   assert.equal(report.snapshot.pinned_manifest, 'matched'); assert.equal(report.request.generationConfig.thinkingConfig.thinkingLevel, 'HIGH');
 });
-test('only reviewed main dispatch with execute + spec confirmation on the first attempt can send; a missing key sends nothing', async () => {
-  for (const patch of [{ GITHUB_REF: 'refs/heads/feature' }, { GITHUB_EVENT_NAME: 'push' }, { GITHUB_RUN_ATTEMPT: '2' },
-    { GITHUB_REPOSITORY: 'YanTKYS/news-watch' }, { EXECUTE: 'false' }, { SPEC_CONFIRMED: 'false' }, { SPEC_CONFIRMED: undefined },
-    { GITHUB_WORKFLOW_REF: 'YanTKYS/ai-watch/.github/workflows/gemini-hydrogen-weekly-poc.yml@refs/pull/1/merge' }]) {
+test('only a manual dispatch on main with execute=true can send (re-runs included); a missing key sends nothing', async () => {
+  for (const patch of [{ GITHUB_REF: 'refs/heads/feature' }, { GITHUB_EVENT_NAME: 'push' },
+    { GITHUB_REPOSITORY: 'YanTKYS/news-watch' }, { EXECUTE: 'false' }, { EXECUTE: undefined }]) {
     const { report, calls } = await live(envelope(), { env: { ...ENV, ...patch } });
     assert.equal(report.reason, 'live_not_authorized', JSON.stringify(patch)); assert.equal(calls.length, 0); assert.equal(report.requests_sent, 0);
   }
+  const rerun = await live(envelope(), { env: { ...ENV, GITHUB_RUN_ATTEMPT: '2' } });
+  assert.equal(rerun.calls.length, 1); assert.equal(rerun.report.status, 'schema_valid_unverified');
   for (const apiKey of ['', 'has space', 'x'.repeat(513), undefined]) {
     const { report, calls } = await live(envelope(), { apiKey }); assert.equal(report.reason, 'missing_or_invalid_key'); assert.equal(calls.length, 0);
   }
