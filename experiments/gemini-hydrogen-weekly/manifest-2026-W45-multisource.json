@@ -1,0 +1,1020 @@
+{
+  "note": "Grok・Perplexity・Museの固定入力の控え（公式21件は manifest-2026-W45.json を維持し、そのSHA-256を内包）。imports/の該当ファイルから再計算した値と一致しない場合、PoCは通信前に停止する。",
+  "version": "multisource-w45-v1",
+  "week": "2026-W45",
+  "official": {
+    "article_count": 21,
+    "selection_sha256": "18d53ba729795abd210b4e333f365b9ddc80636a50314f7dcb0e1c79e6643ff7"
+  },
+  "sources": {
+    "grok": {
+      "count": 16,
+      "files": [
+        {
+          "path": "imports/x/2026/x-20261102.md",
+          "sha256": "daf452784bd0546f0fe4325e86589644c22fcff1718502c5f6cb4caff5613b2d",
+          "count": 2,
+          "collected": "2026-11-02"
+        },
+        {
+          "path": "imports/x/2026/x-20261105.md",
+          "sha256": "7a00ed9a01c51aeb704856efd0158b1adada4fb71e01c2daed1b7083661444b0",
+          "count": 4,
+          "collected": "2026-11-05"
+        },
+        {
+          "path": "imports/x/2026/x-20261106.md",
+          "sha256": "c3abf949a1e442605f0ba8825ea7c1d1dbd354cff75952bad9b1cd12aef6187e",
+          "count": 4,
+          "collected": "2026-11-06"
+        },
+        {
+          "path": "imports/x/2026/x-20261108.md",
+          "sha256": "1b31d80df337d1f4c9a85d8cece347069ccda4297456df76b26d9ffea23673be",
+          "count": 6,
+          "collected": "2026-11-08"
+        }
+      ]
+    },
+    "perplexity": {
+      "count": 14,
+      "files": [
+        {
+          "path": "imports/p/2026-W45.md",
+          "sha256": "541b36c61a1b373ff6d50a7c1a095bf4e982c3a834c79e2a534564234882dedf",
+          "count": 14,
+          "survey_date": "2026-11-06",
+          "target_week": "2026-W45（2026-11-02〜2026-11-08）"
+        }
+      ]
+    },
+    "muse": {
+      "count": 70,
+      "files": [
+        {
+          "path": "imports/m/muse-20261102.md",
+          "sha256": "34999f311eec115fc41cdac16d3ad8f4b067a4c7274576d552a0f3c3c78f3344",
+          "count": 10,
+          "collected": "2026-11-02"
+        },
+        {
+          "path": "imports/m/muse-20261103.md",
+          "sha256": "f7be504d2e55f14bb7634eccd51b35bf5b3a6e1f492847bfba97afbac04c8ef6",
+          "count": 10,
+          "collected": "2026-11-03"
+        },
+        {
+          "path": "imports/m/muse-20261104.md",
+          "sha256": "e3dad63182cdcaface1e871ac7dd7cda24df42318ae26c8711ceb3bfde3aeaef",
+          "count": 10,
+          "collected": "2026-11-04"
+        },
+        {
+          "path": "imports/m/muse-20261105.md",
+          "sha256": "bd00d6481d78f2b8bfa7313e1ed57455e9bfb5cd305302c14f270db3599e4d3d",
+          "count": 10,
+          "collected": "2026-11-05"
+        },
+        {
+          "path": "imports/m/muse-20261106.md",
+          "sha256": "aaa25ed1ca9fe161e0b22bf7f02d0ec2e5ec074fb007fa5593a5d83aadfcf260",
+          "count": 10,
+          "collected": "2026-11-06"
+        },
+        {
+          "path": "imports/m/muse-20261107.md",
+          "sha256": "a59f990f24898655ae238ad825eb6e13db8be7ca983f2986202fbebfea13c701",
+          "count": 10,
+          "collected": "2026-11-07"
+        },
+        {
+          "path": "imports/m/muse-20261108.md",
+          "sha256": "a6b5526d036d2ba0e63667bfb9346fd2be5ff961d915e562307b3b0eb935c4b9",
+          "count": 10,
+          "collected": "2026-11-08"
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "x01",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261102.md",
+      "title": "iMCP 1.8.1が承認前のツール呼び出しを修正",
+      "urls": [
+        "https://x.com/mattt/status/2116908380187156899"
+      ]
+    },
+    {
+      "id": "x02",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261102.md",
+      "title": "Codexの10月末〜11月初変更点と利用制限アップデート",
+      "urls": [
+        "https://x.com/CodexUpdate/status/2116867453137338861"
+      ]
+    },
+    {
+      "id": "x03",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261105.md",
+      "title": "TencentがオープンモデルHy4を発表、ビジョン機能搭載",
+      "urls": [
+        "https://x.com/TencentHunyuan/status/2117870250838630539"
+      ]
+    },
+    {
+      "id": "x04",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261105.md",
+      "title": "Living Brainがモデル非依存の永続メモリ層を公開",
+      "urls": [
+        "https://x.com/ladyxtel/status/2117980022250316282"
+      ]
+    },
+    {
+      "id": "x05",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261105.md",
+      "title": "Kling 4.0 Flashが一般公開、MCP・API対応",
+      "urls": [
+        "https://x.com/Kling_ai/status/2117995299591319932"
+      ]
+    },
+    {
+      "id": "x06",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261105.md",
+      "title": "llama.cpp 0.9.0がFP8量子化と新モデル対応を追加",
+      "urls": [
+        "https://x.com/TORA276990/status/2117992355433492505"
+      ]
+    },
+    {
+      "id": "x07",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261106.md",
+      "title": "OpenAIがChatGPT Images 2.6をリリース、GIF生成と高速化・新APIモデルを追加",
+      "urls": [
+        "https://x.com/OpenAI/status/2118124944928432327"
+      ]
+    },
+    {
+      "id": "x08",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261106.md",
+      "title": "OpenAIが自律パイプラインでLinuxカーネルの948件のローカル権限昇格脆弱性を発見・パッチ",
+      "urls": [
+        "https://x.com/OpenAI/status/2118119454681006460"
+      ]
+    },
+    {
+      "id": "x09",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261106.md",
+      "title": "EonがAIエージェント向けサーバーレスデータエンジンYukonをランチ",
+      "urls": [
+        "https://x.com/OfirEhrlich/status/2118357800648659127"
+      ]
+    },
+    {
+      "id": "x10",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261106.md",
+      "title": "Google CloudがAlloyDBでApache Icebergへの直接アクセスを追加",
+      "urls": [
+        "https://x.com/googlecloud/status/2118148546373259331"
+      ]
+    },
+    {
+      "id": "x11",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "Thinking MachinesがInkling 2 Smallをリリース、エージェント向けMoEモデル",
+      "urls": [
+        "https://x.com/MTSlive/status/2118912062021882015"
+      ]
+    },
+    {
+      "id": "x12",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "AnthropicがClaudeエージェントのメモリ「dreaming」プロセスを詳細公開",
+      "urls": [
+        "https://x.com/AnthropicAI/status/2118814753154064501"
+      ]
+    },
+    {
+      "id": "x13",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "MetaがMuseとMeta AIにActive MemoryとActive Focusを導入",
+      "urls": [
+        "https://x.com/AIatMeta/status/2118768974779634084"
+      ]
+    },
+    {
+      "id": "x14",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "OpenAIがウェットラボエージェント評価ベンチマークBioBasicsBenchを公開",
+      "urls": [
+        "https://x.com/OpenAI/status/2118789008444530781"
+      ]
+    },
+    {
+      "id": "x15",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "Standard Physicsが物理シミュレーションエージェントReynoldsをオープンソース化",
+      "urls": [
+        "https://x.com/StandardPhys/status/2118766173986955771"
+      ]
+    },
+    {
+      "id": "x16",
+      "source_type": "grok",
+      "source_path": "imports/x/2026/x-20261108.md",
+      "title": "Ant LingがマルチモーダルMoE Ling-3.2-flashを発表",
+      "urls": [
+        "https://x.com/AntLingAGI/status/2118428246664761379"
+      ]
+    },
+    {
+      "id": "p01",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "今週の全体傾向",
+      "urls": [
+        "https://github.com/pingdotgg/t3code",
+        "https://github.com/thedotmack/claude-mem",
+        "https://github.com/pbakaus/impeccable",
+        "https://github.com/trending?since=weekly"
+      ]
+    },
+    {
+      "id": "p02",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "1. janhq/jan — オフラインで動くChatGPT代替のデスクトップアプリ",
+      "urls": [
+        "https://github.com/janhq/jan"
+      ]
+    },
+    {
+      "id": "p03",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "2. ggml-org/llama.cpp — CPUでも動く軽量LLM推論エンジンの本家",
+      "urls": [
+        "https://github.com/ggml-org/llama.cpp",
+        "https://github.com/ggml-org/llama.cpp/releases/tag/v0.9.0"
+      ]
+    },
+    {
+      "id": "p04",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "3. Crosstalk-Solutions/project-nomad — オフライン専用の知識・地図サーバー",
+      "urls": [
+        "https://github.com/Crosstalk-Solutions/project-nomad"
+      ]
+    },
+    {
+      "id": "p05",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "4. lfnovo/open-notebook — セルフホスト型のNotebookLM代替",
+      "urls": [
+        "https://github.com/lfnovo/open-notebook",
+        "https://github.com/lfnovo/open-notebook/releases/tag/v1.15.1"
+      ]
+    },
+    {
+      "id": "p06",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "5. QwenLM/qwen-code — ローカルモデルにも対応したAIコーディングエージェント",
+      "urls": [
+        "https://github.com/QwenLM/qwen-code"
+      ]
+    },
+    {
+      "id": "p07",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "6. The-PR-Agent/pr-agent — セルフホストできるAIコードレビュー",
+      "urls": [
+        "https://github.com/The-PR-Agent/pr-agent"
+      ]
+    },
+    {
+      "id": "p08",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "7. github/spec-kit — 仕様を起点にAIで開発する「仕様駆動開発」のツールキット",
+      "urls": [
+        "https://github.com/github/spec-kit",
+        "https://github.github.io/spec-kit/install/air-gapped.html",
+        "https://github.com/github/spec-kit/releases/tag/v1.3.1"
+      ]
+    },
+    {
+      "id": "p09",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "8. max-sixty/worktrunk — AIエージェントを並列で動かすためのGit worktree管理",
+      "urls": [
+        "https://github.com/max-sixty/worktrunk"
+      ]
+    },
+    {
+      "id": "p10",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "9. nektos/act — GitHub Actionsを手元で実行",
+      "urls": [
+        "https://github.com/nektos/act"
+      ]
+    },
+    {
+      "id": "p11",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "10. agentgateway/agentgateway — LLM・MCP通信の統制用プロキシ",
+      "urls": [
+        "https://github.com/agentgateway/agentgateway"
+      ]
+    },
+    {
+      "id": "p12",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "前回掲載分の更新（2026-W44からの差分）",
+      "urls": [
+        "https://github.com/ollama/ollama",
+        "https://github.com/ollama/ollama/releases/tag/v0.40.14",
+        "https://github.com/cjpais/Handy",
+        "https://github.com/cjpais/Handy/releases/tag/v0.10.0",
+        "https://github.com/NVIDIA/SkillSpector",
+        "https://github.com/Graphify-Labs/graphify",
+        "https://github.com/xerj-org/xerj",
+        "https://github.com/infiniflow/ragflow",
+        "https://github.com/k2-fsa/sherpa-onnx"
+      ]
+    },
+    {
+      "id": "p13",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "参考: その他の注目リポジトリ",
+      "urls": [
+        "https://github.com/thedotmack/claude-mem",
+        "https://github.com/JuliusBrussee/caveman",
+        "https://github.com/gitleaks/gitleaks",
+        "https://github.com/aquasecurity/trivy",
+        "https://github.com/go-gitea/gitea",
+        "https://github.com/microsoft/onnxruntime"
+      ]
+    },
+    {
+      "id": "p14",
+      "source_type": "perplexity",
+      "source_path": "imports/p/2026-W45.md",
+      "title": "今週の注目ポイント（3行要約）",
+      "urls": []
+    },
+    {
+      "id": "m01",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "構造化面接スコアカードで、面接の評価軸を面接官全員でそろえる",
+      "urls": [
+        "https://amo.ng/prompts/hiring-scorecard-interview-loop-designer"
+      ]
+    },
+    {
+      "id": "m02",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "月次決算を、期限を数式で出すExcelトラッカーで回す",
+      "urls": [
+        "https://www.pairworkflows.com/month-end-close-excel.html"
+      ]
+    },
+    {
+      "id": "m03",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "サポート記事を「1問1答＋直答＋エスカレーション条件」の型で整える",
+      "urls": [
+        "https://cosupport.ai/articles/ai-knowledge-base-setup-guide"
+      ]
+    },
+    {
+      "id": "m04",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "設計判断をADR（1決定1ファイル）で残し、AIへの指示にも流用する",
+      "urls": [
+        "https://futurecraft.pro/blog/adr-template-ai/"
+      ]
+    },
+    {
+      "id": "m05",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "提案書を1枚のテンプレートではなく「再利用セクションの部品箱」にする",
+      "urls": [
+        "https://www.sidekickorchestration.ai/blog/write-proposals-and-rfps-with-ai"
+      ]
+    },
+    {
+      "id": "m06",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "現場の手順書を「AIが読める手順書」に作り直す",
+      "urls": [
+        "https://speach.me/blog/digitizing-procedures-in-the-era-of-vertical-ai-agents"
+      ]
+    },
+    {
+      "id": "m07",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "ブランドの声を「ボイスカード」1枚に固定して毎回の依頼に貼る",
+      "urls": [
+        "https://cursa.app/en/page/ai-assisted-positioning-and-brand-voice-staying-consistent-across-channels"
+      ]
+    },
+    {
+      "id": "m08",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "入社90日計画を、フェーズ固定のテンプレートで職種ごとに作る",
+      "urls": [
+        "https://www.aiawareness.ai/creating-personalised-employee-onboarding-plans-with-ai/"
+      ]
+    },
+    {
+      "id": "m09",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "文献調査を「1論文1行・列固定・引用付き」の抽出表にする",
+      "urls": [
+        "https://www.paperdigest.org/literature-review-matrix/"
+      ]
+    },
+    {
+      "id": "m10",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261102.md",
+      "title": "入札・ベンダー選定を加重スコア＋感度チェックの表で説明可能にする",
+      "urls": [
+        "https://www.aiawareness.ai/executive-weighted-scoring-model-for-bid-evaluation/"
+      ]
+    },
+    {
+      "id": "m11",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "繰り返し指示は「スキル（SKILL.md）」1フォルダにまとめ、毎回貼り直さない",
+      "urls": [
+        "https://www.guidetoartificialintelligence.com/en/learn/package-repeatable-workflow-claude-skill/"
+      ]
+    },
+    {
+      "id": "m12",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "請求書は「AIは読むだけ、承認はコードと人が決める」型にする",
+      "urls": [
+        "https://dev.to/amplence/let-the-model-read-the-invoice-not-approve-it-an-n8n-pattern-for-ap-automation-58g4"
+      ]
+    },
+    {
+      "id": "m13",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "AIの出力品質は、感覚ではなく「評価ルーブリック＋校正ログ」で測る",
+      "urls": [
+        "https://www.ryzlabs.com/templates/llm-evaluation-rubric-template"
+      ]
+    },
+    {
+      "id": "m14",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "メール対応は「読む・分類・下書き」までを自動化し、送信・削除は人に残す",
+      "urls": [
+        "https://www.guidetoartificialintelligence.com/en/learn/safely-automate-inbox/"
+      ]
+    },
+    {
+      "id": "m15",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "商談の記録は、要約文ではなく「CRMフィールドへの映射表」で残す",
+      "urls": [
+        "https://1min.ai/crm-automation-sales-call-updates"
+      ]
+    },
+    {
+      "id": "m16",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "契約交渉は、チェックリストではなく「プレイブックの6列表」で回す",
+      "urls": [
+        "https://gc.ai/blog/contract-playbook-template"
+      ]
+    },
+    {
+      "id": "m17",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "施策づくりは、生成の前に「キャンペーンブリーフ6問」を固定する",
+      "urls": [
+        "https://cc4.marketing/blog/write-campaign-brief-with-ai/"
+      ]
+    },
+    {
+      "id": "m18",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "現場の不具合報告は、写真・音声を「20項目の定型フォーム」に落とす",
+      "urls": [
+        "https://www.inspectwrk.com/checklists/manufacturing/product-defect-report-template"
+      ]
+    },
+    {
+      "id": "m19",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "競合調査は、会社ごとに自由記述せず「列固定の比較表」で並べる",
+      "urls": [
+        "https://stackby.com/templates/ai-competitive-analysis"
+      ]
+    },
+    {
+      "id": "m20",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261103.md",
+      "title": "機密情報を扱うAI利用は、モデル選びの前に「データフロー図」を1枚残す",
+      "urls": [
+        "http://umatechnology.org/how-to-keep-local-ai-private-while-using-connected-tools-and-files/"
+      ]
+    },
+    {
+      "id": "m21",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "AIワークフローは、ツール一覧ではなく「所有者マップ」1枚で管理する",
+      "urls": [
+        "https://reji.pro/blog/ai-workflow-ownership-map-checklist-founders"
+      ]
+    },
+    {
+      "id": "m22",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "エージェント導入の前に、7次元の「準備度チェック」で止める・進めるを決める",
+      "urls": [
+        "https://kienlef.github.io/assets/downloads/agent-readiness-checklist-v0.1-2026-05-10.pdf"
+      ]
+    },
+    {
+      "id": "m23",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "エージェントの指示は、その場で考えさせず「実行計画JSON」にしてから検証する",
+      "urls": [
+        "https://sumitkrsharma-ai.medium.com/agentic-workflow-compilers-making-ai-agents-reliable-and-executable-workflows-6c553eead6b3"
+      ]
+    },
+    {
+      "id": "m24",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "マーケティングの週次業務は、曜日ごとに「AIに渡す仕事」と「人に残す判断」を分ける",
+      "urls": [
+        "https://pub.aeosoup.com/a-marketers-weekly-ai-workflow-what-to-hand-off-each-day-with-copy-paste-prompts-1b357ffba8a4"
+      ]
+    },
+    {
+      "id": "m25",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "社内人材のマッチングは、同意・重み・推測禁止を固定した「タレントマッチャー」にする",
+      "urls": [
+        "https://thehroffice.substack.com/p/how-to-build-an-hr-talent-agent-with"
+      ]
+    },
+    {
+      "id": "m26",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "会議の記録は、要約ではなく「決定ログ」1決定1行で残す",
+      "urls": [
+        "https://www.shadow.do/blog/ai-meeting-decision-log-template-2026"
+      ]
+    },
+    {
+      "id": "m27",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "デューデリジェンス報告書は、引用・人の承認ゲート付きのPDFパイプラインにする",
+      "urls": [
+        "http://khaisastudio.medium.com/an-n8n-due-diligence-workflow-that-actually-produces-a-pdf-f78d9494f11b"
+      ]
+    },
+    {
+      "id": "m28",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "未払い請求書の督促は、7・14・30・45日の固定カデンスと送信前承認で回す",
+      "urls": [
+        "https://viktor.com/blog/how-to-chase-unpaid-invoices-with-an-ai-employee"
+      ]
+    },
+    {
+      "id": "m29",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "顧客の声の集計は、二重カウントしないための「1行の単位と証拠」から決める",
+      "urls": [
+        "https://ofox.ai/blog/ai-customer-feedback-classification-template/"
+      ]
+    },
+    {
+      "id": "m30",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261104.md",
+      "title": "業務プロンプトは「目的・背景・材料・条件・出す形」の5項目と、入力禁止・確認4点で固定する",
+      "urls": [
+        "https://optisource.co.jp/genai-prompt-business-examples/"
+      ]
+    },
+    {
+      "id": "m31",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "障害対応は、ポストモーテムを読み直すのではなく「SKILL.mdランブック」に圧縮する",
+      "urls": [
+        "https://www.hiddenlogiclab.com/use-cases/incident-postmortem-to-runbook-skill"
+      ]
+    },
+    {
+      "id": "m32",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "プルリクエストのレビューは、「レビューして」ではなくカテゴリ固定のチェックリストで返す",
+      "urls": [
+        "https://dev.to/suifeng023/the-ai-code-review-checklist-a-copy-paste-prompt-for-safer-pull-requests-3e58"
+      ]
+    },
+    {
+      "id": "m33",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "経費精算は、領収書の読み取り・ポリシー照合・承認分岐を1本の流れにする",
+      "urls": [
+        "https://n8n.io/workflows/20104-approve-employee-expense-receipts-with-gmail-google-sheets-and-openai/"
+      ]
+    },
+    {
+      "id": "m34",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "翻訳の用語は、1枚のCSV用語集を「全ツール共通の基準」にして、出力後に照合する",
+      "urls": [
+        "https://www.eesel.ai/blog/support-translation-glossary"
+      ]
+    },
+    {
+      "id": "m35",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "SEO記事のブリーフは、変数付きの再利用プロンプトと検索結果の注入で毎回同じ型にする",
+      "urls": [
+        "https://tesseract.academy/courses/ai-for-seo-keyword-research/lessons/building-reusable-content-brief-prompts/"
+      ]
+    },
+    {
+      "id": "m36",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "インタビュー合成は、1回でまとめさせず「抽出→コード→テーマ→反証」の4パスで回す",
+      "urls": [
+        "https://askmioai.com/ai-customer-interview-analysis/"
+      ]
+    },
+    {
+      "id": "m37",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "サポートの振り分けは、4レーンとエスカレーション条件と「引き継ぎパケット」で固定する",
+      "urls": [
+        "https://www.boai.space/blog/shopify-support-escalation-agent/index.html"
+      ]
+    },
+    {
+      "id": "m38",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "スライド生成は、Slide Master準拠を採点基準にして「ブランド漂流」を防ぐ",
+      "urls": [
+        "https://windowsforum.com/news/choosing-ai-powerpoint-tools-that-preserve-your-slide-master.401640/"
+      ]
+    },
+    {
+      "id": "m39",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "紙のSOPは、AIで下書き化して「版管理・承認・QR起動」のデジタル作業指示書にする",
+      "urls": [
+        "https://flowdit.com/work-instruction-software/"
+      ]
+    },
+    {
+      "id": "m40",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261105.md",
+      "title": "求人票は、5つの固定項目で「何を任せるか・何を教えるか・何で測るか」を先に決める",
+      "urls": [
+        "https://www.taskade.com/prompts/recruiting/job-description-generator-recruiting"
+      ]
+    },
+    {
+      "id": "m41",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "契約書のレビューは、「立場・比較対象・譲れない線」の3行を先に書く",
+      "urls": [
+        "https://medium.com/@pmd.itokenta/before-you-ask-an-ai-to-review-a-contract-write-these-three-lines-4499d47ed43a"
+      ]
+    },
+    {
+      "id": "m42",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "営業の定型業務は、「スキル11個」に切り分け、1行の指示で回す",
+      "urls": [
+        "https://skills.arrows.to/"
+      ]
+    },
+    {
+      "id": "m43",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "調達は、発注依頼から支払いまでをマルチエージェントでつなぎ、既存ツールは置き換えない",
+      "urls": [
+        "https://cxotoday.com/media-coverage/procol-to-launch-clara-2-0-multi-agent-source-to-pay-platform-at-gartner-it-symposium-kochi/"
+      ]
+    },
+    {
+      "id": "m44",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "脆弱性対応は、「発見→再現→悪用→パッチ→人レビュー」の自律パイプラインにする",
+      "urls": [
+        "https://x.com/OpenAI/status/2118119454681006460"
+      ]
+    },
+    {
+      "id": "m45",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "社内文書は「権限付きの検索層」にし、ワークフローは自然言語で組み立てる",
+      "urls": [
+        "https://www.reuters.com/business/box-expands-nvidia-partnership-unveils-ai-workflow-builder-2026-11-05/"
+      ]
+    },
+    {
+      "id": "m46",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "エージェントのデータは、「コピーせず1つのクエリで」統合する",
+      "urls": [
+        "https://x.com/googlecloud/status/2118148546373259331"
+      ]
+    },
+    {
+      "id": "m47",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "ブランド表現は、「GIF生成＋参照画像の再利用」をAPI化する",
+      "urls": [
+        "https://x.com/OpenAI/status/2118124944928432327"
+      ]
+    },
+    {
+      "id": "m48",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "大規模モデルは、「空冷サーバー1台の社内推論」に収めて持ち帰る",
+      "urls": [
+        "https://www.manilatimes.net/2026/11/05/tmt-newswire/pr-newswire/skymizer-and-mitac-computing-to-showcase-a-28-trillion-parameter-ai-model-running-on-a-single-air-cooled-server-at-sc26/2463174/amp"
+      ]
+    },
+    {
+      "id": "m49",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "図面・画面操作は、「視覚推論＋GUI操作」のモデルに任せる",
+      "urls": [
+        "https://dataconomy.com/2026/11/05/tencent-unveils-hy4-ai-model-with-visual-reasoning/"
+      ]
+    },
+    {
+      "id": "m50",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261106.md",
+      "title": "AIエージェントは、「職務記述書＋ルールブック＋30日試用」で雇う",
+      "urls": [
+        "https://www.fullcircle.software/blog/hire-an-ai-employee"
+      ]
+    },
+    {
+      "id": "m51",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "問い合わせの振り分けは、「カテゴリ一覧＋判定モデル1回」で固定する",
+      "urls": [
+        "https://www.unite.ai/salesforce-introduces-koa-decisions-with-image-and-audio-support/"
+      ]
+    },
+    {
+      "id": "m52",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "AIに渡す指標は、「オーナー付きの用語集」で1つに固定する",
+      "urls": [
+        "https://cio.economictimes.indiatimes.com/news/artificial-intelligence/snowflake-launches-ai-agent-innovations-to-power-the-agentic-enterprise-at-expedition-2026/135608889"
+      ]
+    },
+    {
+      "id": "m53",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "家計・経費の確認は、「読み取り専用の口座接続＋固定の質問表」で回す",
+      "urls": [
+        "https://news-insight-ai.web.app/en/news/20261106_ai-news-daily"
+      ]
+    },
+    {
+      "id": "m54",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "企画のたたき台は、紙のスケッチを「仕様」として写真で渡す",
+      "urls": [
+        "https://blog.google/innovation-and-ai/products/gemini-app/turn-drawings-into-apps-gemini/"
+      ]
+    },
+    {
+      "id": "m55",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "動画生成は、「秒単価と尺の型」で量産パイプラインにする",
+      "urls": [
+        "https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-omni-1-2-flash/?ref=explainx"
+      ]
+    },
+    {
+      "id": "m56",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "契約の定型作業は、「一括更新・要求・署名」の3つの専門エージェントに分ける",
+      "urls": [
+        "https://aiagentstore.ai/ai-agent-news/daily/2026-11-06"
+      ]
+    },
+    {
+      "id": "m57",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "エージェントの「記憶・手順・連絡」は、1つのコンテキスト基盤に集約する",
+      "urls": [
+        "https://aiagentstore.ai/ai-agent-news/daily/2026-11-06"
+      ]
+    },
+    {
+      "id": "m58",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "エージェントの監督は、「スマホから承認する」型にする",
+      "urls": [
+        "https://aiagentstore.ai/ai-agent-news/daily/2026-11-06"
+      ]
+    },
+    {
+      "id": "m59",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "研究のAI活用は、「検証ループ付きの実験助手」として回す",
+      "urls": [
+        "https://www.theneuron.ai/digest/everything-that-happened-in-ai-today-friday-november-6-2026/?utm_source=www.theneurondaily.com&utm_medium=referral&utm_campaign=openai-released-gpt-6-cyber-a-hacking-ai"
+      ]
+    },
+    {
+      "id": "m60",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261107.md",
+      "title": "自社サイトのAI学習利用の意思は、robots.txtの1行で統一する",
+      "urls": [
+        "https://dev.clauneck.workers.dev/alifar/google-microsoft-openai-and-anthropic-back-a-shared-ai-training-opt-out-signal-1po8"
+      ]
+    },
+    {
+      "id": "m61",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "エージェント特化のオープンウェイトモデルを、自社で動かせる形で置く",
+      "urls": [
+        "https://x.com/MTSlive/status/2118912062021882015"
+      ]
+    },
+    {
+      "id": "m62",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "エージェントの記憶は、セッションの合間にオフラインで整理する型にする",
+      "urls": [
+        "https://x.com/AnthropicAI/status/2118814753154064501"
+      ]
+    },
+    {
+      "id": "m63",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "長期タスクのエージェントには、「目標の記憶」と「行き詰まりからの復旧」を持たせる",
+      "urls": [
+        "https://x.com/AIatMeta/status/2118768974779634084"
+      ]
+    },
+    {
+      "id": "m64",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "資料の調査は、セルフホスト型の「ノートブック単位＋出典付き」で回す",
+      "urls": [
+        "https://github.com/lfnovo/open-notebook"
+      ]
+    },
+    {
+      "id": "m65",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "流体シミュレーションは、平易な言葉で指示して「再実行可能なファイル」を残す",
+      "urls": [
+        "https://x.com/StandardPhys/status/2118766173986955771"
+      ]
+    },
+    {
+      "id": "m66",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "AIへの入出力は、生成・実行の前に自社のセキュリティ基盤で検査する",
+      "urls": [
+        "https://blockchain.news/news/claude-enterprise-security-admin-updates"
+      ]
+    },
+    {
+      "id": "m67",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "同僚の良いサイトは、「自分のコピー」として会話で改善する型で再利用する",
+      "urls": [
+        "https://x.com/ChatGPT/status/2118827837239226387"
+      ]
+    },
+    {
+      "id": "m68",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "AI開発の進め方は、仕様書起点の3つの定型手順に固定する",
+      "urls": [
+        "https://github.com/github/spec-kit"
+      ]
+    },
+    {
+      "id": "m69",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "閉域の生成AI検証環境は、インストーラー1つで動くデスクトップアプリで用意する",
+      "urls": [
+        "https://github.com/janhq/jan"
+      ]
+    },
+    {
+      "id": "m70",
+      "source_type": "muse",
+      "source_path": "imports/m/muse-20261108.md",
+      "title": "エージェントへの指示は、声で出して手が離せない場面でも回す",
+      "urls": [
+        "https://9to5google.com/2026/11/06/google-antigravity-remote-agents-voice-mode/"
+      ]
+    }
+  ],
+  "composite_sha256": "71f2c38d584a0b6a7a65b70b86746e71d8b3c49407ac70ac610d8ad81be6edf7"
+}

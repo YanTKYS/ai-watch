@@ -52,7 +52,7 @@ class GeminiHydrogenWeekly(unittest.TestCase):
 
     def test_experiment_documents_exist(self):
         base = ROOT / 'experiments/gemini-hydrogen-weekly'
-        for name in ('README.md', 'evaluation-template.md', 'manifest-2026-W45.json'):
+        for name in ('README.md', 'evaluation-template.md', 'manifest-2026-W45.json', 'manifest-2026-W45-multisource.json'):
             self.assertTrue((base / name).is_file(), name)
 
 
