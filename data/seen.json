@@ -589,6 +589,9 @@
     "excluded": "partnership",
     "first_seen": "2026-10-28"
   },
+  "https://openai.com/index/our-new-blog-for-science": {
+    "first_seen": "2026-11-16"
+  },
   "https://openai.com/index/partnering-with-hacktron": {
     "excluded": "partnership",
     "first_seen": "2026-11-07"
@@ -642,6 +645,10 @@
   "https://openai.com/index/stack-overflow-chatgpt-plugin": {
     "excluded": "customer_story",
     "first_seen": "2026-10-18"
+  },
+  "https://openai.com/index/step-toward-defining-the-standard-model": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-16"
   },
   "https://openai.com/index/sullivan-cromwell": {
     "excluded": "low_score",

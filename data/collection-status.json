@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "collection": {
-    "attempted_at": "2026-11-15T10:15:37+09:00",
-    "completed_at": "2026-11-15T10:15:39+09:00",
-    "last_all_success_at": "2026-11-15T10:15:39+09:00",
+    "attempted_at": "2026-11-16T10:21:26+09:00",
+    "completed_at": "2026-11-16T10:21:28+09:00",
+    "last_all_success_at": "2026-11-16T10:21:28+09:00",
     "result": "success",
-    "new_articles": 0,
+    "new_articles": 1,
     "feeds": [
       {
         "name": "OpenAI News",
         "status": "success",
-        "candidates": 0,
-        "adopted": 0
+        "candidates": 2,
+        "adopted": 1
       },
       {
         "name": "Google DeepMind News",
@@ -50,12 +50,12 @@
         "adopted": 0
       }
     ],
-    "run_key": "43662227913:1"
+    "run_key": "43785765021:1"
   },
   "index": {
-    "checked_at": "2026-11-15T10:15:45+09:00",
+    "checked_at": "2026-11-16T10:21:33+09:00",
     "result": "success",
-    "last_success_at": "2026-11-15T10:15:45+09:00",
-    "for_collection": "2026-11-15T10:15:37+09:00"
+    "last_success_at": "2026-11-16T10:21:33+09:00",
+    "for_collection": "2026-11-16T10:21:26+09:00"
   }
 }
