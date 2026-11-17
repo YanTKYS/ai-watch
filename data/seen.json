@@ -164,6 +164,19 @@
   "https://github.blog/changelog/2026-11-13-upcoming-deprecation-of-selected-github-copilot-models-in-december": {
     "first_seen": "2026-11-14"
   },
+  "https://github.blog/changelog/2026-11-16-bulk-start-ai-scan-for-repositories": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-17"
+  },
+  "https://github.blog/changelog/2026-11-16-control-where-github-copilot-customizations-come-from": {
+    "first_seen": "2026-11-17"
+  },
+  "https://github.blog/changelog/2026-11-16-github-copilot-models-deprecated-on-november-16-2026": {
+    "first_seen": "2026-11-17"
+  },
+  "https://github.blog/changelog/2026-11-16-github-copilot-weekly-releases-november-9": {
+    "first_seen": "2026-11-17"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -206,6 +219,9 @@
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.8.0": {
     "first_seen": "2026-11-11"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.9.0": {
+    "first_seen": "2026-11-17"
   },
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.299": {
     "first_seen": "2026-10-18",
@@ -282,6 +298,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.325": {
     "first_seen": "2026-11-14"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.326": {
+    "first_seen": "2026-11-17"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -328,6 +347,10 @@
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
   },
+  "https://openai.com/business/customer-stories/holiday-extras-dots": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-17"
+  },
   "https://openai.com/business/customer-stories/holidays-extras-codex": {
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
@@ -343,6 +366,9 @@
   "https://openai.com/index/accelerating-engineering-for-the-physical-world": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
+  },
+  "https://openai.com/index/advancing-computer-use-for-healthcare-teams": {
+    "first_seen": "2026-11-17"
   },
   "https://openai.com/index/ai-effect-on-freelance-work": {
     "excluded": "low_score",
@@ -460,6 +486,10 @@
     "excluded": "low_score",
     "first_seen": "2026-10-22"
   },
+  "https://openai.com/index/expanding-chatgpt-for-academic-researchers": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-17"
+  },
   "https://openai.com/index/fair-use-benefits-everyone": {
     "excluded": "low_score",
     "first_seen": "2026-10-31"
@@ -554,12 +584,20 @@
     "excluded": "low_score",
     "first_seen": "2026-10-20"
   },
+  "https://openai.com/index/lvmh-media-division-partnership": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-17"
+  },
   "https://openai.com/index/measuring-how-ai-agents-handle-wet-lab-science": {
     "first_seen": "2026-11-07"
   },
   "https://openai.com/index/merge-builds-with-openai": {
     "excluded": "customer_story",
     "first_seen": "2026-11-06"
+  },
+  "https://openai.com/index/more-ways-to-move-care-forward-with-chatgpt-for-healthcare": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-17"
   },
   "https://openai.com/index/openai-cut-incident-investigation": {
     "excluded": "customer_story",
@@ -588,6 +626,10 @@
   "https://openai.com/index/oracle-apps-in-chatgpt": {
     "excluded": "partnership",
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/our-first-phase-of-embedded-assessments": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-17"
   },
   "https://openai.com/index/our-new-blog-for-science": {
     "first_seen": "2026-11-16"
@@ -626,6 +668,10 @@
     "excluded": "low_score",
     "first_seen": "2026-10-24"
   },
+  "https://openai.com/index/science-at-the-frontier": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-17"
+  },
   "https://openai.com/index/securing-our-frontier-model-training-environment": {
     "excluded": "low_score",
     "first_seen": "2026-10-24"
@@ -650,6 +696,9 @@
     "excluded": "low_score",
     "first_seen": "2026-11-16"
   },
+  "https://openai.com/index/strengthening-online-child-safety": {
+    "first_seen": "2026-11-17"
+  },
   "https://openai.com/index/sullivan-cromwell": {
     "excluded": "low_score",
     "first_seen": "2026-10-18"
@@ -672,6 +721,10 @@
   "https://openai.com/index/the-future-of-the-firm": {
     "excluded": "low_score",
     "first_seen": "2026-10-29"
+  },
+  "https://openai.com/index/the-kings-trust-and-openai": {
+    "excluded": "partnership",
+    "first_seen": "2026-11-17"
   },
   "https://openai.com/index/third-moment-research": {
     "excluded": "customer_story",
