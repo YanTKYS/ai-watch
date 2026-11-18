@@ -177,6 +177,21 @@
   "https://github.blog/changelog/2026-11-16-github-copilot-weekly-releases-november-9": {
     "first_seen": "2026-11-17"
   },
+  "https://github.blog/changelog/2026-11-17-github-copilot-app-microsoft-ignite-releases": {
+    "first_seen": "2026-11-18"
+  },
+  "https://github.blog/changelog/2026-11-17-github-copilot-evals-is-now-in-public-preview": {
+    "first_seen": "2026-11-18"
+  },
+  "https://github.blog/changelog/2026-11-17-github-copilot-fusion-updates-more-availability-benchmarks-and-models": {
+    "first_seen": "2026-11-18"
+  },
+  "https://github.blog/changelog/2026-11-17-github-copilot-in-jetbrains-ignite-releases": {
+    "first_seen": "2026-11-18"
+  },
+  "https://github.blog/changelog/2026-11-17-openais-gpt-6-2-astra-and-gpt-6-2-sol-now-available": {
+    "first_seen": "2026-11-18"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.15.0"
@@ -197,6 +212,9 @@
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.1.0": {
     "first_seen": "2026-10-22"
+  },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.10.0": {
+    "first_seen": "2026-11-18"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.2.0": {
     "first_seen": "2026-10-24",
@@ -301,6 +319,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.326": {
     "first_seen": "2026-11-17"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.327": {
+    "first_seen": "2026-11-18"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -331,6 +352,17 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.169.0": {
     "first_seen": "2026-11-14"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.169.1": {
+    "excluded": "fixes_only",
+    "first_seen": "2026-11-18"
+  },
+  "https://github.com/openai/codex/releases/tag/rust-v0.170.0": {
+    "first_seen": "2026-11-18"
+  },
+  "https://openai.com/ads/blog/chatgpt-ads-increases-its-market-presence": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-18"
+  },
   "https://openai.com/ads/customers/evernote": {
     "excluded": "low_score",
     "first_seen": "2026-11-04"
@@ -354,6 +386,10 @@
   "https://openai.com/business/customer-stories/holidays-extras-codex": {
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
+  },
+  "https://openai.com/business/customer-stories/revolut": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-18"
   },
   "https://openai.com/business/customer-stories/shield": {
     "excluded": "customer_story",
@@ -380,6 +416,10 @@
   },
   "https://openai.com/index/anima": {
     "first_seen": "2026-10-28"
+  },
+  "https://openai.com/index/astra-law-6-2": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-18"
   },
   "https://openai.com/index/att-legal": {
     "excluded": "customer_story",
@@ -542,17 +582,27 @@
   "https://openai.com/index/introducing-businesses-chatgpt": {
     "first_seen": "2026-11-11"
   },
+  "https://openai.com/index/introducing-chatgpt-for-sales": {
+    "first_seen": "2026-11-18"
+  },
   "https://openai.com/index/introducing-chatgpt-wallet": {
     "first_seen": "2026-11-14"
   },
   "https://openai.com/index/introducing-gpt-6-1-terra": {
     "first_seen": "2026-10-27"
   },
+  "https://openai.com/index/introducing-gpt-6-2-astra-sol": {
+    "first_seen": "2026-11-18"
+  },
   "https://openai.com/index/introducing-gpt-6-cyber": {
     "first_seen": "2026-11-06"
   },
   "https://openai.com/index/introducing-images-2-6": {
     "first_seen": "2026-11-05"
+  },
+  "https://openai.com/index/introducing-openai-for-chile": {
+    "excluded": "policy_society",
+    "first_seen": "2026-11-18"
   },
   "https://openai.com/index/introducing-the-rosalind-academic-plan": {
     "excluded": "education_program",
@@ -695,6 +745,10 @@
   "https://openai.com/index/step-toward-defining-the-standard-model": {
     "excluded": "low_score",
     "first_seen": "2026-11-16"
+  },
+  "https://openai.com/index/strengthening-nato-allied-cyber-defences-ai": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-18"
   },
   "https://openai.com/index/strengthening-online-child-safety": {
     "first_seen": "2026-11-17"
