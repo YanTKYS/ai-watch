@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "collection": {
-    "attempted_at": "2026-11-22T10:32:06+09:00",
-    "completed_at": "2026-11-22T10:32:08+09:00",
-    "last_all_success_at": "2026-11-22T10:32:08+09:00",
+    "attempted_at": "2026-11-23T10:56:37+09:00",
+    "completed_at": "2026-11-23T10:56:38+09:00",
+    "last_all_success_at": "2026-11-23T10:56:38+09:00",
     "result": "success",
     "new_articles": 0,
     "feeds": [
       {
         "name": "OpenAI News",
         "status": "success",
-        "candidates": 0,
+        "candidates": 1,
         "adopted": 0
       },
       {
@@ -50,12 +50,12 @@
         "adopted": 0
       }
     ],
-    "run_key": "44971895801:1"
+    "run_key": "45097343405:1"
   },
   "index": {
-    "checked_at": "2026-11-22T10:32:13+09:00",
+    "checked_at": "2026-11-23T10:56:44+09:00",
     "result": "success",
-    "last_success_at": "2026-11-22T10:32:13+09:00",
-    "for_collection": "2026-11-22T10:32:06+09:00"
+    "last_success_at": "2026-11-23T10:56:44+09:00",
+    "for_collection": "2026-11-23T10:56:37+09:00"
   }
 }

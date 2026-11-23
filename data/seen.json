@@ -775,6 +775,10 @@
     "excluded": "partnership",
     "first_seen": "2026-11-07"
   },
+  "https://openai.com/index/perplexity-and-intelligence": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-23"
+  },
   "https://openai.com/index/preparing-our-next-security-sprint-to-harden-openai": {
     "excluded": "low_score",
     "first_seen": "2026-11-03"
