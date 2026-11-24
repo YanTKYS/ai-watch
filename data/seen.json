@@ -18,6 +18,9 @@
     "excluded": "responsibility",
     "first_seen": "2026-10-18"
   },
+  "https://deepmind.google/blog/finding-faster-quantum-algorithms-with-agents-and-formal-verification": {
+    "first_seen": "2026-11-24"
+  },
   "https://deepmind.google/blog/gemini-4-argon-for-robotics": {
     "first_seen": "2026-10-18"
   },
@@ -243,6 +246,9 @@
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.12.0": {
     "first_seen": "2026-11-21"
   },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.13.0": {
+    "first_seen": "2026-11-24"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.2.0": {
     "first_seen": "2026-10-24",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0"
@@ -358,6 +364,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.330": {
     "first_seen": "2026-11-21"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.331": {
+    "first_seen": "2026-11-24"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -398,6 +407,9 @@
   "https://github.com/openai/codex/releases/tag/rust-v0.171.0": {
     "first_seen": "2026-11-20"
   },
+  "https://github.com/openai/codex/releases/tag/rust-v0.172.0": {
+    "first_seen": "2026-11-24"
+  },
   "https://openai.com/ads/blog/chatgpt-ads-increases-its-market-presence": {
     "excluded": "policy_society",
     "first_seen": "2026-11-18"
@@ -433,6 +445,10 @@
     "excluded": "customer_story",
     "first_seen": "2026-11-18"
   },
+  "https://openai.com/business/customer-stories/richpanel-ai-customer-support": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-24"
+  },
   "https://openai.com/business/customer-stories/shield": {
     "excluded": "customer_story",
     "first_seen": "2026-11-14"
@@ -443,6 +459,10 @@
   },
   "https://openai.com/business/learn/codex-security-plugin-demo": {
     "first_seen": "2026-11-20"
+  },
+  "https://openai.com/business/learn/connected-intelligence-for-in-house-legal": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-24"
   },
   "https://openai.com/business/learn/daybreak-blue-onboarding-demo": {
     "excluded": "low_score",
@@ -682,6 +702,9 @@
   "https://openai.com/index/introducing-openai-for-chile": {
     "excluded": "policy_society",
     "first_seen": "2026-11-18"
+  },
+  "https://openai.com/index/introducing-shirudo": {
+    "first_seen": "2026-11-24"
   },
   "https://openai.com/index/introducing-the-rosalind-academic-plan": {
     "excluded": "education_program",
