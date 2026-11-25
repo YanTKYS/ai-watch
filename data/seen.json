@@ -249,6 +249,9 @@
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.13.0": {
     "first_seen": "2026-11-24"
   },
+  "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.14.0": {
+    "first_seen": "2026-11-25"
+  },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.2.0": {
     "first_seen": "2026-10-24",
     "grouped_into": "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v2.3.0"
@@ -367,6 +370,9 @@
   "https://github.com/anthropics/claude-code/releases/tag/v2.1.331": {
     "first_seen": "2026-11-24"
   },
+  "https://github.com/anthropics/claude-code/releases/tag/v2.1.332": {
+    "first_seen": "2026-11-25"
+  },
   "https://github.com/openai/codex/releases/tag/libcap-v2.75": {
     "first_seen": "2026-11-04"
   },
@@ -426,6 +432,10 @@
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
   },
+  "https://openai.com/business/customer-stories/clay-plugins-openai": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-25"
+  },
   "https://openai.com/business/customer-stories/gondola": {
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
@@ -440,6 +450,14 @@
   "https://openai.com/business/customer-stories/holidays-extras-codex": {
     "excluded": "customer_story",
     "first_seen": "2026-11-13"
+  },
+  "https://openai.com/business/customer-stories/ifood": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-25"
+  },
+  "https://openai.com/business/customer-stories/intentful-dots": {
+    "excluded": "customer_story",
+    "first_seen": "2026-11-25"
   },
   "https://openai.com/business/customer-stories/revolut": {
     "excluded": "customer_story",
@@ -641,6 +659,9 @@
   "https://openai.com/index/gpt-6-1-sol-coderabbit-code-security": {
     "first_seen": "2026-10-27"
   },
+  "https://openai.com/index/gpt-6-models-demonstrate-intrinsic-protein-design-capabilities": {
+    "first_seen": "2026-11-25"
+  },
   "https://openai.com/index/greptile-code-review-codex-astra": {
     "first_seen": "2026-10-27"
   },
@@ -839,6 +860,10 @@
   "https://openai.com/index/science-at-the-frontier": {
     "excluded": "low_score",
     "first_seen": "2026-11-17"
+  },
+  "https://openai.com/index/searching-for-distant-planets-with-astra": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-25"
   },
   "https://openai.com/index/securing-our-frontier-model-training-environment": {
     "excluded": "low_score",
