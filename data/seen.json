@@ -42,6 +42,10 @@
   "https://deepmind.google/blog/genie-4-is-now-available": {
     "first_seen": "2026-11-19"
   },
+  "https://deepmind.google/blog/interpreting-mass-spectra-with-google-antigravity": {
+    "excluded": "low_score",
+    "first_seen": "2026-11-26"
+  },
   "https://deepmind.google/blog/introducing-alphaproof-code": {
     "first_seen": "2026-11-11"
   },
@@ -215,6 +219,9 @@
   },
   "https://github.blog/changelog/2026-11-18-gemini-4-neon-in-github-copilot": {
     "first_seen": "2026-11-19"
+  },
+  "https://github.blog/changelog/2026-11-25-copilot-code-review-billing-will-default-to-the-organization": {
+    "first_seen": "2026-11-26"
   },
   "https://github.com/anthropics/anthropic-sdk-python/releases/tag/v1.14.0": {
     "first_seen": "2026-10-18",
