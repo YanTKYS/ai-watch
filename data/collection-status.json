@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
   "collection": {
-    "attempted_at": "2026-11-26T12:44:51+09:00",
-    "completed_at": "2026-11-26T12:44:53+09:00",
-    "last_all_success_at": "2026-11-26T12:44:53+09:00",
+    "attempted_at": "2026-11-27T12:45:21+09:00",
+    "completed_at": "2026-11-27T12:45:23+09:00",
+    "last_all_success_at": "2026-11-27T12:45:23+09:00",
     "result": "success",
-    "new_articles": 1,
+    "new_articles": 0,
     "feeds": [
       {
         "name": "OpenAI News",
@@ -16,14 +16,14 @@
       {
         "name": "Google DeepMind News",
         "status": "success",
-        "candidates": 1,
+        "candidates": 0,
         "adopted": 0
       },
       {
         "name": "GitHub Changelog",
         "status": "success",
-        "candidates": 1,
-        "adopted": 1
+        "candidates": 0,
+        "adopted": 0
       },
       {
         "name": "Claude Code Releases",
@@ -50,12 +50,12 @@
         "adopted": 0
       }
     ],
-    "run_key": "45750855098:1"
+    "run_key": "45935985644:1"
   },
   "index": {
-    "checked_at": "2026-11-26T12:44:59+09:00",
+    "checked_at": "2026-11-27T12:45:29+09:00",
     "result": "success",
-    "last_success_at": "2026-11-26T12:44:59+09:00",
-    "for_collection": "2026-11-26T12:44:51+09:00"
+    "last_success_at": "2026-11-27T12:45:29+09:00",
+    "for_collection": "2026-11-27T12:45:21+09:00"
   }
 }
